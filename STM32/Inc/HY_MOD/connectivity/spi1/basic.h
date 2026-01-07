@@ -3,6 +3,7 @@
 #ifdef HY_MOD_STM32_SPI
 
 #include "HY_MOD/main/fn_state.h"
+#include "HY_MOD/main/typedef.h"
 
 #define SPI_MASTER_ASK "$READ  "
 #define SPI_LENGTH_H   "$L:HL  "

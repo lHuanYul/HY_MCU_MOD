@@ -50,14 +50,14 @@ Result fdcan_pkt_write_motor(FdcanPkt *pkt, MotorParameter *motor)
     return RESULT_OK(pkt);
 }
 
-Result fdcan_vehicle_motor_send(VehicleParameter *vehicle)
+Result fdcan_vehicle_motor_send(VehicleParameter *vehicle, FdcanPktPool *pool, FdcanPktBuf *buf)
 {
-    FdcanPkt *pkt = RESULT_UNWRAP_HANDLE(fdcan_pkt_pool_alloc());
+    FdcanPkt *pkt = RESULT_UNWRAP_HANDLE(fdcan_pkt_pool_alloc(pool));
     fdcan_pkt_write_motor(pkt, &vehicle->motor_left);
-    RESULT_CHECK_HANDLE(fdcan_pkt_buf_push(&fdcan_trsm_pkt_buf, pkt, 1));
-    pkt = RESULT_UNWRAP_HANDLE(fdcan_pkt_pool_alloc());
+    RESULT_CHECK_HANDLE(fdcan_pkt_buf_push(buf, pkt, pool, 1));
+    pkt = RESULT_UNWRAP_HANDLE(fdcan_pkt_pool_alloc(pool));
     fdcan_pkt_write_motor(pkt, &vehicle->motor_right);
-    RESULT_CHECK_HANDLE(fdcan_pkt_buf_push(&fdcan_trsm_pkt_buf, pkt, 1));
+    RESULT_CHECK_HANDLE(fdcan_pkt_buf_push(buf, pkt, pool, 1));
     return RESULT_OK(NULL);
 }
 #endif

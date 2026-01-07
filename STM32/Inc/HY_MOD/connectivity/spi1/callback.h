@@ -4,7 +4,7 @@
 
 #include "HY_MOD/packet/json.h"
 
-void spi1_rx_callback(SpiParametar *spi, JsonPktPool *pool, JsonPktBuf *buf);
-void spi1_tx_callback(SpiParametar *spi, JsonPktPool *pool, JsonPktBuf *buf);
+void spi_rx_cb(SpiParametar *spi, SPI_HandleTypeDef *hspi, JsonPktPool *pool, JsonPktBuf *buf);
+void spi_tx_cb(SpiParametar *spi, SPI_HandleTypeDef *hspi, JsonPktPool *pool, JsonPktBuf *buf);
 
 #endif

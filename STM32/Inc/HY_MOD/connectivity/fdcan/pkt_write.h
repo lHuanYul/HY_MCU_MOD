@@ -14,7 +14,7 @@ Result fdcan_motor_send(MotorParameter *motor);
 #include "vehicle/basic.h"
 
 Result fdcan_pkt_write_motor(FdcanPkt *pkt, MotorParameter *motor);
-Result fdcan_vehicle_motor_send(VehicleParameter *vehicle);
+Result fdcan_vehicle_motor_send(VehicleParameter *vehicle, FdcanPktPool *pool, FdcanPktBuf *buf);
 #endif
 
 #ifdef MCU_SENSOR
