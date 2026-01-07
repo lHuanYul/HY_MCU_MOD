@@ -2,9 +2,8 @@
 #ifdef HY_MOD_STM32_SPI
 #include "HY_MOD/main/variable_cal.h"
 
-void spi1_rx_callback(void)
+void spi1_rx_callback(SpiParametar *spi, JsonPktPool *pool, JsonPktBuf *buf)
 {
-    SpiParametar *spi = &spi1_h;
     GPIO_WRITE(spi->const_h.NSS, 1);
     #if defined(STM32F7) || defined(STM32H7)
         SCB_InvalidateDCache_by_Addr((uint32_t*)spi->rx_buf, JSON_PKT_LEN+32);
@@ -38,10 +37,10 @@ void spi1_rx_callback(void)
             ) {
                 spi->state = SPI_STATE_FINISH;
                 spi->rx_buf[spi->rx_buf_len] = '\0';
-                JsonPkt *pkt = RESULT_UNWRAP_HANDLE(json_pkt_pool_alloc());
+                JsonPkt *pkt = RESULT_UNWRAP_HANDLE(json_pkt_pool_alloc(pool));
                 json_pkt_set_len(pkt, spi->rx_buf_len);
                 memcpy(pkt->data, spi->rx_buf, spi->rx_buf_len + 1);
-                json_pkt_buf_push(&spi->rx_pkt_buf, pkt, 1);
+                json_pkt_buf_push(buf, pkt, pool, 1);
                 osSemaphoreRelease(spi->rx_handle);
                 return;
             }
@@ -54,9 +53,8 @@ error:
     osSemaphoreRelease(spi->rx_handle);
 }
 
-void spi1_tx_callback(void)
+void spi1_tx_callback(SpiParametar *spi, JsonPktPool *pool, JsonPktBuf *buf)
 {
-    SpiParametar *spi = &spi1_h;
     switch (spi->state)
     {
         case SPI_STATE_FINISH:
