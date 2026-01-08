@@ -42,9 +42,9 @@ void spi_rx_cb(SpiParametar *spi, SPI_HandleTypeDef *hspi, JsonPktPool *pool, Js
                 spi->state = SPI_STATE_FINISH;
                 spi->rx_buf[spi->rx_buf_len] = '\0';
                 JsonPkt *pkt = RESULT_UNWRAP_HANDLE(json_pkt_pool_alloc(pool));
-                json_pkt_set_len(pkt, spi->rx_buf_len);
+                RESULT_CHECK_GOTO(json_pkt_set_len(pkt, spi->rx_buf_len), release);
                 memcpy(pkt->data, spi->rx_buf, spi->rx_buf_len + 1);
-                json_pkt_buf_push(buf, pkt, pool, 1);
+                RESULT_CHECK_GOTO(json_pkt_buf_push(buf, pkt, pool, 1), release);
                 osSemaphoreRelease(spi->rx_handle);
                 return;
             }
@@ -54,6 +54,7 @@ void spi_rx_cb(SpiParametar *spi, SPI_HandleTypeDef *hspi, JsonPktPool *pool, Js
     }
 error:
     spi->state = SPI_STATE_ERROR;
+release:
     osSemaphoreRelease(spi->rx_handle);
 }
 
@@ -81,7 +82,8 @@ void spi_tx_cb(SpiParametar *spi, SPI_HandleTypeDef *hspi, JsonPktPool *pool, Js
         {
             
             spi->state = SPI_STATE_FINISH;
-            // ...
+            JsonPkt *pkt = RESULT_UNWRAP_GOTO(json_pkt_buf_pop(buf), release);
+            json_pkt_pool_free(pool, pkt);
             osSemaphoreRelease(spi->tx_handle);
             return;
         }
@@ -89,6 +91,7 @@ void spi_tx_cb(SpiParametar *spi, SPI_HandleTypeDef *hspi, JsonPktPool *pool, Js
     }
 error:
     spi->state = SPI_STATE_ERROR;
+release:
     osSemaphoreRelease(spi->tx_handle);
 }
 

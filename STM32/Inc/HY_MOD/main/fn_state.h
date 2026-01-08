@@ -127,6 +127,17 @@ typedef struct Result
         }                                   \
     } while (0)
 
+#define RESULT_UNWRAP_GOTO(expr,tag)        \
+    ({                                      \
+        Result res = (expr);                \
+        if (RESULT_CHECK_RAW(res))          \
+        {                                   \
+            last_error = res.result.error;  \
+            goto tag;                       \
+        }                                   \
+        (res).result.success.obj;           \
+    })
+
 #ifdef STM32_DEVICE
 #define ERROR_CHECK_HAL_RET_HAL(expr)       \
     do {                                    \

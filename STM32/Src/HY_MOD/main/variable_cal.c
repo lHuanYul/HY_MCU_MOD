@@ -107,8 +107,8 @@ float32_t var_fabsf(float32_t x)
 uint16_t var_comb_u16(const void* src)
 {
     const uint8_t *out = (const uint8_t *)src;
-    return    ((uint16_t)out[2] <<  8)
-            | ((uint16_t)out[3] <<  0);
+    return    ((uint16_t)out[0] <<  8)
+            | ((uint16_t)out[1] <<  0);
 }
 
 /**
