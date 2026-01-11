@@ -5,7 +5,7 @@
 /*
 void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi)
 */
-void spi_rx_cb(SpiParametar *spi, SPI_HandleTypeDef *hspi, JsonPktPool *pool, JsonPktBuf *buf)
+void spi_json_rx_cb(SpiParametar *spi, SPI_HandleTypeDef *hspi, JsonPktPool *pool, JsonPktBuf *buf)
 {
     if (hspi != spi->const_h.hspix) return;
     GPIO_WRITE(spi->const_h.NSS, 1);
@@ -16,82 +16,31 @@ void spi_rx_cb(SpiParametar *spi, SPI_HandleTypeDef *hspi, JsonPktPool *pool, Js
     switch (spi->state)
     {
         case SPI_STATE_RECV_HEADER:
-        {
-            if (
-                spi->rx_buf[0] == '$' &&
-                spi->rx_buf[1] == 'L' &&
-                spi->rx_buf[2] == ':' &&
-                spi->rx_buf[spi->rx_buf_len - 1] == '\0'
-            ) {
-                spi->state = SPI_STATE_RECV_BODY;
-                uint16_t payload_len = var_u8_to_u16_be(spi->rx_buf + 3);
-                if (payload_len > JSON_PKT_LEN) goto error;
-                spi->rx_buf_len = payload_len;
-                osSemaphoreRelease(spi->rx_handle);
-                return;
-            }
-            break;
-        }
         case SPI_STATE_RECV_BODY:
         {
-            if (
-                spi->rx_buf_len > 0      &&
-                spi->rx_buf[0] == '{'    &&
-                spi->rx_buf[spi->rx_buf_len - 1] == '}'
-            ) {
-                spi->state = SPI_STATE_FINISH;
-                spi->rx_buf[spi->rx_buf_len] = '\0';
-                JsonPkt *pkt = RESULT_UNWRAP_HANDLE(json_pkt_pool_alloc(pool));
-                RESULT_CHECK_GOTO(json_pkt_set_len(pkt, spi->rx_buf_len), release);
-                memcpy(pkt->data, spi->rx_buf, spi->rx_buf_len + 1);
-                RESULT_CHECK_GOTO(json_pkt_buf_push(buf, pkt, pool, 1), release);
-                osSemaphoreRelease(spi->rx_handle);
-                return;
-            }
             break;
         }
-        default: break;
+        default: spi->state = SPI_STATE_ERROR;
     }
-error:
-    spi->state = SPI_STATE_ERROR;
-release:
     osSemaphoreRelease(spi->rx_handle);
 }
 
 /*
 void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
 */
-void spi_tx_cb(SpiParametar *spi, SPI_HandleTypeDef *hspi, JsonPktPool *pool, JsonPktBuf *buf)
+void spi_json_tx_cb(SpiParametar *spi, SPI_HandleTypeDef *hspi, JsonPktPool *pool, JsonPktBuf *buf)
 {
     if (hspi != spi->const_h.hspix) return;
     switch (spi->state)
     {
         case SPI_STATE_FINISH:
-        {
-            spi->state = SPI_STATE_RECV_HEADER;
-            osSemaphoreRelease(spi->tx_handle);
-            return;
-        }
         case SPI_STATE_TRSM_HEADER:
-        {
-            spi->state = SPI_STATE_TRSM_BODY;
-            osSemaphoreRelease(spi->tx_handle);
-            return;
-        }
         case SPI_STATE_TRSM_BODY:
         {
-            
-            spi->state = SPI_STATE_FINISH;
-            JsonPkt *pkt = RESULT_UNWRAP_GOTO(json_pkt_buf_pop(buf), release);
-            json_pkt_pool_free(pool, pkt);
-            osSemaphoreRelease(spi->tx_handle);
-            return;
+            break;
         }
-        default: break;
+        default: spi->state = SPI_STATE_ERROR;
     }
-error:
-    spi->state = SPI_STATE_ERROR;
-release:
     osSemaphoreRelease(spi->tx_handle);
 }
 
