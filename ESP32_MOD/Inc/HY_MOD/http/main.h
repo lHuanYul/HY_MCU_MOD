@@ -2,7 +2,9 @@
 #include "HY_MOD/http/basic.h"
 #ifdef HY_MOD_ESP32_HTTP
 
-esp_err_t http_send(void);
-esp_err_t http_start_server(HttpParametar *http);
+#include "HY_MOD/main/fn_state.h"
+
+Result http_send(void);
+Result http_start_server(HttpParametar *http);
 
 #endif

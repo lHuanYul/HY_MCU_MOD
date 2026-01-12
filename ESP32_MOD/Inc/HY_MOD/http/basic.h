@@ -2,6 +2,7 @@
 #include "main/config.h"
 #ifdef HY_MOD_ESP32_HTTP
 #include "esp_http_server.h"
+#include "esp_http_client.h"
 
 #define MAX_HTTP_OUTPUT_BUFFER 2048
 
@@ -20,9 +21,10 @@ typedef struct HttpParametar
 {
     const HttpConst const_h;
     httpd_handle_t server;
-    httpd_config_t config;
+    httpd_config_t config_server;
     MyHttpBuffer rx_buf;
     httpd_uri_t rx_recv;
+    esp_http_client_config_t config_client;
     MyHttpBuffer tx_buf;
 } HttpParametar;
 

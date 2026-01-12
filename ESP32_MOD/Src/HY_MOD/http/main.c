@@ -68,12 +68,16 @@ void http_rest_with_url(void)
 }
 */
 
-esp_err_t http_send(void)
+Result http_send(HttpParametar *http)
 {
     const char *target_url = "http://192.168.0.21/set-temperature";
     const char *my_json = "{\"type\": \"Normal\", \"value\": 27.0}";
+    http->tx_buf.len = strlen(my_json);
+    memcpy(http->tx_buf.buffer, my_json, http->tx_buf.len);
+    http->config_client.url = target_url;
+    
     http_send_handler(target_url, my_json);
-    return ESP_OK;
+    return RESULT_OK(NULL);
 }
 
 #define REST_CHECK(a, str, goto_tag, ...)                                              \
@@ -87,20 +91,20 @@ esp_err_t http_send(void)
     } while (0)
 
 __attribute__((weak)) void http_recv_register(HttpParametar *http) { return; };
-esp_err_t http_start_server(HttpParametar *http)
+Result http_start_server(HttpParametar *http)
 {
-    http->config.uri_match_fn = httpd_uri_match_wildcard;
+    http->config_server.uri_match_fn = httpd_uri_match_wildcard;
 
     ESP_LOGI(TAG, "HTTP Server Starting");
-    if (httpd_start(&http->server, &http->config) != ESP_OK)
+    if (httpd_start(&http->server, &http->config_server) != ESP_OK)
     {
         ESP_LOGE(TAG, "Start server failed");
-        return ESP_FAIL;
+        return RESULT_ERROR(RES_ERR_FAIL);
     }
     http_recv_register(http);
 
     ESP_LOGI(TAG, "HTTP Server Started");
-    return ESP_OK;
+    return RESULT_OK(NULL);
 }
 
 #endif

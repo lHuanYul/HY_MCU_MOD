@@ -3,23 +3,17 @@
 
 static const char *TAG = "MY_HTTP_SEND";
 
-void http_send_handler(const char *url, const char *json_data)
+void http_send_handler(HttpParametar *http)
 {
-    esp_http_client_config_t config = {
-        .url = url,
-        .method = HTTP_METHOD_POST,
-        .timeout_ms = 5000,
-    };
-
-    esp_http_client_handle_t client = esp_http_client_init(&config);
+    esp_http_client_handle_t client = esp_http_client_init(&http->config_client);
     if (client == NULL)
     {
         ESP_LOGE(TAG, "Failed to initialise HTTP connection");
         return;
     }
     esp_http_client_set_header(client, "Content-Type", "application/json");
-    esp_http_client_set_post_field(client, json_data, strlen(json_data));
-    ESP_LOGI(TAG, "Posting to %s...", url);
+    esp_http_client_set_post_field(client, http->tx_buf.buffer, http->tx_buf.len);
+    ESP_LOGI(TAG, "Posting to %s...", http->config_client.url);
     esp_err_t err = esp_http_client_perform(client);
     if (err == ESP_OK)
     {
