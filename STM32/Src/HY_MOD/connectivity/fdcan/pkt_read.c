@@ -70,6 +70,7 @@ static Result motor_pkt(FdcanPkt *pkt, MotorParameter *motor)
     uint8_t u8s[sizeof(float32_t)];
     memcpy(u8s, pkt->data + 2, sizeof(float32_t));
     motor->value_fbk = var_u8_to_f32_be(u8s);
+    motor_history_write(motor);
     return RESULT_OK(NULL);
 }
 

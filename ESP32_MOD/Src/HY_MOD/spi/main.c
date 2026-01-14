@@ -57,23 +57,23 @@ static void spi_trcv(SpiParametar *spi, uint32_t timeout_ms)
         spi->state = SPI_STATE_ERROR;
 }
 
-void spi_recv_start(SpiParametar *spi, uint16_t byte_len, uint8_t *rx_buf)
+void spi_recv_start(SpiParametar *spi, uint16_t byte_len, uint8_t *rx_buf, uint32_t timeout_ms)
 {
     memset(&spi->slave, 0, sizeof(spi_slave_transaction_t));
     spi->slave.rx_buffer = rx_buf;
     spi->slave.length = byte_len * U8_BIT_SIZE;
     spi->slave.user = (void*)xTaskGetCurrentTaskHandle();
-    spi_trcv(spi, 5000);
+    spi_trcv(spi, timeout_ms);
     spi->rx_buf_len = spi->slave.trans_len / U8_BIT_SIZE;
 }
 
-void spi_trsm_start(SpiParametar *spi, uint16_t byte_len, uint8_t *tx_buf)
+void spi_trsm_start(SpiParametar *spi, uint16_t byte_len, uint8_t *tx_buf, uint32_t timeout_ms)
 {
     memset(&spi->slave, 0, sizeof(spi_slave_transaction_t));
     spi->slave.length = byte_len * U8_BIT_SIZE;
     spi->slave.tx_buffer = tx_buf;
     spi->slave.user = (void*)xTaskGetCurrentTaskHandle();
-    spi_trcv(spi, 1000);
+    spi_trcv(spi, timeout_ms);
 }
 
 #endif
