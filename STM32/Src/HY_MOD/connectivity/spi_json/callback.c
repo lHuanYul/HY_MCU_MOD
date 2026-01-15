@@ -1,4 +1,4 @@
-#include "HY_MOD/connectivity/spi1/callback.h"
+#include "HY_MOD/connectivity/spi_json/callback.h"
 #ifdef HY_MOD_STM32_SPI
 #include "HY_MOD/main/variable_cal.h"
 

@@ -1,4 +1,4 @@
-#include "HY_MOD/connectivity/spi1/main.h"
+#include "HY_MOD/connectivity/spi_json/main.h"
 #ifdef HY_MOD_STM32_SPI
 #include "HY_MOD/main/variable_cal.h"
 #include "spi.h"
@@ -44,7 +44,12 @@ Result spi_start_transmit(SpiParametar *spi)
         return RESULT_ERROR(RES_ERR_FAIL);
     }
     wait_it(spi, spi->tx_handle,100);
+#ifdef STM32_G0
     while (__HAL_SPI_GET_FLAG(spi->const_h.hspix, SPI_FLAG_BSY));
+#elifdef STM32_H7
+    while (!__HAL_SPI_GET_FLAG(&hspi1, SPI_FLAG_EOT));
+    __HAL_SPI_CLEAR_EOTFLAG(&hspi1);
+#endif
     GPIO_WRITE(spi->const_h.NSS, 1);
     return RESULT_OK(NULL);
 }
