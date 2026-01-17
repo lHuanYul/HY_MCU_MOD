@@ -1,6 +1,6 @@
 #include "HY_MOD/light/main.h"
 #ifdef HY_MOD_STM32_LIGHT
-#include "main/mod_cfg.h"
+#include "main/light.h"
 
 #define DEFALT_TASK_DELAY_MS 1000
 uint32_t defalt_running;

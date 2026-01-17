@@ -1,7 +1,7 @@
 #include "HY_MOD/fdcan/main.h"
 #ifdef HY_MOD_STM32_FDCAN
 
-#include "main/mod_cfg.h"
+#include "main/fdcan.h"
 #include "HY_MOD/fdcan/main.h"
 #include "HY_MOD/fdcan/pkt_write.h"
 
@@ -28,8 +28,8 @@ static Result auto_pkt_proc(void)
 #endif
     if (fdcan_h.data_store == FNC_ENABLE)
     {
-        FdcanPkt *pkt;
         #ifdef ENABLE_CON_PKT_TEST
+        FdcanPkt *pkt;
         pkt = RESULT_UNWRAP_HANDLE(fdcan_pkt_pool_alloc());
         fdcan_pkt_write(pkt, DATA_TYPE_TEST);
         fdcan_pkt_buf_push(&fdcan_trsm_pkt_buf, pkt);

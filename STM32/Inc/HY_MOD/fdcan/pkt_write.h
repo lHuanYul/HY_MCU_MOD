@@ -19,8 +19,8 @@ Result fdcan_vehicle_motor_send(VehicleParameter *vehicle, FdcanPktPool *pool, F
 
 #ifdef MCU_SENSOR
 #include "analog/adc1/main.h"
-#include "HY_MOD/spi/rfid/main.h"
-#include "us_sensor/main.h"
+#include "HY_MOD/rfid/main.h"
+#include "HY_MOD/us_sensor/main.h"
 
 Result fdcan_pkt_write_hall_uss(FdcanPkt *pkt);
 Result fdcan_pkt_write_rfid(FdcanPkt *pkt);

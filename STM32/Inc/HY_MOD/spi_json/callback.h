@@ -1,6 +1,6 @@
 #pragma once
 #include "HY_MOD/spi_json/basic.h"
-#ifdef HY_MOD_STM32_SPI
+#ifdef HY_MOD_STM32_SPI_JSON
 
 #include "HY_MOD/packet/json.h"
 

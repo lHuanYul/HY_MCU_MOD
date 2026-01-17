@@ -1,7 +1,7 @@
 #include "HY_MOD/spi_json/main.h"
-#ifdef HY_MOD_STM32_SPI
+#ifdef HY_MOD_STM32_SPI_JSON
 
-#include "main/mod_cfg.h"
+#include "main/spi_json.h"
 #include "HY_MOD/main/variable_cal.h"
 #include "HY_MOD/packet/json.h"
 

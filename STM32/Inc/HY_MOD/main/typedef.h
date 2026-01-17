@@ -13,6 +13,7 @@ typedef int8_t FncState;
 #define FNC_DISABLE 0
 #define FNC_ENABLE  1
 
+#ifdef STM32_DEVICE
 typedef struct GPIOData
 {
     GPIO_TypeDef        *GPIOx;
@@ -21,3 +22,4 @@ typedef struct GPIOData
 
 #define GPIO_TOGGLE(pin)    HAL_GPIO_TogglePin((pin).GPIOx, (pin).GPIO_Pin_x)
 #define GPIO_WRITE(pin,set) HAL_GPIO_WritePin((pin).GPIOx, (pin).GPIO_Pin_x, set)
+#endif

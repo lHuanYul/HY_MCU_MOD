@@ -1,6 +1,6 @@
 #pragma once
 #include "main/config.h"
-#ifdef HY_MOD_STM32_SPI
+#ifdef HY_MOD_STM32_SPI_JSON
 
 #include "HY_MOD/main/fn_state.h"
 #include "HY_MOD/main/typedef.h"

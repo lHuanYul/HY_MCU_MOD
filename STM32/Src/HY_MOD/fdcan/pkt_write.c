@@ -63,6 +63,8 @@ Result fdcan_vehicle_motor_send(VehicleParameter *vehicle, FdcanPktPool *pool, F
 #endif
 
 #ifdef MCU_SENSOR
+#include "HY_MOD/rfid/basic.h"
+
 Result fdcan_pkt_write_hall_uss(FdcanPkt *pkt)
 {
     if (pkt == NULL) return RESULT_ERROR(RES_ERR_MEMORY_ERROR);
@@ -78,10 +80,10 @@ Result fdcan_pkt_write_hall_uss(FdcanPkt *pkt)
 Result fdcan_pkt_write_rfid(FdcanPkt *pkt)
 {
     if (pkt == NULL) return RESULT_ERROR(RES_ERR_MEMORY_ERROR);
-    pkt->id = CAN_ID_MAP_RFID;
-    pkt->data[0] = new_card;
-    new_card = 0;
-    memcpy(pkt->data + 1, spi2_rfid.uid.uidByte, 4);
+    pkt->id = CAN_ID_RFID_FBK;
+    pkt->data[0] = rfid_h.new_card;
+    rfid_h.new_card = 0;
+    memcpy(pkt->data + 1, rfid_h.uid.uidByte, 4);
     RESULT_CHECK_HANDLE(fdcan_pkt_set_len(pkt, 1 + 4));
     return RESULT_OK(NULL);
 }
