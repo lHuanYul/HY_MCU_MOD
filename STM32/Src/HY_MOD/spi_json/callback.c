@@ -5,7 +5,7 @@
 /*
 void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi)
 */
-void spi_json_rx_cb(SpiParametar *spi, SPI_HandleTypeDef *hspi, JsonPktPool *pool, JsonPktBuf *buf)
+void spi_json_rx_cb(SpiJsonParametar *spi, SPI_HandleTypeDef *hspi, JsonPktPool *pool, JsonPktBuf *buf)
 {
     if (hspi != spi->const_h.hspix) return;
     GPIO_WRITE(spi->const_h.NSS, 1);
@@ -24,7 +24,7 @@ void spi_json_rx_cb(SpiParametar *spi, SPI_HandleTypeDef *hspi, JsonPktPool *poo
 /*
 void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
 */
-void spi_json_tx_cb(SpiParametar *spi, SPI_HandleTypeDef *hspi, JsonPktPool *pool, JsonPktBuf *buf)
+void spi_json_tx_cb(SpiJsonParametar *spi, SPI_HandleTypeDef *hspi, JsonPktPool *pool, JsonPktBuf *buf)
 {
     if (hspi != spi->const_h.hspix) return;
     GPIO_WRITE(spi->const_h.NSS, 1);

@@ -29,9 +29,15 @@ float32_t var_u8_to_f32_be(const uint8_t *u8);
 float32_t var_wrap_pos(float32_t x, float32_t value);
 float32_t var_wrap_pi(float32_t x, float32_t value);
 float32_t var_fabsf(float32_t x);
+uint32_t var_u32_iir(uint32_t old, uint32_t new, float32_t alpha);
+float32_t var_average(uint16_t *data, uint32_t len);
+uint32_t var_u32_max(uint32_t *data, uint32_t size);
+uint32_t var_u32_min(uint32_t *data, uint32_t size);
 
 uint16_t var_swap_u16(uint16_t value);
 void var_u16_to_u8_be(uint16_t value, uint8_t *u8);
 uint16_t var_u8_to_u16_be(const uint8_t *u8);
 void var_i16_to_u8_be(int16_t value, uint8_t* u8);
 int16_t var_u8_to_i16_be(const uint8_t *u8);
+uint16_t var_u16_max(uint16_t *data, uint32_t size);
+uint16_t var_u16_min(uint16_t *data, uint32_t size);

@@ -3,7 +3,7 @@
 ErrorType last_error;
 
 #ifdef PRINCIPAL_PROGRAM
-#include "vehicle/basic.h"
+#include "HY_MOD/vehicle/basic.h"
 
 Result_h error_state;
 

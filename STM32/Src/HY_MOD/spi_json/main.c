@@ -3,14 +3,14 @@
 #include "HY_MOD/main/variable_cal.h"
 #include "spi.h"
 
-Result spi_init(SpiParametar *spi)
+Result spi_init(SpiJsonParametar *spi)
 {
     spi->rx_handle = osSemaphoreNew(1, 0, &spi->rx_handle_attr);
     spi->tx_handle = osSemaphoreNew(1, 0, &spi->tx_handle_attr);
     return RESULT_OK(NULL);
 }
 
-static Result wait_it(SpiParametar *spi, osSemaphoreId_t tag, uint32_t time_out)
+static Result wait_it(SpiJsonParametar *spi, osSemaphoreId_t tag, uint32_t time_out)
 {
     if (osSemaphoreAcquire(tag, time_out) != osOK)
     {
@@ -21,7 +21,7 @@ static Result wait_it(SpiParametar *spi, osSemaphoreId_t tag, uint32_t time_out)
     return RESULT_OK(NULL);
 }
 
-Result spi_start_receive(SpiParametar *spi)
+Result spi_start_receive(SpiJsonParametar *spi)
 {
     GPIO_WRITE(spi->const_h.NSS, 0);
     for(volatile int i = 0; i < 800; i++) __NOP();
@@ -35,7 +35,7 @@ Result spi_start_receive(SpiParametar *spi)
     return RESULT_OK(NULL);
 }
 
-Result spi_start_transmit(SpiParametar *spi)
+Result spi_start_transmit(SpiJsonParametar *spi)
 {
     GPIO_WRITE(spi->const_h.NSS, 0);
     for(volatile int i = 0; i < 800; i++) __NOP();

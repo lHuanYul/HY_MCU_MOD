@@ -59,7 +59,7 @@ Result fdcan_pkt_ist_read(FdcanPkt *pkt)
 #endif
 
 #ifdef MCU_VEHICLE_MAIN
-#include "vehicle/main.h"
+#include "HY_MOD/vehicle/main.h"
 
 static Result motor_pkt(FdcanPkt *pkt, MotorParameter *motor)
 {

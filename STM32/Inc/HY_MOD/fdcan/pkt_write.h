@@ -11,14 +11,14 @@ Result fdcan_motor_send(MotorParameter *motor, FdcanPktPool *pool, FdcanPktBuf *
 #endif
 
 #ifdef MCU_VEHICLE_MAIN
-#include "vehicle/basic.h"
+#include "HY_MOD/vehicle/basic.h"
 
 Result fdcan_pkt_write_motor(FdcanPkt *pkt, MotorParameter *motor);
 Result fdcan_vehicle_motor_send(VehicleParameter *vehicle, FdcanPktPool *pool, FdcanPktBuf *buf);
 #endif
 
 #ifdef MCU_SENSOR
-#include "analog/adc1/main.h"
+#include "main/adc_hall.h"
 #include "HY_MOD/rfid/main.h"
 #include "HY_MOD/us_sensor/main.h"
 

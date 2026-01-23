@@ -9,6 +9,7 @@
 #define SPI_LENGTH_H   "$L:HL  "
 #define SPI_SLAVE_EMP  "$NONE  "
 
+#ifndef SpiConst
 typedef struct SpiConst
 {
     SPI_HandleTypeDef *hspix;
@@ -18,8 +19,9 @@ typedef struct SpiConst
     // CS
     GPIOData NSS;
 } SpiConst;
+#endif
 
-typedef enum SpiState
+typedef enum SpiJsonState
 {
     SPI_STATE_FINISH,
     SPI_STATE_ERROR,
@@ -27,7 +29,7 @@ typedef enum SpiState
     SPI_STATE_RECV_BODY,
     SPI_STATE_TRSM_HEADER,
     SPI_STATE_TRSM_BODY,
-} SpiState;
+} SpiJsonState;
 
 #ifdef STM32H7
 #ifndef ALIGN_32
@@ -52,10 +54,10 @@ STM32H7 REMBER TO SET MPU (SET IN CUBEMX)
   MPU_InitStruct.IsBufferable = MPU_ACCESS_NOT_BUFFERABLE;
 */
 
-typedef struct SpiParametar
+typedef struct SpiJsonParametar
 {
     const SpiConst const_h;
-    SpiState state;
+    SpiJsonState state;
     osSemaphoreId_t rx_handle;
     const osSemaphoreAttr_t rx_handle_attr;
     uint16_t rx_buf_len;
@@ -64,6 +66,6 @@ typedef struct SpiParametar
     const osSemaphoreAttr_t tx_handle_attr;
     uint16_t tx_buf_len;
     uint8_t *tx_buf;
-} SpiParametar;
+} SpiJsonParametar;
 
 #endif

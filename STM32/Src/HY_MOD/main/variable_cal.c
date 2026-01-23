@@ -102,6 +102,44 @@ float32_t var_fabsf(float32_t x)
     return v.f;
 }
 
+uint32_t var_u32_iir(uint32_t old, uint32_t new, float32_t alpha)
+{
+    return (uint32_t)((1.0f - alpha) * (float32_t)old + alpha * (float32_t)new);
+}
+
+float32_t var_average(uint16_t *data, uint32_t len)
+{
+    uint32_t total = 0;
+    uint32_t i;
+    for (i = 0; i < len; i++)
+    {
+        total += data[i];
+    }
+    return (float32_t)(total / len);
+}
+
+uint32_t var_u32_max(uint32_t *data, uint32_t len)
+{
+    uint32_t i;
+    uint32_t r = data[0];
+    for (i = 1; i < len; i++)
+    {
+        if (r < data[i]) r = data[i];
+    }
+    return r;
+}
+
+uint32_t var_u32_min(uint32_t *data, uint32_t len)
+{
+    uint32_t i;
+    uint32_t r = data[0];
+    for (i = 1; i < len; i++)
+    {
+        if (r > data[i]) r = data[i];
+    }
+    return r;
+}
+
 // 16 bit --------------------------------------------------------------------------------
 
 uint16_t var_comb_u16(const void* src)
@@ -149,4 +187,26 @@ int16_t var_u8_to_i16_be(const uint8_t *u8)
     int16_t i16;
     memcpy(&i16, &u16, sizeof(i16));
     return i16;
+}
+
+uint16_t var_u16_max(uint16_t *data, uint32_t len)
+{
+    uint32_t i;
+    uint16_t r = data[0];
+    for (i = 1; i < len; i++)
+    {
+        if (r < data[i]) r = data[i];
+    }
+    return r;
+}
+
+uint16_t var_u16_min(uint16_t *data, uint32_t len)
+{
+    uint32_t i;
+    uint16_t r = data[0];
+    for (i = 1; i < len; i++)
+    {
+        if (r > data[i]) r = data[i];
+    }
+    return r;
 }

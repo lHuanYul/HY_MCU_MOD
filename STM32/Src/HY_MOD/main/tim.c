@@ -5,8 +5,10 @@ uint32_t tim_clk_APB1, tim_clk_APB2;
 void INIT_OWN_TIM(void)
 {
     tim_clk_APB1 = HAL_RCC_GetPCLK1Freq();
+#ifdef STM32G0B1RE
+    tim_clk_APB2 = HAL_RCC_GetPCLK1Freq();
+#elifdef STM32G431RB
     tim_clk_APB2 = HAL_RCC_GetPCLK2Freq();
-#ifdef STM32G431RB
     if ((RCC->CFGR & RCC_CFGR_PPRE1) != RCC_CFGR_PPRE1_DIV1) tim_clk_APB1 *= 2U;
     if ((RCC->CFGR & RCC_CFGR_PPRE2) != RCC_CFGR_PPRE2_DIV1) tim_clk_APB2 *= 2U;
 #elifdef STM32H753ZI

@@ -13,7 +13,7 @@ void StartSpi1Task(void *argument)
     const uint32_t osPeriod_next = pdMS_TO_TICKS(SPI1_TASK_NEXT_MS);
     uint32_t next_wake = osKernelGetTickCount();
     json_pkt_pool_init(&json_pkt_pool);
-    SpiParametar *spi = &spi1_h;
+    SpiJsonParametar *spi = &spi1_h;
     spi_init(spi);
 
     const char json_response[] = "{\"TR\":\"SC\"}";

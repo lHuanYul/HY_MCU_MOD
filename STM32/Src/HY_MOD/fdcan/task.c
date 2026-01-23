@@ -6,7 +6,7 @@
 #include "HY_MOD/fdcan/pkt_write.h"
 
 #ifdef MCU_VEHICLE_MAIN
-#include "vehicle/main.h"
+#include "HY_MOD/vehicle/main.h"
 #endif
 
 static Result auto_pkt_proc(void)
