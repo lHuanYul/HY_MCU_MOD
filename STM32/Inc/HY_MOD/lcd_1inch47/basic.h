@@ -28,7 +28,7 @@ typedef struct SpiConst
 
 typedef struct Lcd1I47Const
 {
-    LcdDatas *lcd;
+    const LcdDatas *lcd;
     SpiConst spi_h;
     GPIOData DC;
     GPIOData RST;

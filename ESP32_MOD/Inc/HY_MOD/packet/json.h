@@ -1,11 +1,17 @@
 #pragma once
 #include "main/config.h"
 #ifdef HY_MOD_ESP32_JSON
+
 #include "HY_MOD/main/fn_state.h"
+#include "esp_attr.h"
+
+#ifndef ALIGN_4
+    #define ALIGN_4(x)  (((x) + 1 + 3) & ~3)
+#endif
 
 typedef struct JsonPkt
 {
-    uint8_t     data[JSON_PKT_LEN + 1];
+    uint8_t     *data;
     uint16_t    len;
     struct JsonPkt *next;
 } JsonPkt;

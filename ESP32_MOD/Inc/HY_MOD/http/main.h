@@ -4,7 +4,7 @@
 
 #include "HY_MOD/main/fn_state.h"
 
-Result http_send(void);
+Result http_send(HttpParametar *http);
 Result http_start_server(HttpParametar *http);
 
 #endif

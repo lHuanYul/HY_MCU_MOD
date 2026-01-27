@@ -1,6 +1,8 @@
 #include "HY_MOD/packet/json.h"
 #ifdef HY_MOD_ESP32_JSON
 
+DMA_ATTR static uint8_t raw_dma_buffer[JSON_PKT_POOL_CAP][ALIGN_4(JSON_PKT_LEN)];
+
 Result json_pkt_set_len(JsonPkt *pkt, uint16_t len)
 {
     if (len > JSON_PKT_LEN) return RESULT_ERROR(RES_ERR_FULL);
@@ -11,7 +13,9 @@ Result json_pkt_set_len(JsonPkt *pkt, uint16_t len)
 void json_pkt_pool_init(JsonPktPool *pool)
 {
     pool->head = NULL;
-    for (uint8_t i = 0; i < JSON_PKT_POOL_CAP; i++) {
+    for (uint8_t i = 0; i < JSON_PKT_POOL_CAP; i++)
+    {
+        pool->pkt[i].data = raw_dma_buffer[i];
         pool->pkt[i].next = pool->head;
         pool->head = &pool->pkt[i];
     }
@@ -34,7 +38,6 @@ Result json_pkt_pool_alloc(JsonPktPool *pool)
 void json_pkt_pool_free(JsonPktPool *pool, JsonPkt *pkt)
 {
     if (pool->remain >= JSON_PKT_POOL_CAP) while(1);
-    memset(pkt->data, 0, sizeof(pkt->data));
     pkt->len = 0;
     pkt->next = pool->head;
     pool->head = pkt;

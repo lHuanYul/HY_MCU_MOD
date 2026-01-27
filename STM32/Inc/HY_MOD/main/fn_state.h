@@ -47,6 +47,20 @@ typedef struct Result
 
 #define RESULT_CHECK_RAW(_res_) (!(_res_).is_ok)
 
+#define RESULT_UNWRAP_SKIP(expr)\
+    ({\
+        Result _res_ = (expr);\
+        if (RESULT_CHECK_RAW(_res_))\
+        {\
+            last_error = _res_.result.error;\
+            NULL;\
+        } \
+        else \
+        { \
+            (_res_).result.success.obj;\
+        } \
+    })
+
 #define RESULT_CHECK_SIMPLE(_res_)\
     do {\
         if (RESULT_CHECK_RAW(_res_))\

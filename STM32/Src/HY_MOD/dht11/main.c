@@ -11,15 +11,14 @@ static void init_setup(Dht11Parametar *dht11)
 void StartDht11Task(void *argument)
 {
     init_setup(&dht11_h);
-    osDelay(1000);
+    osDelay(3000);
     for(;;)
     {
-        if (dht11_h.state == DHT_STATE_FINISH || dht11_h.state == DHT_STATE_FINISHED)
-        {
-            dht11_h.tim_mode_pwm = 1;
-            dh11_tim_mode_switch(&dht11_h);
-        }
-        osDelay(5000);
+        dht11_h.state = DHT_STATE_FINISHED;
+        dht11_h.tim_mode_pwm = 1;
+        dh11_tim_mode_switch(&dht11_h);
+
+        osDelay(2000); // DHT22 建議 2秒以上間隔
     }
 }
 

@@ -5,16 +5,16 @@
 #include "HY_MOD/main/variable_cal.h"
 #include "HY_MOD/packet/json.h"
 
-uint32_t spi_test = 0;
 #define SPI1_TASK_SMAL_MS      5
 #define SPI1_TASK_NEXT_MS   1000
+#define SPI_JSON_START_TRCV(spi, len) spi_start_transceive(&(spi)->spi_p,(spi)->tx_pkt->data,(spi)->rx_pkt->data, (len))
 void StartSpi1Task(void *argument)
 {
     const uint32_t osPeriod_next = pdMS_TO_TICKS(SPI1_TASK_NEXT_MS);
     uint32_t next_wake = osKernelGetTickCount();
     json_pkt_pool_init(&json_pkt_pool);
     SpiJsonParametar *spi = &spi1_h;
-    spi_init(spi);
+    spi_json_init(spi);
 
     const char json_response[] = "{\"TR\":\"SC\"}";
     JsonPkt *tx_normal = RESULT_UNWRAP_HANDLE(json_pkt_pool_alloc(&json_pkt_pool));
@@ -22,107 +22,122 @@ void StartSpi1Task(void *argument)
     memcpy(tx_normal->data, json_response, tx_normal->len);
     RESULT_CHECK_HANDLE(json_pkt_buf_push(&spi_trsm_buf, tx_normal, &json_pkt_pool, 0));
 
-    next_wake += osPeriod_next * 5;
+    next_wake += osPeriod_next;
     osDelayUntil(next_wake);
-    JsonPkt *tx_pkt = NULL;
     for(;;)
     {
-        switch (spi1_h.state)
+        switch (SPI_JSON_STATE_GET(spi))
         {
-            case SPI_STATE_FINISH:
+            case SPI_JSON_STATE_OK:
             {
                 osDelayUntil(next_wake);
                 next_wake += osPeriod_next;
-                spi->tx_buf_len = sizeof(SPI_MASTER_ASK);
-                memcpy(spi->tx_buf, SPI_MASTER_ASK, sizeof(SPI_MASTER_ASK));
-                RESULT_CHECK_GOTO(spi_start_transmit(spi), error);
-                spi_test++;
-                spi->state = SPI_STATE_RECV_HEADER;
+                SPI_JSON_STATE_SET(spi, SPI_JSON_STATE_HEAD);
                 break;
             }
-            case SPI_STATE_ERROR:
+            case SPI_JSON_STATE_ERR:
             {
                 next_wake += osPeriod_next * 3;
                 osDelayUntil(next_wake);
                 next_wake += osPeriod_next;
-                spi1_h.state = SPI_STATE_FINISH;
+                SPI_JSON_STATE_SET(spi, SPI_JSON_STATE_OK);
                 break;
             }
-            case SPI_STATE_RECV_HEADER:
+            case SPI_JSON_STATE_HEAD:
             {
-                spi->rx_buf_len = sizeof(SPI_LENGTH_H);
-                RESULT_CHECK_GOTO(spi_start_receive(spi), error);
-                if (memcmp(spi->rx_buf, SPI_SLAVE_EMP, sizeof(SPI_SLAVE_EMP)) == 0)
+                spi->rx_pkt = RESULT_UNWRAP_HANDLE(json_pkt_pool_alloc(&json_pkt_pool));
+                spi->rx_pkt->data[0] = '\0';
+                spi->tx_pkt = RESULT_UNWRAP_HANDLE(json_pkt_pool_alloc(&json_pkt_pool));
+                spi->tx_pkt->len = sizeof(SPI_LENGTH_H);
+                memcpy(spi->tx_pkt->data, SPI_LENGTH_H, sizeof(SPI_LENGTH_H));
+                Result res = json_pkt_buf_get(&spi_trsm_buf);
+                if (RESULT_CHECK_RAW(res))
                 {
-                    spi1_h.state = SPI_STATE_TRSM_HEADER;
+                    spi->tx_hold = NULL;
+                    var_u16_to_u8_be(0, (spi->tx_pkt->data + 3));
                 }
-                else if (
-                    spi->rx_buf[0] == '$' &&
-                    spi->rx_buf[1] == 'L' &&
-                    spi->rx_buf[2] == ':' &&
-                    spi->rx_buf[spi->rx_buf_len - 1] == '\0'
-                ) {
-                    spi->state = SPI_STATE_RECV_BODY;
-                    uint16_t payload_len = var_u8_to_u16_be(spi->rx_buf + 3);
-                    if (payload_len > JSON_PKT_LEN)
-                    {
-                        spi->state = SPI_STATE_ERROR;
-                        break;
-                    }
-                    spi->rx_buf_len = payload_len;
+                else
+                {
+                    spi->tx_hold = res.result.success.obj;
+                    var_u16_to_u8_be(spi->tx_hold->len, (spi->tx_pkt->data + 3));
                 }
-                else goto error;
+                RESULT_CHECK_GOTO(SPI_JSON_START_TRCV(spi, sizeof(SPI_LENGTH_H)), head_err);
+
+                uint8_t *data = spi->rx_pkt->data;
+                uint16_t payload_len = var_u8_to_u16_be(data + 3);
+                if (!(
+                    data[0] == '$' && data[1] == 'L' &&
+                    data[2] == ':' && data[sizeof(SPI_LENGTH_H) - 1] == '\0'
+                )) goto head_err;
+                if (payload_len == 0 && spi->tx_hold == NULL)
+                {
+                    SPI_JSON_STATE_SET(spi, SPI_JSON_STATE_OK);
+                    goto head_none;
+                }
+                else if (payload_len <= JSON_PKT_LEN)
+                {
+                    SPI_JSON_STATE_SET(spi, SPI_JSON_STATE_BODY);
+                    spi->rx_pkt->len = payload_len;
+                }
+                else goto head_err;
+                break;
+head_err:
+                SPI_JSON_STATE_SET(spi, SPI_JSON_STATE_ERR);
+head_none:
+                json_pkt_pool_free(&json_pkt_pool, spi->rx_pkt);
+                spi->rx_pkt = NULL;
+                json_pkt_pool_free(&json_pkt_pool, spi->tx_pkt);
+                spi->tx_pkt = NULL;
                 break;
             }
-            case SPI_STATE_RECV_BODY:
+            case SPI_JSON_STATE_BODY:
             {
-                RESULT_CHECK_GOTO(spi_start_receive(spi), error);
-                if (
-                    spi->rx_buf_len > 0      &&
-                    spi->rx_buf[0] == '{'    &&
-                    spi->rx_buf[spi->rx_buf_len - 1] == '}'
-                ) {
-                    spi->state = SPI_STATE_TRSM_HEADER;
-                    spi->rx_buf[spi->rx_buf_len] = '\0';
-                    JsonPkt *pkt = RESULT_UNWRAP_HANDLE(json_pkt_pool_alloc(&json_pkt_pool));
-                    RESULT_CHECK_HANDLE(json_pkt_set_len(pkt, spi->rx_buf_len + 1));
-                    memcpy(pkt->data, spi->rx_buf, spi->rx_buf_len + 1);
-                    json_pkt_buf_push(&spi_recv_buf, pkt, &json_pkt_pool, 1);
+                osDelay(SPI1_TASK_SMAL_MS);
+                uint16_t len = spi->rx_pkt->len;;
+                if (spi->tx_hold != NULL)
+                {
+                    json_pkt_pool_free(&json_pkt_pool, spi->tx_pkt);
+                    spi->tx_pkt = spi->tx_hold;
+                    len = (spi->tx_pkt->len > spi->rx_pkt->len) ? spi->tx_pkt->len : spi->rx_pkt->len;
                 }
-                else goto error;
+                RESULT_CHECK_GOTO(SPI_JSON_START_TRCV(spi, len), body_err);
+                
+                if (spi->rx_pkt->len > 0)
+                {
+                    uint8_t *data = spi->rx_pkt->data;
+                    if (!(
+                        data[0] == '{'          &&
+                        data[spi->rx_pkt->len - 1] == '}'
+                    )) goto body_err;
+                    data[spi->rx_pkt->len] = '\0';
+                    json_pkt_buf_push(&spi_recv_buf, spi->rx_pkt, &json_pkt_pool, 1);
+                }
+                else
+                {
+                    json_pkt_pool_free(&json_pkt_pool, spi->rx_pkt);
+                }
+                spi->rx_pkt = NULL;
+                if (spi->tx_hold != NULL)
+                {
+                    JsonPkt *pkt = RESULT_UNWRAP_HANDLE(json_pkt_buf_pop(&spi_trsm_buf));
+                    if (pkt != spi->tx_pkt) while (1);
+                }
+                json_pkt_pool_free(&json_pkt_pool, spi->tx_pkt);
+                SPI_JSON_STATE_SET(spi, SPI_JSON_STATE_OK);
                 break;
-            }
-            case SPI_STATE_TRSM_HEADER:
-            {
-                tx_pkt = RESULT_UNWRAP_GOTO(json_pkt_buf_get(&spi_trsm_buf), tx_skip);
-                spi->tx_buf_len = sizeof(SPI_LENGTH_H);
-                memcpy(spi->tx_buf, SPI_LENGTH_H, spi->tx_buf_len);
-                var_u16_to_u8_be(tx_pkt->len, (uint8_t *)(spi->tx_buf + 3));
-                RESULT_CHECK_GOTO(spi_start_transmit(spi), tx_skip);
-                spi->state = SPI_STATE_TRSM_BODY;
-                break;
-            }
-            case SPI_STATE_TRSM_BODY:
-            {
-                if (tx_pkt == NULL) goto error;
-                spi->tx_buf_len = tx_pkt->len;
-                memcpy(spi->tx_buf, tx_pkt->data, spi->tx_buf_len);
-                RESULT_CHECK_GOTO(spi_start_transmit(spi), tx_skip);
-                spi->state = SPI_STATE_FINISH;
-                tx_pkt = NULL;
-                JsonPkt *pkt = RESULT_UNWRAP_HANDLE(json_pkt_buf_pop(&spi_trsm_buf));
-                json_pkt_pool_free(&json_pkt_pool, pkt);
+body_err:
+                SPI_JSON_STATE_SET(spi, SPI_JSON_STATE_ERR);
+                json_pkt_pool_free(&json_pkt_pool, spi->rx_pkt);
+                spi->rx_pkt = NULL;
+                if (spi->tx_hold == NULL)
+                {
+                    json_pkt_pool_free(&json_pkt_pool, spi->tx_pkt);
+                    spi->tx_pkt = NULL;
+                }
+                else spi->tx_pkt = NULL;
                 break;
             }
         }
-        osDelay(SPI1_TASK_SMAL_MS);
-        continue;
-tx_skip:
-        tx_pkt = NULL;
-        spi->state = SPI_STATE_FINISH;
-        continue;
-error:
-        spi->state = SPI_STATE_ERROR;
     }
 
     StopTask();

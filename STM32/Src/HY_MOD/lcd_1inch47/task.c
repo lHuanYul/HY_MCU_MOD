@@ -1,21 +1,6 @@
 #include "HY_MOD/lcd_1inch47/main.h"
 #ifdef HY_MOD_STM32_LCD_1INCH47
 
-
-#define DEFALT_TASK_DELAY_MS 1000
-uint32_t default_running;
-void StartDefaultTask(void *argument)
-{
-    const uint32_t osPeriod = pdMS_TO_TICKS(DEFALT_TASK_DELAY_MS);
-    uint32_t next_wake = osKernelGetTickCount() + osPeriod;
-    for (;;)
-    {
-        default_running = HAL_GetTick();
-        osDelayUntil(next_wake);
-        next_wake += osPeriod;
-    }
-}
-
 #define LCD_TASK_DELAY_MS 1000
 uint32_t hytest = 0;
 void StartLcdTask(void *argument)

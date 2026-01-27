@@ -76,7 +76,7 @@ Result http_send(HttpParametar *http)
     memcpy(http->tx_buf.buffer, my_json, http->tx_buf.len);
     http->config_client.url = target_url;
     
-    http_send_handler(target_url, my_json);
+    http_send_handler(http);
     return RESULT_OK(NULL);
 }
 

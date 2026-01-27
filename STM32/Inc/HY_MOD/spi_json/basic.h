@@ -4,43 +4,22 @@
 
 #include "HY_MOD/main/fn_state.h"
 #include "HY_MOD/main/typedef.h"
+#include "HY_MOD/main/variable_cal.h"
+#include "HY_MOD/packet/json.h"
+#include "HY_MOD/spi/basic.h"
 
-#define SPI_MASTER_ASK "$READ  "
+#define SPI_JSON_STATE_OK     0
+#define SPI_JSON_STATE_HEAD   2
+#define SPI_JSON_STATE_BODY   4
+#define SPI_JSON_STATE_ERR    15
+
+#define SPI_JSON_STATE_GET(spi) FLAGS_GET(spi->state, BIT_0_3_MASK)
+#define SPI_JSON_STATE_SET(spi, val) FLAGS_SET(spi->state, BIT_0_3_MASK, val)
+
 #define SPI_LENGTH_H   "$L:HL  "
-#define SPI_SLAVE_EMP  "$NONE  "
 
-#ifndef SpiConst
-typedef struct SpiConst
-{
-    SPI_HandleTypeDef *hspix;
-    GPIOData MISO;
-    GPIOData MOSI;
-    GPIOData SCK;
-    // CS
-    GPIOData NSS;
-} SpiConst;
-#endif
-
-typedef enum SpiJsonState
-{
-    SPI_STATE_FINISH,
-    SPI_STATE_ERROR,
-    SPI_STATE_RECV_HEADER,
-    SPI_STATE_RECV_BODY,
-    SPI_STATE_TRSM_HEADER,
-    SPI_STATE_TRSM_BODY,
-} SpiJsonState;
-
-#ifdef STM32H7
-#ifndef ALIGN_32
-    #define ALIGN_32(x)  ((((x) + 31) / 32) * 32)
-#endif
-    #define SPI_DMA_BUFFER_ATTR __attribute__((section(".RAM_D1"), aligned(32)))
-#else
-    #define SPI_DMA_BUFFER_ATTR
-#endif
 /* EXAMPLE
-SPI_DMA_BUFFER_ATTR static uint8_t rx_buf[ALIGN_32(JSON_PKT_LEN)];
+// SPI_DMA_BUFFER_ATTR static uint8_t rx_buf[ALIGN_32(JSON_PKT_LEN)];
 
 STM32H7 REMBER TO SET MPU (SET IN CUBEMX)
   MPU_InitStruct.Number = MPU_REGION_NUMBER1;
@@ -56,16 +35,13 @@ STM32H7 REMBER TO SET MPU (SET IN CUBEMX)
 
 typedef struct SpiJsonParametar
 {
-    const SpiConst const_h;
-    SpiJsonState state;
-    osSemaphoreId_t rx_handle;
-    const osSemaphoreAttr_t rx_handle_attr;
-    uint16_t rx_buf_len;
-    uint8_t *rx_buf;
-    osSemaphoreId_t tx_handle;
-    const osSemaphoreAttr_t tx_handle_attr;
-    uint16_t tx_buf_len;
-    uint8_t *tx_buf;
+    SpiParametar spi_p;
+    uint8_t     state;
+    JsonPkt     *rx_pkt;
+    JsonPkt     *tx_pkt;
+    JsonPkt     *tx_hold;
 } SpiJsonParametar;
+
+Result spi_json_init(SpiJsonParametar *spi);
 
 #endif

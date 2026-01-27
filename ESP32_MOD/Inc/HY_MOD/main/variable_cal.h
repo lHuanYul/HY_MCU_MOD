@@ -3,6 +3,19 @@
 
 #include "HY_MOD/main/fn_state.h"
 
+#define BIT_SNG_MASK                (0x01UL)
+#define BIT_SNG_SET(flags, bit)     ((flags) |= (BIT_SNG_MASK << (bit)))
+#define BIT_SNG_CLR(flags, bit)     ((flags) &= ~(BIT_SNG_MASK << (bit)))
+#define BIT_SNG_REV(flags, bit)     ((flags) ^= (BIT_SNG_MASK << (bit)))
+#define BIT_SNG_GET(flags, bit)     ((flags) & (BIT_SNG_MASK << (bit)))
+#define BIT_SNG_CHK(flags, bit)     (((flags) >> (bit)) & BIT_SNG_MASK)
+#define BIT_0_3_MASK                (0x0FUL)
+#define BIT_4_7_MASK                (0xF0UL)
+#define FLAGS_SET(flags, mask, val) ((flags) = ((flags) & ~(mask)) | ((val) & (mask)))
+#define FLAGS_CLR(flags, mask)      ((flags) &= ~(mask))
+#define FLAGS_GET(flags, mask)      ((flags) & (mask))
+#define FLAGS_CHK(flags, mask, val) (((flags) & (mask)) == (val))
+
 #define VAR_CLAMPF(val, min, max)   \
 ({                                  \
     if (val > max) val = max;       \
