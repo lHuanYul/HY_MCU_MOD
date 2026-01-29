@@ -1,16 +1,22 @@
-#include "HY_MOD/dht11/callback.h"
-#ifdef HY_MOD_STM32_DHT11
+#include "HY_MOD/dht/callback.h"
+#ifdef HY_MOD_STM32_DHT
 
+/*
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+*/
 uint32_t hycb[2] = {0};
-void dht11_tim_PE_cb(Dht11Parametar *dht11, TIM_HandleTypeDef *htim)
+void dht_tim_PE_cb(DhtParametar *dht11, TIM_HandleTypeDef *htim)
 {
     if (htim != dht11->const_h.htimx) return;
     hycb[0]++;
     dht11->tim_mode_pwm = 0;
-    dh11_tim_mode_switch(dht11);
+    dht_tim_mode_switch(dht11);
 }
 
-void dht11_tim_IC_cb(Dht11Parametar *dht11, TIM_HandleTypeDef *htim)
+/*
+void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
+*/
+void dht_tim_IC_cb(DhtParametar *dht11, TIM_HandleTypeDef *htim)
 {
     if (htim != dht11->const_h.htimx) return;
     // if (htim->Channel != dht11->const_h.HAL_TIM_ACTIVE_CHANNEL_x) return;

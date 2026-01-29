@@ -1,17 +1,17 @@
 #pragma once
 #include "main/config.h"
-#ifdef HY_MOD_STM32_DHT11
+#ifdef HY_MOD_STM32_DHT
 
 #include "HY_MOD/main/typedef.h"
 
-typedef struct Dht11Const
+typedef struct DhtConst
 {
     TIM_HandleTypeDef   *htimx;
     uint32_t            TIM_CHANNEL_x;
     HAL_TIM_ActiveChannel HAL_TIM_ACTIVE_CHANNEL_x;
     uint32_t            *tim_clk;
     GPIOData            gpio;
-} Dht11Const;
+} DhtConst;
 
 typedef enum
 {
@@ -23,9 +23,9 @@ typedef enum
     DHT_STATE_ERROR,
 } Dht11State;
 
-typedef struct Dht11Parametar
+typedef struct DhtParametar
 {
-    Dht11Const  const_h;
+    DhtConst    const_h;
     float32_t   dbg_tim_freq;
     uint32_t    last_cnt;
     bool        tim_mode_pwm;
@@ -47,10 +47,9 @@ typedef struct Dht11Parametar
     float32_t   wet;
 
     float32_t   tmp;
-} Dht11Parametar;
+} DhtParametar;
 
-extern Dht11Parametar dht11_h;
-
-void dh11_tim_mode_switch(Dht11Parametar *dht11);
+void init_setup(DhtParametar *dht11);
+void dht_tim_mode_switch(DhtParametar *dht11);
 
 #endif

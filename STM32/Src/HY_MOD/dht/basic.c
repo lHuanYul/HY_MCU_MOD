@@ -1,25 +1,16 @@
-#include "HY_MOD/dht11/basic.h"
-#ifdef HY_MOD_STM32_DHT11
+#include "HY_MOD/dht/basic.h"
+#ifdef HY_MOD_STM32_DHT
 
-#include "HY_MOD/main/tim.h"
-#include "tim.h"
-
-Dht11Parametar dht11_h = {
-    .const_h = {
-        .htimx = &htim2,
-        .TIM_CHANNEL_x = TIM_CHANNEL_1,
-        .HAL_TIM_ACTIVE_CHANNEL_x = HAL_TIM_ACTIVE_CHANNEL_1,
-        .tim_clk = &tim_clk_APB1,
-        .gpio = {
-            .GPIOx = GPIOA,
-            .GPIO_Pin_x = GPIO_PIN_0,
-        },
-    },
-};
-
-void dh11_tim_mode_switch(Dht11Parametar *dht11)
+void init_setup(DhtParametar *dht)
 {
-    TIM_HandleTypeDef *htimx = dht11->const_h.htimx;
+    dht->dbg_tim_freq =
+        (float32_t)*dht->const_h.tim_clk /
+        (float32_t)(dht->const_h.htimx->Init.Prescaler + 1U);
+}
+
+void dht_tim_mode_switch(DhtParametar *dht)
+{
+    TIM_HandleTypeDef *htimx = dht->const_h.htimx;
     TIM_TypeDef *Instance = htimx->Instance;
 
     __HAL_TIM_DISABLE(htimx);
@@ -33,7 +24,7 @@ void dh11_tim_mode_switch(Dht11Parametar *dht11)
     tmpccmr1 &= ~(TIM_CCMR1_CC1S | TIM_CCMR1_OC1M | TIM_CCMR1_IC1F);
     tmpccer &= ~(TIM_CCER_CC1P | TIM_CCER_CC1NP);
 
-    if (dht11->tim_mode_pwm)
+    if (dht->tim_mode_pwm)
     {   // ----------------- PWM 發送模式 -----------------
         // 設定為 PWM Mode 2 (111): 
         // 行為: CNT < CCR 時為 Inactive (Low), CNT > CCR 時為 Active (High/Float)
@@ -52,7 +43,7 @@ void dh11_tim_mode_switch(Dht11Parametar *dht11)
         // 預備開啟的中斷: 只開 Update (週期結束時切換模式)
         __HAL_TIM_ENABLE_IT(htimx, TIM_IT_UPDATE);
 
-        dht11->state = DHT_STATE_SEND;
+        dht->state = DHT_STATE_SEND;
     }
     else
     {   // ----------------- Input Capture 接收模式 -----------------
@@ -70,14 +61,14 @@ void dh11_tim_mode_switch(Dht11Parametar *dht11)
         __HAL_TIM_ENABLE_IT(htimx, TIM_IT_CC1);
 
         // 狀態機重置
-        dht11->state = DHT_STATE_RESPONSE; // 準備接收 Response
+        dht->state = DHT_STATE_RESPONSE; // 準備接收 Response
     }
 
     Instance->CCMR1 = tmpccmr1;
     Instance->CCER  = tmpccer;
 
     __HAL_TIM_SET_COUNTER(htimx, 0);
-    dht11->last_cnt = 0;
+    dht->last_cnt = 0;
 
     Instance->CCER |= TIM_CCER_CC1E;
     __HAL_TIM_ENABLE(htimx);
