@@ -5,5 +5,6 @@
 void adc_hal_start_dma(AdcParameter *adc);
 void adc_upd_dma_get_arr(AdcParameter *adc);
 uint16_t adc_upd_dma_get_val(AdcParameter *adc, uint32_t loop);
+void adc_upd_injected(AdcParameter *adc);
 
 #endif

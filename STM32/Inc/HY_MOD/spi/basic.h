@@ -17,14 +17,6 @@ typedef struct SpiConst
     GPIOData NSS;
 } SpiConst;
 
-// #ifdef STM32H7
-// #ifndef ALIGN_32
-//     #define ALIGN_32(x)  ((((x) + 31) / 32) * 32)
-// #endif
-//     #define SPI_DMA_BUFFER_ATTR __attribute__((section(".RAM_D1"), aligned(32)))
-// #else
-//     #define SPI_DMA_BUFFER_ATTR
-// #endif
 /* EXAMPLE
 SPI_DMA_BUFFER_ATTR static uint8_t rx_buf[ALIGN_32(JSON_PKT_LEN)];
 

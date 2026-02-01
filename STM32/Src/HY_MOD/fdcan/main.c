@@ -3,6 +3,7 @@
 #include "HY_MOD/cmds.h"
 #include "HY_MOD/fdcan/pkt_read.h"
 #include "HY_MOD/fdcan/pkt_write.h"
+#include "HY_MOD/main/typedef.h"
 #include "fdcan.h"
 
 Result fdcan_pkt_transmit(FdcanPkt *pkt)

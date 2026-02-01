@@ -5,7 +5,7 @@
 Result fdcan_pkt_write_test(FdcanPkt *pkt);
 
 #ifdef MCU_MOTOR_CTRL
-#include "motor/basic.h"
+#include "HY_MOD/motor/basic.h"
 
 Result fdcan_motor_send(MotorParameter *motor, FdcanPktPool *pool, FdcanPktBuf *buf);
 #endif

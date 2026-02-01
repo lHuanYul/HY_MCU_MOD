@@ -1,6 +1,8 @@
 #include "HY_MOD/lcd_1inch47/main.h"
 #ifdef HY_MOD_STM32_LCD_1INCH47
 
+#include "main/lcd_1inch47.h"
+
 #define LCD_TASK_DELAY_MS 1000
 uint32_t hytest = 0;
 void StartLcdTask(void *argument)

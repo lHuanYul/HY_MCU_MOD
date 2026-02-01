@@ -2,11 +2,6 @@
 #include "HY_MOD/adc/basic.h"
 #ifdef HY_MOD_STM32_ADC_HALL
 
-typedef struct AdcHallConst
-{
-    uint32_t rankx;
-} AdcHallConst;
-
 typedef enum AdcState
 {
     ADC_HALL_STATE_NONE,
@@ -15,7 +10,6 @@ typedef enum AdcState
 
 typedef struct AdcHallParameter
 {
-    const AdcHallConst const_h;
     AdcParameter    adc;
     uint16_t        value;
     uint16_t        gate;

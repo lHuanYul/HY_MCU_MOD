@@ -6,7 +6,7 @@ static uint16_t adc_vals_dma_sig[ADC_NEED_LEN] = {0};
 
 void adc_hal_start_dma(AdcParameter *adc)
 {
-    HAL_ADC_Start_DMA(adc->const_h.hadcx, (uint32_t*)adc_vals_dma_arr, ADC_COUNT);
+    HAL_ADC_Start_DMA(adc->hadcx, (uint32_t*)adc_vals_dma_arr, ADC_COUNT);
 }
 
 void adc_upd_dma_get_arr(AdcParameter *adc)
@@ -15,13 +15,18 @@ void adc_upd_dma_get_arr(AdcParameter *adc)
     for (i = 0; i < ADC_NEED_LEN; i++)
     {
         adc_vals_dma_sig[i] =
-            adc_vals_dma_arr[ADC_NEED_LEN * i + adc->const_h.rankx];
+            adc_vals_dma_arr[ADC_NEED_LEN * i + adc->rankx];
     }
 }
 
 uint16_t adc_upd_dma_get_val(AdcParameter *adc, uint32_t loop)
 {
-    return adc_vals_dma_arr[ADC_NEED_LEN * loop + adc->const_h.rankx];
+    return adc_vals_dma_arr[ADC_NEED_LEN * loop + adc->rankx];
+}
+
+void adc_upd_injected(AdcParameter *adc)
+{
+    adc->value = (uint16_t)HAL_ADCEx_InjectedGetValue(adc->hadcx, adc->rankx);
 }
 
 #endif

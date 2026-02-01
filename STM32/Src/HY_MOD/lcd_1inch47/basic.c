@@ -10,25 +10,6 @@ const LcdDatas waveshare_1inch47 = {
     .height = 320,
 };
 
-#include "spi.h"
-#include "tim.h"
-
-Lcd1I47Parametar lcd_1i47_h = {
-    .const_h = {
-        .lcd = &waveshare_1inch47,
-        .spi_h = {
-            .hspix = &hspi2,
-            .MOSI = { GPIOD, GPIO_PIN_4 },
-            .SCK  = { GPIOD, GPIO_PIN_1 },
-            .NSS  = { GPIOD, GPIO_PIN_0 },
-        },
-        .DC  = { GPIOC, GPIO_PIN_10 },
-        .RST = { GPIOC, GPIO_PIN_11 },
-        .htimx = &htim14,
-        .TIM_CHANNEL_x = TIM_CHANNEL_1,
-    },
-};
-
 #define LCD_SPI lcd->const_h.spi_h.hspix
 
 // 寫入命令

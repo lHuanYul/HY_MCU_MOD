@@ -4,11 +4,9 @@
 /*
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 */
-uint32_t hycb[2] = {0};
 void dht_tim_PE_cb(DhtParametar *dht11, TIM_HandleTypeDef *htim)
 {
     if (htim != dht11->const_h.htimx) return;
-    hycb[0]++;
     dht11->tim_mode_pwm = 0;
     dht_tim_mode_switch(dht11);
 }
@@ -20,7 +18,6 @@ void dht_tim_IC_cb(DhtParametar *dht11, TIM_HandleTypeDef *htim)
 {
     if (htim != dht11->const_h.htimx) return;
     // if (htim->Channel != dht11->const_h.HAL_TIM_ACTIVE_CHANNEL_x) return;
-    hycb[1]++;
 
     uint32_t cnt = __HAL_TIM_GET_COMPARE(dht11->const_h.htimx, dht11->const_h.TIM_CHANNEL_x);
     uint32_t diff;

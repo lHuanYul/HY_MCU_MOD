@@ -10,6 +10,7 @@
     #define SPI_DMA_BUFFER_ATTR __attribute__((section(".RAM_D1"), aligned(32)))
 #else
     #define SPI_DMA_BUFFER_ATTR
+    #define ALIGN_32(x) x
 #endif
 
 typedef struct JsonPkt
