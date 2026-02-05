@@ -6,6 +6,7 @@
 #include "HY_MOD/motor/trigonometric.h"
 #include "HY_MOD/fdcan/pkt_write.h"
 
+#define HALL_DELAY 10
 static void hall_update(MotorParameter *motor)
 {
     motor->hall_current =
@@ -17,7 +18,8 @@ static void hall_update(MotorParameter *motor)
         motor->hall_current = UINT8_MAX;
         return;
     }
-    vec_ctrl_hall_angle_trf(motor);
+    motor->hall_delay = HALL_DELAY;
+    motor_vec_ctrl_hall_angle_trf(motor);
 }
 
 static void hall_check(MotorParameter *motor)
@@ -49,13 +51,13 @@ static void hall_check(MotorParameter *motor)
 static void rpm_update(MotorParameter *motor)
 {
     if (motor->exti_hall_acc == 0)
-        __HAL_TIM_SET_COUNTER(motor->const_h.SPD_htimx, 0);
+        __HAL_TIM_SET_COUNTER(motor->const_h.Hall_htimx, 0);
     else 
     if (motor->exti_hall_acc >= MOTOR_RPM_CNT)
     {
         motor->exti_hall_acc = 0;
-        uint32_t htim_cnt = __HAL_TIM_GET_COUNTER(motor->const_h.SPD_htimx);
-        __HAL_TIM_SET_COUNTER(motor->const_h.SPD_htimx, 0);
+        uint32_t htim_cnt = __HAL_TIM_GET_COUNTER(motor->const_h.Hall_htimx);
+        __HAL_TIM_SET_COUNTER(motor->const_h.Hall_htimx, 0);
         if (htim_cnt == 0)
         {
             motor->rpm_feedback.value = 0.0f;
@@ -72,24 +74,6 @@ static void rpm_update(MotorParameter *motor)
     motor->exti_hall_acc++;
 }
 
-static void deg_update(MotorParameter *motor)
-{
-    switch (motor->mode_control)
-    {
-        case MOTOR_CTRL_120:
-        {
-            deg_ctrl_120_load(motor);
-            break;
-        }
-        case MOTOR_CTRL_180:
-        {
-            deg_ctrl_180_load(motor);
-            break;
-        }
-        default: break;
-    }
-}
-
 /*
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 */
@@ -98,16 +82,16 @@ void motor_hall_exti_cb(MotorParameter *motor)
     hall_update(motor);
     hall_check(motor);
     rpm_update(motor);
-#ifndef MOTOR_FOC_SPIN_DEBUG
-    deg_update(motor);
-#else
-    if (expected && (motor->reverse == reverse))
-    {
-        motor->tim_angle_acc = 0.0f;
-    }
-    RESULT_CHECK_RET_VOID(vec_ctrl_hall_angle_trf(motor));
-    deg_ctrl_load(motor);
-#endif
+// #ifndef MOTOR_FOC_SPIN_DEBUG
+//     pwm_update(motor, motor->hall_current);
+// #else
+//     if (expected && (motor->reverse == reverse))
+//     {
+//         motor->tim_angle_acc = 0.0f;
+//     }
+//     RESULT_CHECK_RET_VOID(motor_vec_ctrl_hall_angle_trf(motor));
+//     deg_ctrl_load(motor);
+// #endif
 }
 
 void motor_stop_cb(MotorParameter *motor)
@@ -119,8 +103,16 @@ void motor_stop_cb(MotorParameter *motor)
     motor->foc_angle_acc = 0.0f;
     PI_reset(&motor->pi_speed);
 #ifdef MOTOR_PI_SPEED
-    motor->pwm_duty_deg = 0.0f;
+    motor->deg_duty = 0.0f;
 #endif
+}
+
+static void ctrl_start(MotorParameter *motor)
+{
+    // !
+    motor_set_rotate_mode(motor, MOTOR_ROT_NORMAL);
+    motor_switch_ctrl(motor, MOTOR_CTRL_120);
+    motor_set_rpm(motor, 0, 500.0f);
 }
 
 static void state_update(MotorParameter *motor)
@@ -161,7 +153,7 @@ static void state_update(MotorParameter *motor)
     {
         case MOTOR_ROT_COAST:
         case MOTOR_ROT_BREAK:
-        case MOTOR_ROT_LOCK_CHK:
+        case MOTOR_ROT_LOCK_FIN:
         {
             PI_reset(&motor->pi_speed);
             break;
@@ -170,12 +162,12 @@ static void state_update(MotorParameter *motor)
         {
             motor->pi_speed.reference = motor->rpm_reference.value;
             PI_run(&motor->pi_speed);
-#ifdef MOTOR_PI_SPEED
-            motor->pwm_duty_deg += motor->pi_speed.out;
-            VAR_CLAMPF(motor->pwm_duty_deg, 0.0f, 1.0f);
-#else
-            motor->pwm_duty_deg = 1.0f;
-#endif
+    #ifdef MOTOR_PI_SPEED
+            motor->deg_duty += motor->pi_speed.out;
+            VAR_CLAMPF(motor->deg_duty, 0.0f, 1.0f);
+    #else
+            motor->deg_duty = 1.0f;
+    #endif
             motor->pi_Iq.reference += motor->pi_speed.out * motor->tfm_duty_Iq;
             VAR_CLAMPF(motor->pi_Iq.reference, motor->pi_Iq.min, motor->pi_Iq.max);
             break;
@@ -183,7 +175,7 @@ static void state_update(MotorParameter *motor)
         case MOTOR_ROT_LOCK:
         {
             motor->mode_rot_ref = MOTOR_ROT_BREAK;
-            if (save_stop) motor->mode_rot_ref = MOTOR_ROT_LOCK_CHK;
+            if (save_stop) motor->mode_rot_ref = MOTOR_ROT_LOCK_FIN;
             break;
         }
     }
@@ -193,25 +185,36 @@ static void state_update(MotorParameter *motor)
     // motor->tfm_duty_Iq = var_clampf((motor->tfm_duty_Iq + motor->pi_speed.out), 0.15f, 0.2f);
 }
 
+static void foc_run(MotorParameter *motor)
+{
+    RESULT_CHECK_RET_VOID(motor_vec_ctrl_hall_angle_chk(motor));
+    motor_vec_ctrl_clarke(motor);
+    motor_vec_ctrl_park(motor);
+    motor_vec_ctrl_pi_id_iq(motor);
+    motor_vec_ctrl_ipark(motor);
+    motor_vec_ctrl_svgen(motor);
+    motor_vec_ctrl_svpwm(motor);
+}
+
 /* 20kHz
 void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef *hadc)
 */
 void motor_pwm_cb(MotorParameter *motor)
 {
-    vec_ctrl_adcs_upd(motor);
-    motor->tim_it_acc++;
+    motor_vec_ctrl_adcs_upd(motor);
     if (motor->mode_control == MOTOR_CTRL_INIT)
     {
         if (motor->tim_it_acc >= 20000)
         {
             motor->tim_it_acc = 0;
-            vec_ctrl_adcs_reset(motor);
-            // !
-            motor_set_rotate_mode(motor, MOTOR_ROT_NORMAL);
-            motor_switch_ctrl(motor, MOTOR_CTRL_120);
-            motor_set_rpm(motor, 0, 500.0f);
+            motor_vec_ctrl_adcs_reset(motor);
+            ctrl_start(motor);
         }
-        else return;
+        else
+        {
+            motor->tim_it_acc++;
+            return;
+        }
     }
     if (motor->tim_it_acc % 1000 == 0)
     {
@@ -221,22 +224,14 @@ void motor_pwm_cb(MotorParameter *motor)
     {
         if (
             motor->rpm_feedback.value == 0.0f &&
-            motor->rpm_user.value != 0.0f
+            motor->rpm_reference.value != 0.0f
         ) {
             hall_update(motor);
-            if (motor->hall_current != UINT8_MAX)
-            {
-                if (!motor->rpm_user.reverse)
-                    motor->hall_start = hall_seq_ccw[motor->hall_start];
-                else
-                    motor->hall_start = hall_seq_clw[motor->hall_start];
     #ifdef MOTOR_AUTO_SPIN
-                motor->hall_current = motor->hall_start;
-                motor->pwm_duty_deg = 0.5f;
-                motor->mode_control = MOTOR_CTRL_120;
-                deg_update(motor);
+            motor->mode_control = MOTOR_CTRL_120;
+            motor->hall_delay = 1;
+            motor->deg_duty = 1.0f;
     #endif
-            }
         }
         if (
             motor->fdcan_enable
@@ -245,15 +240,38 @@ void motor_pwm_cb(MotorParameter *motor)
             motor_history_write(motor);
         }
     }
-    if (motor->tim_it_acc >= 2000000000) motor->tim_it_acc = 0;
+    motor->tim_it_acc++;
+    if (motor->tim_it_acc >= 20000) motor->tim_it_acc = 0;
     
-    RESULT_CHECK_RET_VOID(vec_ctrl_hall_angle_chk(motor));
-    vec_ctrl_clarke(motor);
-    vec_ctrl_park(motor);
-    vec_ctrl_pi_id_iq(motor);
-    vec_ctrl_ipark(motor);
-    vec_ctrl_svgen(motor);
-    vec_ctrl_svpwm(motor);
+    foc_run(motor);
+
+    switch (motor->mode_control)
+    {
+        case MOTOR_CTRL_120:
+        {
+            uint16_t hall_delay = motor->hall_delay;
+            if (hall_delay > 0)
+            {
+                // if (hall_delay == HALL_DELAY)
+                //     deg_ctrl_120_load(motor, 0);
+                // else if (motor->hall_delay == 1)
+                //     deg_ctrl_120_load(motor, motor->hall_current);
+                deg_ctrl_120_load(motor, 4);
+                hall_delay--;
+            }
+            break;
+        }
+    #ifndef MOTOR_FOC_SPIN_DEBUG
+        case MOTOR_CTRL_FOC_RATED:
+        {
+            motor->pwm_duty_u = motor->foc_duty_u;
+            motor->pwm_duty_v = motor->foc_duty_v;
+            motor->pwm_duty_w = motor->foc_duty_w;
+        }
+    #endif
+        default: return;
+    }
+    motor_pwm_load(motor);
 }
 
 #endif

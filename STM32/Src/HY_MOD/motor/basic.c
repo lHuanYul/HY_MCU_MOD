@@ -8,17 +8,23 @@ const uint8_t hall_seq_ccw[8] = {UINT8_MAX, 5, 3, 1, 6, 4, 2, UINT8_MAX};
 const uint8_t hall_seq_clw[8] = {UINT8_MAX, 3, 6, 2, 5, 1, 4, UINT8_MAX};
 MotorParameter motor_h = {
     .const_h = {
-        // Yellow Green Blue
-        .Hall_GPIOx         = { GPIOC,       GPIOC,       GPIOC       },
-        .Hall_GPIO_Pin_x    = { GPIO_PIN_10, GPIO_PIN_11, GPIO_PIN_12 },
-        // H: PC0 PC1 PC2 / L: PB13 PB14 PB15
-        // Yellow Green Blue
+        // PC0     ------> TIM1_CH1
+        // PC1     ------> TIM1_CH2
+        // PC2     ------> TIM1_CH3
+        // PB13     ------> TIM1_CH1N
+        // PB14     ------> TIM1_CH2N
+        // PB15     ------> TIM1_CH3N
         .PWM_htimx          = &htim1,
         .PWM_TIM_CHANNEL_x  = { TIM_CHANNEL_1, TIM_CHANNEL_2, TIM_CHANNEL_3 },
         .PWM_tim_clk        = &tim_clk_APB2,
-        .PWM_MID_TIM_CH_x   = TIM_CHANNEL_4,
-        .SPD_htimx          = &htim2,
-        .SPD_tim_clk        = &tim_clk_APB1,
+        .PWM_MID_TIM_CH_x   = TIM_CHANNEL_4,  
+        // PA0     ------> TIM2_CH1
+        // PA1     ------> TIM2_CH2
+        // PB10     ------> TIM2_CH3
+        .Hall_htimx         = &htim2,
+        .Hall_tim_clk       = &tim_clk_APB1,
+        .Hall_GPIOx         = { GPIOC,       GPIOC,       GPIOC       },
+        .Hall_GPIO_Pin_x    = { GPIO_PIN_10, GPIO_PIN_11, GPIO_PIN_12 },
         // 42BLF01
         .rated_current      = MOTOR_42BLF01_RATED_CURRENT,
         .peak_current       = MOTOR_42BLF01_PEAK_CURRENT,
@@ -75,9 +81,9 @@ void motor_set_rotate_mode(MotorParameter *motor, MotorModeRotate mode)
         mode != MOTOR_ROT_BREAK &&
         mode != MOTOR_ROT_NORMAL &&
         mode != MOTOR_ROT_LOCK &&
-        mode != MOTOR_ROT_LOCK_CHK
+        mode != MOTOR_ROT_LOCK_FIN
     ) return;
-    if (mode == MOTOR_ROT_LOCK_CHK) mode = MOTOR_ROT_LOCK;
+    if (mode == MOTOR_ROT_LOCK_FIN) mode = MOTOR_ROT_LOCK;
     motor->mode_rot_user = mode;
 }
 
@@ -93,14 +99,15 @@ void motor_switch_ctrl(MotorParameter *motor, MotorModeControl ctrl)
 
 void motor_pwm_load(MotorParameter *motor)
 {
+    TIM_HandleTypeDef *htimx = motor->const_h.PWM_htimx;
     VAR_CLAMPF(motor->pwm_duty_u, 0.0f, 1.0f);
     VAR_CLAMPF(motor->pwm_duty_v, 0.0f, 1.0f);
     VAR_CLAMPF(motor->pwm_duty_w, 0.0f, 1.0f);
-    __HAL_TIM_SET_COMPARE(motor->const_h.PWM_htimx, motor->const_h.PWM_TIM_CHANNEL_x[0],
+    __HAL_TIM_SET_COMPARE(htimx, motor->const_h.PWM_TIM_CHANNEL_x[0],
         (uint32_t)(motor->tfm_pwm_period * motor->pwm_duty_u));
-    __HAL_TIM_SET_COMPARE(motor->const_h.PWM_htimx, motor->const_h.PWM_TIM_CHANNEL_x[1],
+    __HAL_TIM_SET_COMPARE(htimx, motor->const_h.PWM_TIM_CHANNEL_x[1],
         (uint32_t)(motor->tfm_pwm_period * motor->pwm_duty_v));
-    __HAL_TIM_SET_COMPARE(motor->const_h.PWM_htimx, motor->const_h.PWM_TIM_CHANNEL_x[2],
+    __HAL_TIM_SET_COMPARE(htimx, motor->const_h.PWM_TIM_CHANNEL_x[2],
         (uint32_t)(motor->tfm_pwm_period * motor->pwm_duty_w));
 }
 

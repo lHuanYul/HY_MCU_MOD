@@ -14,8 +14,8 @@ void motor_setup(MotorParameter *motor)
     // ELE_tim_f：霍爾計時器的實際計數頻率 (Hz)
     // = ELE_timer_clock / (PSC + 1)
     const float32_t SPD_tim_f =
-        (float32_t)*motor->const_h.SPD_tim_clk /
-        (float32_t)(motor->const_h.SPD_htimx->Init.Prescaler + 1U);
+        (float32_t)*motor->const_h.Hall_tim_clk /
+        (float32_t)(motor->const_h.Hall_htimx->Init.Prescaler + 1U);
 
     // PWM_tim_t：PWM 控制定時器每個計數週期的時間 (秒/計數)
     // = (PSC + 1) / ELE_timer_clock
@@ -26,8 +26,8 @@ void motor_setup(MotorParameter *motor)
     // SPD_tim_t：霍爾計時器每個計數週期的時間 (秒/計數)
     // = (PSC + 1) / ELE_timer_clock
     const float32_t SPD_tim_t =
-        (float32_t)(motor->const_h.SPD_htimx->Init.Prescaler + 1U) /
-        (float32_t)*motor->const_h.SPD_tim_clk;
+        (float32_t)(motor->const_h.Hall_htimx->Init.Prescaler + 1U) /
+        (float32_t)*motor->const_h.Hall_tim_clk;
 
     motor->dbg_pwm_freq = PWM_tim_f / (motor->const_h.PWM_htimx->Init.Period * 2);
     // motor->dbg_tim_it_freq = FOC_tim_f / motor->const_h.IT20k_htimx->Init.Period;
@@ -54,7 +54,7 @@ void motor_setup(MotorParameter *motor)
         HAL_TIM_PWM_Start(motor->const_h.PWM_htimx, motor->const_h.PWM_TIM_CHANNEL_x[i]);
         HAL_TIMEx_PWMN_Start(motor->const_h.PWM_htimx, motor->const_h.PWM_TIM_CHANNEL_x[i]);
     }
-    HAL_TIM_Base_Start_IT(motor->const_h.SPD_htimx);
+    HAL_TIMEx_HallSensor_Start_IT(motor->const_h.Hall_htimx);
 }
 
 #endif

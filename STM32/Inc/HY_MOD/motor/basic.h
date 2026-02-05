@@ -26,9 +26,9 @@ typedef struct MotorConst
     // deg control L
     GPIO_TypeDef        *Coil_GPIOx[3];
     uint16_t            Coil_GPIO_Pin_x[3];
-    // 轉速計時器
-    TIM_HandleTypeDef   *SPD_htimx;
-    uint32_t            *SPD_tim_clk;
+    // 霍爾計時器
+    TIM_HandleTypeDef   *Hall_htimx;
+    uint32_t            *Hall_tim_clk;
     // 馬達data sheet
     float32_t           rated_trorque;
     float32_t           rated_current;
@@ -51,7 +51,7 @@ typedef enum MotorModeRotate
     MOTOR_ROT_BREAK,
     MOTOR_ROT_NORMAL,
     MOTOR_ROT_LOCK,
-    MOTOR_ROT_LOCK_CHK,
+    MOTOR_ROT_LOCK_FIN,
 } MotorModeRotate;
 
 typedef enum DirectionState
@@ -140,6 +140,8 @@ typedef struct MotorParameter
     // 目前霍爾相位
     volatile uint8_t    hall_current;
 
+    volatile uint16_t   hall_delay;
+
     uint8_t             hall_start;
     // 上次霍爾相位
     uint8_t             hall_chk_last;
@@ -168,8 +170,14 @@ typedef struct MotorParameter
     SVGENDQ             svgendq;
     
     float32_t           v_ref;
-    // PWM duty
-    volatile float32_t  pwm_duty_deg;
+    // DEG duty
+    volatile float32_t  deg_duty;
+    // FOC duty
+    float32_t           foc_duty_u;
+    // FOC duty
+    float32_t           foc_duty_v;
+    // FOC duty
+    float32_t           foc_duty_w;
     // PWM duty
     float32_t           pwm_duty_u;
     // PWM duty

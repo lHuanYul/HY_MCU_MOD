@@ -62,9 +62,8 @@ static const uint8_t index_180_cw[]   = {7, 2, 0, 1, 4, 3, 5, 7};
    ((__CHANNEL__) == TIM_CHANNEL_2) ? ((__HANDLE__)->Instance->CCER &= ~TIM_CCER_CC2NE) : \
    ((__CHANNEL__) == TIM_CHANNEL_3) ? ((__HANDLE__)->Instance->CCER &= ~TIM_CCER_CC3NE) : 0)
 
-void deg_ctrl_120_load(MotorParameter *motor)
+void deg_ctrl_120_load(MotorParameter *motor, uint8_t id)
 {
-    if (motor->hall_current == UINT8_MAX) return;
     uint8_t i;
     float32_t *duty[3] = {
         &motor->pwm_duty_u,
@@ -76,7 +75,7 @@ void deg_ctrl_120_load(MotorParameter *motor)
     {
         case MOTOR_ROT_COAST:
         {
-            motor->pwm_duty_deg = 1.0f;
+            motor->deg_duty = 1.0f;
             for (i = 0; i < 3; i++) seq[i] = seq_map_120[6][i];
             break;
         }
@@ -91,18 +90,18 @@ void deg_ctrl_120_load(MotorParameter *motor)
             for (i = 0; i < 3; i++)
             {
                 if (!motor->rpm_reference.reverse)
-                    seq[i] = seq_map_120[index_120_ccw[motor->hall_current]][i];
+                    seq[i] = seq_map_120[index_120_ccw[id]][i];
                 else
-                    seq[i] = seq_map_120[ index_120_cw[motor->hall_current]][i];
+                    seq[i] = seq_map_120[ index_120_cw[id]][i];
             }
             break;
         }
-        case MOTOR_ROT_LOCK_CHK:
+        case MOTOR_ROT_LOCK_FIN:
         {
-            motor->pwm_duty_deg = 0.2f;
+            motor->deg_duty = 0.2f;
             // !
             for (i = 0; i < 3; i++)
-                seq[i] = seq_map_120[index_180_lock[motor->hall_current]][i];
+                seq[i] = seq_map_120[index_180_lock[id]][i];
             break;
         }
     }
@@ -113,7 +112,7 @@ void deg_ctrl_120_load(MotorParameter *motor)
             // TIM_CH_ENABLE(motor->const_h.PWM_htimx, motor->const_h.PWM_TIM_CHANNEL_x[i]);
             TIM_PWM_ENABLE(motor->const_h.PWM_htimx, motor->const_h.PWM_TIM_CHANNEL_x[i]);
             TIM_PWMN_DISABLE(motor->const_h.PWM_htimx, motor->const_h.PWM_TIM_CHANNEL_x[i]);
-            *duty[i] = motor->pwm_duty_deg;
+            *duty[i] = motor->deg_duty;
         }
         else if (seq[i] == LOW_PASS)
         {
@@ -128,7 +127,6 @@ void deg_ctrl_120_load(MotorParameter *motor)
             *duty[i] = 0.01f;
         }
     }
-    motor_pwm_load(motor);
 }
 
 void deg_ctrl_180_load(MotorParameter *motor)
@@ -145,7 +143,7 @@ void deg_ctrl_180_load(MotorParameter *motor)
     {
         case MOTOR_ROT_COAST:
         {
-            motor->pwm_duty_deg = 1.0f;
+            motor->deg_duty = 1.0f;
             for (i = 0; i < 3; i++) seq[i] = seq_map_180[6][i];
             break;
         }
@@ -166,9 +164,9 @@ void deg_ctrl_180_load(MotorParameter *motor)
             }
             break;
         }
-        case MOTOR_ROT_LOCK_CHK:
+        case MOTOR_ROT_LOCK_FIN:
         {
-            motor->pwm_duty_deg = 0.2f;
+            motor->deg_duty = 0.2f;
             for (i = 0; i < 3; i++)
                 seq[i] = seq_map_180[index_180_lock[motor->hall_current]][i];
             break;
@@ -178,14 +176,13 @@ void deg_ctrl_180_load(MotorParameter *motor)
     {
         if (seq[i] == HIGH_PASS)
         {
-            *duty[i] = motor->pwm_duty_deg;
+            *duty[i] = motor->deg_duty;
         }
         else
         {
             *duty[i] = 0;
         }
     }
-    motor_pwm_load(motor);
 }
 
 #endif

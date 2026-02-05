@@ -17,33 +17,33 @@ static const float32_t hall_elec_angle[8] = {
     F32_MAX,
 };
 
-inline void vec_ctrl_adcs_reset(MotorParameter *motor)
+inline void motor_vec_ctrl_adcs_reset(MotorParameter *motor)
 {
     adc_current_reset(motor->adc_a);
     adc_current_reset(motor->adc_b);
     adc_current_reset(motor->adc_c);
 }
 
-inline void vec_ctrl_adcs_upd(MotorParameter *motor)
+inline void motor_vec_ctrl_adcs_upd(MotorParameter *motor)
 {
     RESULT_CHECK_RET_VOID(adc_current_upd(motor->adc_a));
     RESULT_CHECK_RET_VOID(adc_current_upd(motor->adc_b));
     RESULT_CHECK_RET_VOID(adc_current_upd(motor->adc_c));
 }
 
-inline void vec_ctrl_hall_angle_trf(MotorParameter *motor)
+inline void motor_vec_ctrl_hall_angle_trf(MotorParameter *motor)
 {
     motor->exti_hall_rad = hall_elec_angle[motor->hall_current];
 }
 
-inline Result vec_ctrl_hall_angle_chk(MotorParameter *motor)
+inline Result motor_vec_ctrl_hall_angle_chk(MotorParameter *motor)
 {
     if (motor->exti_hall_rad == F32_MAX) return RESULT_ERROR(RES_ERR_NOT_FOUND);
     return RESULT_OK(motor);
 }
 
 float32_t current_zero;
-inline void vec_ctrl_clarke(MotorParameter *motor)
+inline void motor_vec_ctrl_clarke(MotorParameter *motor)
 {
     // 電流進motor為 正
     current_zero = (motor->adc_a->current + motor->adc_b->current + motor->adc_c->current) / 3.0f;
@@ -54,7 +54,7 @@ inline void vec_ctrl_clarke(MotorParameter *motor)
     return;
 }
 
-inline void vec_ctrl_park(MotorParameter *motor)
+inline void motor_vec_ctrl_park(MotorParameter *motor)
 {
     motor->park.Alpha = motor->clarke.Alpha;
     motor->park.Beta = motor->clarke.Beta;
@@ -68,7 +68,7 @@ inline void vec_ctrl_park(MotorParameter *motor)
     PARK_run(&motor->park);
 }
 
-inline void vec_ctrl_pi_id_iq(MotorParameter *motor)
+inline void motor_vec_ctrl_pi_id_iq(MotorParameter *motor)
 {
     if(motor->rpm_feedback.value == 0.0f)
     {
@@ -88,7 +88,7 @@ inline void vec_ctrl_pi_id_iq(MotorParameter *motor)
         VAR_CLAMPF(motor->pi_Iq.out, -0.75f, 0.75f);
 }
 
-inline void vec_ctrl_ipark(MotorParameter *motor)
+inline void motor_vec_ctrl_ipark(MotorParameter *motor)
 {
     motor->ipark.Vdref += motor->pi_Id.out;
     VAR_CLAMPF(motor->ipark.Vdref, -0.06f, 0.06f);
@@ -104,7 +104,7 @@ inline void vec_ctrl_ipark(MotorParameter *motor)
 float32_t sec_chk[30] = {0};
 uint8_t chk_cnt = 0;
 uint8_t sec_mem = 0;
-inline void vec_ctrl_svgen(MotorParameter *motor)
+inline void motor_vec_ctrl_svgen(MotorParameter *motor)
 {
     motor->svgendq.Ualpha = motor->ipark.Alpha;
     motor->svgendq.Ubeta  = motor->ipark.Beta ;
@@ -121,7 +121,7 @@ inline void vec_ctrl_svgen(MotorParameter *motor)
 }
 
 #define SQUARE(x) (x*x)
-inline void vec_ctrl_svpwm(MotorParameter *motor)
+inline void motor_vec_ctrl_svpwm(MotorParameter *motor)
 {
     if (
         arm_sqrt_f32(
@@ -139,61 +139,51 @@ inline void vec_ctrl_svpwm(MotorParameter *motor)
     T2 *= motor->v_ref;
     // T0div2: 零向量時間的一半 將整個零向量時間平均分配到PWM週期的前後兩端 讓波形中心對稱
     float32_t T0div2 = (1.0f - (T1 + T2)) * 0.5f;
-    float32_t duty_u, duty_v, duty_w;
     switch (motor->svgendq.Sector)
     {
         case 6:
         {
-            duty_u = T0div2 + T1 + T2;
-            duty_v = T0div2 + T2;
-            duty_w = T0div2;
+            motor->foc_duty_u = T0div2 + T1 + T2;
+            motor->foc_duty_v = T0div2 + T2;
+            motor->foc_duty_w = T0div2;
             break;
         }
         case 2:
         {
-            duty_u = T0div2 + T1;
-            duty_v = T0div2 + T1 + T2;
-            duty_w = T0div2;
+            motor->foc_duty_u = T0div2 + T1;
+            motor->foc_duty_v = T0div2 + T1 + T2;
+            motor->foc_duty_w = T0div2;
             break;
         }
         case 3:
         {
-            duty_u = T0div2;
-            duty_v = T0div2 + T1 + T2;
-            duty_w = T0div2 + T2;
+            motor->foc_duty_u = T0div2;
+            motor->foc_duty_v = T0div2 + T1 + T2;
+            motor->foc_duty_w = T0div2 + T2;
             break;
         }
         case 1:
         {
-            duty_u = T0div2;
-            duty_v = T0div2 + T1;
-            duty_w = T0div2 + T1 + T2;
+            motor->foc_duty_u = T0div2;
+            motor->foc_duty_v = T0div2 + T1;
+            motor->foc_duty_w = T0div2 + T1 + T2;
             break;
         }
         case 5:
         {
-            duty_u = T0div2 + T2;
-            duty_v = T0div2;
-            duty_w = T0div2 + T1 + T2;
+            motor->foc_duty_u = T0div2 + T2;
+            motor->foc_duty_v = T0div2;
+            motor->foc_duty_w = T0div2 + T1 + T2;
             break;
         }
         case 4:
         {
-            duty_u = T0div2 + T1 + T2;
-            duty_v = T0div2;
-            duty_w = T0div2 + T1;
+            motor->foc_duty_u = T0div2 + T1 + T2;
+            motor->foc_duty_v = T0div2;
+            motor->foc_duty_w = T0div2 + T1;
             break;
         }
     }
-    #ifndef MOTOR_FOC_SPIN_DEBUG
-    if (motor->mode_control == MOTOR_CTRL_FOC_RATED)
-    {
-        motor->pwm_duty_u = duty_u;
-        motor->pwm_duty_v = duty_v;
-        motor->pwm_duty_w = duty_w;
-        motor_pwm_load(motor);
-    }
-    #endif
 }
 
 #endif
