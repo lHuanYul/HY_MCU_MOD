@@ -124,7 +124,7 @@ void deg_ctrl_120_load(MotorParameter *motor, uint8_t id)
         else
         {
             TIM_CH_DISABLE(motor->const_h.PWM_htimx, motor->const_h.PWM_TIM_CHANNEL_x[i]);
-            *duty[i] = 0.01f;
+            *duty[i] = 0.87f;
         }
     }
 }

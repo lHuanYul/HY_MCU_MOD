@@ -7,6 +7,8 @@
 #include "HY_MOD/fdcan/pkt_write.h"
 
 #define HALL_DELAY 10
+#define HALL_DELAY_LOAD motor->hall_current // motor->hall_current
+
 static void hall_update(MotorParameter *motor)
 {
     motor->hall_current =
@@ -166,7 +168,7 @@ static void state_update(MotorParameter *motor)
             motor->deg_duty += motor->pi_speed.out;
             VAR_CLAMPF(motor->deg_duty, 0.0f, 1.0f);
     #else
-            motor->deg_duty = 1.0f;
+            motor->deg_duty = 0.5f;
     #endif
             motor->pi_Iq.reference += motor->pi_speed.out * motor->tfm_duty_Iq;
             VAR_CLAMPF(motor->pi_Iq.reference, motor->pi_Iq.min, motor->pi_Iq.max);
@@ -252,12 +254,12 @@ void motor_pwm_cb(MotorParameter *motor)
             uint16_t hall_delay = motor->hall_delay;
             if (hall_delay > 0)
             {
-                // if (hall_delay == HALL_DELAY)
-                //     deg_ctrl_120_load(motor, 0);
-                // else if (motor->hall_delay == 1)
-                //     deg_ctrl_120_load(motor, motor->hall_current);
-                deg_ctrl_120_load(motor, 4);
-                hall_delay--;
+                if (hall_delay == HALL_DELAY)
+                    deg_ctrl_120_load(motor, HALL_DELAY_LOAD);
+                else if (motor->hall_delay == 1)
+                    deg_ctrl_120_load(motor, motor->hall_current);
+                // deg_ctrl_120_load(motor, 4);
+                motor->hall_delay--;
             }
             break;
         }
