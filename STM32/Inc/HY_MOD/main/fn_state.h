@@ -74,7 +74,7 @@ typedef struct Result
         if (RESULT_CHECK_RAW(_res_))\
         {\
             last_error = _res_.result.error;\
-            while (1);\
+            Error_Handler();\
         }\
     } while (0)
 
@@ -84,7 +84,7 @@ typedef struct Result
         if (RESULT_CHECK_RAW(_res_))\
         {\
             last_error = _res_.result.error;\
-            while (1);\
+            Error_Handler();\
         }\
         (_res_).result.success.obj;\
     })
@@ -153,37 +153,37 @@ typedef struct Result
     })
 
 #ifdef STM32_DEVICE
-#define ERROR_CHECK_HAL_RET_HAL(expr)       \
-    do {                                    \
-        HAL_StatusTypeDef _err = (expr);    \
-        if (_err != HAL_OK)                 \
-        {                                   \
-            return _err;                    \
-        }                                   \
+#define ERROR_CHECK_HAL_RET_HAL(expr) \
+    do { \
+        HAL_StatusTypeDef _err = (expr); \
+        if (_err != HAL_OK) \
+        { \
+            return _err; \
+        } \
     } while (0)
 
-#define ERROR_CHECK_HAL_RET_RES(expr)       \
-    do {                                    \
-        HAL_StatusTypeDef _err = (expr);    \
-        if (_err != HAL_OK)                 \
-        {                                   \
-            return RESULT_ERROR(_err);      \
-        }                                   \
+#define ERROR_CHECK_HAL_RET_RES(expr) \
+    do { \
+        HAL_StatusTypeDef _err = (expr); \
+        if (_err != HAL_OK) \
+        { \
+            return RESULT_ERROR(_err); \
+        } \
     } while (0)
 
-#define ERROR_CHECK_HAL_HANDLE(expr)        \
-    do {                                    \
-        HAL_StatusTypeDef _err = (expr);    \
-        if (_err != HAL_OK)                 \
-        {                                   \
-            last_error = _err;              \
-            while (1);                      \
-        }                                   \
+#define ERROR_CHECK_HAL_HANDLE(expr) \
+    do { \
+        HAL_StatusTypeDef _err = (expr); \
+        if (_err != HAL_OK) \
+        { \
+            last_error = _err; \
+            Error_Handler(); \
+        } \
     } while (0)
 #endif
 
-#define StopTask()  \
-({                  \
+#define StopTask() \
+({ \
     osThreadExit(); \
-    return;         \
+    return; \
 })

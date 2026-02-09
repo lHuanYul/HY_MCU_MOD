@@ -1,22 +1,16 @@
 #include "HY_MOD/infrared/basic.h"
 #ifdef HY_MOD_IR_TRSM
 
-#include "tim.h"
-#include "HY_MOD/main/tim.h"
-
-IRParameter infrared_h = {
-    .const_h = {
-        .Master_htimx = &htim17,
-        .Master_TIM_CHANNEL_x = TIM_CHANNEL_1,
-        .Master_tim_clk = &tim_clk_APB1,
-        // PC1     ------> TIM15_CH1
-        .Slave_htimx = &htim15,
-        .Slave_TIM_CHANNEL_x = TIM_CHANNEL_1,
-    },
-};
-
 const uint8_t ir_heran_fan_addr = 0x30;
 const uint8_t ir_heran_fan_power = 0x88;
+
+const IRTime ir_heran_fan = {
+    .header_mark = 9000,
+    .header_space = 4500,
+    .bit_mark = 560,
+    .bit_0 = 560,
+    .bit_1 = 1690,
+};
 
 void ir_code_gen(IRParameter *ir, IRCodes code)
 {
@@ -32,6 +26,7 @@ void ir_code_gen(IRParameter *ir, IRCodes code)
         case IR_CODE_N: break;
         case IR_CODE_HERAN_FAN_POWER:
         {
+            ir->time = &ir_heran_fan;
             CODE_WRITE(8, ir_heran_fan_addr);
             CODE_WRITE(8, ~ir_heran_fan_addr);
             CODE_WRITE(8, ir_heran_fan_power);

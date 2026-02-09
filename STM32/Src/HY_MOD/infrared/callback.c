@@ -12,7 +12,7 @@ void ir_trsm_cb(IRParameter *ir, TIM_HandleTypeDef *htim)
         case IR_STATE_LEADER:
         {
             __HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_x,
-                __HAL_TIM_GET_COMPARE(htim, TIM_CHANNEL_x) + IR_NEC_LEADER_L);
+                __HAL_TIM_GET_COMPARE(htim, TIM_CHANNEL_x) + ir->time->header_space);
             ir->state = IR_STATE_DATA;
             ir->byte = 0;
             ir->bit = 0;
@@ -26,19 +26,19 @@ void ir_trsm_cb(IRParameter *ir, TIM_HandleTypeDef *htim)
                 if (ir->bit % 2 == 0)
                 {
                     __HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_x,
-                            __HAL_TIM_GET_COMPARE(htim, TIM_CHANNEL_x) + IR_NEC_MARK);
+                            __HAL_TIM_GET_COMPARE(htim, TIM_CHANNEL_x) + ir->time->bit_mark);
                 }
                 else
                 {
                     if(BIT_SNG_CHK(ir->list[ir->byte].data, ir->bit / 2))
                     {
                         __HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_x,
-                            __HAL_TIM_GET_COMPARE(htim, TIM_CHANNEL_x) + IR_NEC_SPACE_1);
+                            __HAL_TIM_GET_COMPARE(htim, TIM_CHANNEL_x) + ir->time->bit_1);
                     }
                     else
                     {
                         __HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_x,
-                            __HAL_TIM_GET_COMPARE(htim, TIM_CHANNEL_x) + IR_NEC_SPACE_0);
+                            __HAL_TIM_GET_COMPARE(htim, TIM_CHANNEL_x) + ir->time->bit_0);
                     }
                 }
                 if (ir->bit >= last)
@@ -50,15 +50,17 @@ void ir_trsm_cb(IRParameter *ir, TIM_HandleTypeDef *htim)
                 break;
             }
             __HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_x,
-                __HAL_TIM_GET_COMPARE(htim, TIM_CHANNEL_x) + IR_NEC_MARK);
+                __HAL_TIM_GET_COMPARE(htim, TIM_CHANNEL_x) + ir->time->bit_mark);
             ir->state = IR_STATE_END;
             break;
         }
         case IR_STATE_END:
         {
-            HAL_TIM_OC_Stop_IT(htim, TIM_CHANNEL_x);
+            // __HAL_TIM_SET_COMPARE(ir->const_h.Slave_htimx,
+            //     ir->const_h.Slave_TIM_CHANNEL_x, 0);
             HAL_TIM_PWM_Stop(ir->const_h.Slave_htimx, ir->const_h.Slave_TIM_CHANNEL_x);
-            ir->state = IR_STATE_IDLE;
+            HAL_TIM_OC_Stop_IT(htim, TIM_CHANNEL_x);
+            ir->state = IR_STATE_CD;
         }
         default: break;
     }

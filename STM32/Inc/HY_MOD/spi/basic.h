@@ -18,7 +18,7 @@ typedef struct SpiConst
 } SpiConst;
 
 /* EXAMPLE
-SPI_DMA_BUFFER_ATTR static uint8_t rx_buf[ALIGN_32(JSON_PKT_LEN)];
+ATTR_RAM_D1_ALIGN_32 static uint8_t rx_buf[ALIGN_32(JSON_PKT_LEN)];
 
 STM32H7 REMBER TO SET MPU (SET IN CUBEMX)
   MPU_InitStruct.Number = MPU_REGION_NUMBER1;

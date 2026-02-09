@@ -40,7 +40,7 @@ static Result auto_pkt_proc(void)
 }
 
 uint32_t fdcan_tick;
-#define FDCAN_TASK_DELAY_MS 5
+#define TASK_DELAY_MS 5
 void StartFdCanTask(void *argument)
 {
     #ifdef DISABLE_FDCAN
@@ -110,7 +110,7 @@ void StartFdCanTask(void *argument)
             fdcan_h.const_h.hfdcanx, FDCAN_IT_RX_FIFO1_NEW_MESSAGE, 0)
     );
     fdcan_tick = 0;
-    const uint32_t osPeriod = pdMS_TO_TICKS(FDCAN_TASK_DELAY_MS);
+    const uint32_t osPeriod = pdMS_TO_TICKS(TASK_DELAY_MS);
     uint32_t next_wake = osKernelGetTickCount() + osPeriod;
     for(;;)
     {

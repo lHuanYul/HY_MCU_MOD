@@ -13,19 +13,53 @@
 extern const uint8_t hall_seq_clw[8];
 extern const uint8_t hall_seq_ccw[8];
 
+typedef union MotorPhaseGPIOData
+{
+    struct {
+        GPIOData u;
+        GPIOData v;
+        GPIOData w;
+    };
+    GPIOData uvw[3];
+} MotorPhaseGPIOData;
+
+typedef struct MotorPwmGpio
+{
+    uint32_t MODEx;
+    uint32_t MODEx_0;
+    uint32_t MODEx_1;
+} MotorPwmGpio;
+typedef union MotorPhasePwmGPIO
+{
+    struct {
+        MotorPwmGpio u;
+        MotorPwmGpio v;
+        MotorPwmGpio w;
+    };
+    MotorPwmGpio uvw[3];
+} MotorPhasePwmGPIO;
+
+typedef union MotorPhaseDuty
+{
+    struct {
+        float32_t u;
+        float32_t v;
+        float32_t w;
+    };
+    float32_t uvw[3];
+} MotorPhaseDuty;
+
 typedef struct MotorConst
 {
     // HALL PIN
-    GPIO_TypeDef        *Hall_GPIOx[3];
-    uint16_t            Hall_GPIO_Pin_x[3];
+    MotorPhaseGPIOData  Hall_GPIO;
     // PWM timer
     TIM_HandleTypeDef   *PWM_htimx;
     uint32_t            PWM_TIM_CHANNEL_x[3];
     uint32_t            *PWM_tim_clk;
     uint32_t            PWM_MID_TIM_CH_x;
-    // deg control L
-    GPIO_TypeDef        *Coil_GPIOx[3];
-    uint16_t            Coil_GPIO_Pin_x[3];
+    MotorPhaseGPIOData  PWMN_GPIO;
+    MotorPhasePwmGPIO   PWMN_GPIO_set;
     // 霍爾計時器
     TIM_HandleTypeDef   *Hall_htimx;
     uint32_t            *Hall_tim_clk;
@@ -171,19 +205,12 @@ typedef struct MotorParameter
     
     float32_t           v_ref;
     // DEG duty
-    volatile float32_t  deg_duty;
+    float32_t           deg_duty;
+    MotorPhaseDuty           duty_deg;
     // FOC duty
-    float32_t           foc_duty_u;
-    // FOC duty
-    float32_t           foc_duty_v;
-    // FOC duty
-    float32_t           foc_duty_w;
+    MotorPhaseDuty           duty_foc;
     // PWM duty
-    float32_t           pwm_duty_u;
-    // PWM duty
-    float32_t           pwm_duty_v;
-    // PWM duty
-    float32_t           pwm_duty_w;
+    MotorPhaseDuty           duty_load;
 
     MotorHistoryArray   history;
 } MotorParameter;

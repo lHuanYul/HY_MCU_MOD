@@ -1,13 +1,14 @@
 #pragma once
-#include "main/config.h"
+#include "HY_MOD/packet/basic.h"
 #ifdef HY_MOD_STM32_FDCAN
+
 #include "HY_MOD/main/fn_state.h"
 
 typedef struct FdcanPkt
 {
-    uint32_t id;
-    uint8_t data[FDCAN_PKT_LEN];
-    uint8_t len;
+    uint32_t        id;
+    uint8_t         *data;
+    uint8_t         len;
     struct FdcanPkt *next;
 } FdcanPkt;
 bool fdcan_pkt_check_len(FdcanPkt *pkt, uint8_t len);

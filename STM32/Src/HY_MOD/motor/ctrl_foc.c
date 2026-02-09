@@ -143,44 +143,44 @@ inline void motor_vec_ctrl_svpwm(MotorParameter *motor)
     {
         case 6:
         {
-            motor->foc_duty_u = T0div2 + T1 + T2;
-            motor->foc_duty_v = T0div2 + T2;
-            motor->foc_duty_w = T0div2;
+            motor->duty_foc.u = T0div2 + T1 + T2;
+            motor->duty_foc.v = T0div2 + T2;
+            motor->duty_foc.w = T0div2;
             break;
         }
         case 2:
         {
-            motor->foc_duty_u = T0div2 + T1;
-            motor->foc_duty_v = T0div2 + T1 + T2;
-            motor->foc_duty_w = T0div2;
+            motor->duty_foc.u = T0div2 + T1;
+            motor->duty_foc.v = T0div2 + T1 + T2;
+            motor->duty_foc.w = T0div2;
             break;
         }
         case 3:
         {
-            motor->foc_duty_u = T0div2;
-            motor->foc_duty_v = T0div2 + T1 + T2;
-            motor->foc_duty_w = T0div2 + T2;
+            motor->duty_foc.u = T0div2;
+            motor->duty_foc.v = T0div2 + T1 + T2;
+            motor->duty_foc.w = T0div2 + T2;
             break;
         }
         case 1:
         {
-            motor->foc_duty_u = T0div2;
-            motor->foc_duty_v = T0div2 + T1;
-            motor->foc_duty_w = T0div2 + T1 + T2;
+            motor->duty_foc.u = T0div2;
+            motor->duty_foc.v = T0div2 + T1;
+            motor->duty_foc.w = T0div2 + T1 + T2;
             break;
         }
         case 5:
         {
-            motor->foc_duty_u = T0div2 + T2;
-            motor->foc_duty_v = T0div2;
-            motor->foc_duty_w = T0div2 + T1 + T2;
+            motor->duty_foc.u = T0div2 + T2;
+            motor->duty_foc.v = T0div2;
+            motor->duty_foc.w = T0div2 + T1 + T2;
             break;
         }
         case 4:
         {
-            motor->foc_duty_u = T0div2 + T1 + T2;
-            motor->foc_duty_v = T0div2;
-            motor->foc_duty_w = T0div2 + T1;
+            motor->duty_foc.u = T0div2 + T1 + T2;
+            motor->duty_foc.v = T0div2;
+            motor->duty_foc.w = T0div2 + T1;
             break;
         }
     }

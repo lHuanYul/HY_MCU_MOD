@@ -4,17 +4,14 @@
 
 #define IR_CODE_LIST_MAX 20
 
-// #define IR_NEC_LEADER_H 9000
-// #define IR_NEC_LEADER_L 4500
-// #define IR_NEC_MARK     562
-// #define IR_NEC_SPACE_0  562
-// #define IR_NEC_SPACE_1  1687
-
-#define IR_NEC_LEADER_H 9000
-#define IR_NEC_LEADER_L 4500
-#define IR_NEC_MARK     562
-#define IR_NEC_SPACE_0  562
-#define IR_NEC_SPACE_1  1687
+typedef struct IRTime
+{
+    uint16_t header_mark;
+    uint16_t header_space;
+    uint16_t bit_mark;
+    uint16_t bit_0;
+    uint16_t bit_1;
+} IRTime;
 
 #ifndef __HAL_TIM_SET_OCMODE
 // Only for TIM17
@@ -48,6 +45,7 @@ typedef enum IRState
     IR_STATE_LEADER,
     IR_STATE_DATA,
     IR_STATE_END,
+    IR_STATE_CD,
 } IRState;
 
 typedef struct IRCode
@@ -60,13 +58,13 @@ typedef struct IRParameter
 {
     const IRConst const_h;
     IRState state;
+    uint8_t cd;
+    const IRTime  *time;
     IRCode  list[IR_CODE_LIST_MAX];
     uint8_t len;
     uint8_t byte;
     uint8_t bit;
 } IRParameter;
-
-extern IRParameter infrared_h;
 
 void ir_code_gen(IRParameter *ir, IRCodes code);
 

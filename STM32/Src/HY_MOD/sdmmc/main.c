@@ -5,8 +5,8 @@
 #define CACHE_LINE_SIZE 32
 #define ALIGN_UP(x) (((x) + CACHE_LINE_SIZE - 1) & ~(CACHE_LINE_SIZE - 1))
 
-ATTR_X(section(".dma_nc"), aligned(32)) uint8_t wbuf[8];
-ATTR_X(section(".dma_nc"), aligned(32)) uint8_t rbuf[8] = {0};
+__attribute__((section(".dma_nc"), aligned(32))) uint8_t sd_w_buf[8];
+__attribute__((section(".dma_nc"), aligned(32))) uint8_t sd_r_buf[8] = {0};
 static const char msg[] = "HELLO";
 
 static bool sd_wait_transfer(uint32_t ms)
@@ -69,9 +69,9 @@ void StartSDCardTask(void *argument)
             continue;
         }
         SD_CARD_ACT(11, f_open(&sd_card0.file_h, file_test.const_h.name, FA_OPEN_ALWAYS | FA_WRITE));
-        memcpy(wbuf, msg, sizeof(msg));
-        SCB_CleanDCache_by_Addr((uint32_t*)wbuf, ALIGN_UP(sizeof(msg)));
-        SD_CARD_ACT(12, f_write(&sd_card0.file_h, wbuf, sizeof(msg), &sd_card0.bits));
+        memcpy(sd_w_buf, msg, sizeof(msg));
+        SCB_CleanDCache_by_Addr((uint32_t*)sd_w_buf, ALIGN_UP(sizeof(msg)));
+        SD_CARD_ACT(12, f_write(&sd_card0.file_h, sd_w_buf, sizeof(msg), &sd_card0.bits));
         /**
          * 如果f_sync錯誤code=2 CLK/CMD線注意
          */
@@ -79,8 +79,8 @@ void StartSDCardTask(void *argument)
         SD_CARD_ACT(14, f_close(&sd_card0.file_h));
         osDelay(100);
         SD_CARD_ACT(21, f_open(&sd_card0.file_h, file_test.const_h.name, FA_OPEN_ALWAYS | FA_READ));
-        SCB_InvalidateDCache_by_Addr((uint32_t*)rbuf, ALIGN_UP(sizeof(rbuf)));
-        SD_CARD_ACT(22, f_read(&sd_card0.file_h, rbuf, sizeof(msg), &sd_card0.bits));
+        SCB_InvalidateDCache_by_Addr((uint32_t*)sd_r_buf, ALIGN_UP(sizeof(sd_r_buf)));
+        SD_CARD_ACT(22, f_read(&sd_card0.file_h, sd_r_buf, sizeof(msg), &sd_card0.bits));
         SD_CARD_ACT(23, f_close(&sd_card0.file_h));
         sd_running = 100;
         osDelay(1000);

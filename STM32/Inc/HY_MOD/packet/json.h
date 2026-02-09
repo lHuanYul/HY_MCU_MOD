@@ -1,23 +1,14 @@
 #pragma once
-#include "main/config.h"
+#include "HY_MOD/packet/basic.h"
 #ifdef HY_MOD_STM32_JSON
-#include "HY_MOD/main/fn_state.h"
 
-#ifdef STM32H7
-    #ifndef ALIGN_32
-        #define ALIGN_32(x)  ((((x) + 31) / 32) * 32)
-    #endif
-    #define SPI_DMA_BUFFER_ATTR __attribute__((section(".RAM_D1"), aligned(32)))
-#else
-    #define SPI_DMA_BUFFER_ATTR
-    #define ALIGN_32(x) x
-#endif
+#include "HY_MOD/main/fn_state.h"
 
 typedef struct JsonPkt
 {
-    uint8_t     *data;
-    uint16_t    len;
-    struct JsonPkt *next;
+    uint8_t         *data;
+    uint16_t        len;
+    struct JsonPkt  *next;
 } JsonPkt;
 Result json_pkt_get_num(JsonPkt *pkt, char *id, uint64_t *container);
 Result json_pkt_get_char(JsonPkt *pkt, char *id, char *container, uint16_t container_cap);
@@ -29,7 +20,6 @@ typedef struct JsonPktPool
     JsonPkt*    head;
     uint8_t     remain;
 } JsonPktPool;
-extern JsonPktPool json_pkt_pool;
 void json_pkt_pool_init(JsonPktPool *pool);
 Result json_pkt_pool_alloc(JsonPktPool *pool);
 void json_pkt_pool_free(JsonPktPool *pool, JsonPkt *pkt);

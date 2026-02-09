@@ -155,11 +155,11 @@ static void uss_update(VehicleParameter *vehicle)
     }
 }
 
-#define VEHICLE_TASK_DELAY_MS 10
+#define TASK_DELAY_MS 10
 uint32_t veh_next_wake;
 void StartVehicleTask(void *argument)
 {
-    const uint32_t osPeriod = pdMS_TO_TICKS(VEHICLE_TASK_DELAY_MS);
+    const uint32_t osPeriod = pdMS_TO_TICKS(TASK_DELAY_MS);
     veh_next_wake = osKernelGetTickCount() + osPeriod;
     VehicleParameter *vehicle = &vehicle_h;
     for(;;)

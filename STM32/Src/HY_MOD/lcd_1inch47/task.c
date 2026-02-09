@@ -3,12 +3,12 @@
 
 #include "main/lcd_1inch47.h"
 
-#define LCD_TASK_DELAY_MS 1000
+#define TASK_DELAY_MS 1000
 uint32_t hytest = 0;
 void StartLcdTask(void *argument)
 {
     Lcd1I47Parametar *lcd_1i47 = &lcd_1i47_h;
-    // const uint32_t osPeriod = pdMS_TO_TICKS(LCD_TASK_DELAY_MS);
+    // const uint32_t osPeriod = pdMS_TO_TICKS(TASK_DELAY_MS);
     // uint32_t next_wake = osKernelGetTickCount() + osPeriod;
     hytest++;
     LCD_init(lcd_1i47);

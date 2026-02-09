@@ -10,9 +10,9 @@ typedef struct USSConst
     uint32_t            TIM_CHANNEL_x;
     HAL_TIM_ActiveChannel HAL_TIM_ACTIVE_CHANNEL_x;
     GPIO_TypeDef*       trig_GPIOx;
-    uint16_t            trig_GPIO_Pin_x;
+    uint16_t            trig_Pin;
     GPIO_TypeDef*       echo_GPIOx;
-    uint16_t            echo_GPIO_Pin_x;
+    uint16_t            echo_Pin;
     float               warning_gate;
     float               danger_gate;
 } USSConst;

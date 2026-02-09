@@ -26,15 +26,17 @@ typedef int8_t FncState;
 #ifdef STM32_DEVICE
 typedef struct GPIOData
 {
-    GPIO_TypeDef        *GPIOx;
-    uint16_t            GPIO_Pin_x;
+    GPIO_TypeDef    *GPIOx;
+    uint16_t        Pin;
 } GPIOData;
 
-#define GPIO_TOGGLE(pin)    HAL_GPIO_TogglePin((pin).GPIOx, (pin).GPIO_Pin_x)
-#define GPIO_WRITE(pin,set) HAL_GPIO_WritePin((pin).GPIOx, (pin).GPIO_Pin_x, set)
-#define GPIO_READ(pin)      HAL_GPIO_ReadPin((pin).GPIOx, (pin).GPIO_Pin_x)
-#define GPIO_IF_RESET(pin)  (!HAL_GPIO_ReadPin((pin).GPIOx, (pin).GPIO_Pin_x))
-#define GPIO_IF_SET(pin)    HAL_GPIO_ReadPin((pin).GPIOx, (pin).GPIO_Pin_x)
+#define GPIO_TOGGLE(pin)        HAL_GPIO_TogglePin((pin).GPIOx, (pin).Pin)
+#define GPIO_WRITE(pin,set)     HAL_GPIO_WritePin((pin).GPIOx, (pin).Pin, set)
+#define GPIO_WRITE_R(pin,set)   ((pin).GPIOx->BSRR = (uint32_t)(pin).Pin << (16 * (1 - (uint32_t)(set))))
+#define GPIO_READ(pin)          HAL_GPIO_ReadPin((pin).GPIOx, (pin).Pin)
+#define GPIO_READ_R(pin)        ((pin).GPIOx->IDR & (pin).Pin)
+#define GPIO_IF_RESET(pin)      (!HAL_GPIO_ReadPin((pin).GPIOx, (pin).Pin))
+#define GPIO_IF_SET(pin)        HAL_GPIO_ReadPin((pin).GPIOx, (pin).Pin)
 
 #ifdef STM32G431RB
 #define BOARD_LED_TOGGLE    HAL_GPIO_TogglePin(GPIOA,GPIO_PIN_5)

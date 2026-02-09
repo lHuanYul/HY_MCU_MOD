@@ -1,8 +1,8 @@
 #include "HY_MOD/packet/json.h"
 #ifdef HY_MOD_STM32_JSON
-#include "CoreJSON/core_json.h"
 
-SPI_DMA_BUFFER_ATTR static uint8_t raw_dma_buffer[JSON_PKT_POOL_CAP][ALIGN_32(JSON_PKT_LEN + 1)];
+#include "CoreJSON/core_json.h"
+#include "HY_MOD/main/buffer.h"
 
 Result json_pkt_get_num(JsonPkt *pkt, char *id, uint64_t *container)
 {
@@ -68,7 +68,7 @@ void json_pkt_pool_init(JsonPktPool *pool)
     pool->head = NULL;
     for (uint8_t i = 0; i < JSON_PKT_POOL_CAP; i++)
     {
-        pool->pkt[i].data = raw_dma_buffer[i];
+        pool->pkt[i].data = json_buffers[i];
         pool->pkt[i].next = pool->head;
         pool->head = &pool->pkt[i];
     }

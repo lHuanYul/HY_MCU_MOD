@@ -28,7 +28,7 @@ void dht_tim_IC_cb(DhtParametar *dht11, TIM_HandleTypeDef *htim)
         diff = (dht11->const_h.htimx->Init.Period - dht11->last_cnt) + cnt + 1;
     dht11->last_cnt = cnt;
 
-    if (HAL_GPIO_ReadPin(dht11->const_h.gpio.GPIOx, dht11->const_h.gpio.GPIO_Pin_x)) return;
+    if (HAL_GPIO_ReadPin(dht11->const_h.gpio.GPIOx, dht11->const_h.gpio.Pin)) return;
 
     switch (dht11->state)
     {

@@ -12,9 +12,9 @@
 static void hall_update(MotorParameter *motor)
 {
     motor->hall_current =
-          ((motor->const_h.Hall_GPIOx[0]->IDR & motor->const_h.Hall_GPIO_Pin_x[0]) ? 4U : 0U)
-        | ((motor->const_h.Hall_GPIOx[1]->IDR & motor->const_h.Hall_GPIO_Pin_x[1]) ? 2U : 0U)
-        | ((motor->const_h.Hall_GPIOx[2]->IDR & motor->const_h.Hall_GPIO_Pin_x[2]) ? 1U : 0U);
+          (GPIO_READ_R(motor->const_h.Hall_GPIO.u) ? 4U : 0U)
+        | (GPIO_READ_R(motor->const_h.Hall_GPIO.v) ? 2U : 0U)
+        | (GPIO_READ_R(motor->const_h.Hall_GPIO.w) ? 1U : 0U);
     if (motor->hall_current == 0 || motor->hall_current == 7)
     {
         motor->hall_current = UINT8_MAX;
@@ -105,7 +105,7 @@ void motor_stop_cb(MotorParameter *motor)
     motor->foc_angle_acc = 0.0f;
     PI_reset(&motor->pi_speed);
 #ifdef MOTOR_PI_SPEED
-    motor->deg_duty = 0.0f;
+    motor->duty_deg = 0.0f;
 #endif
 }
 
@@ -165,8 +165,8 @@ static void state_update(MotorParameter *motor)
             motor->pi_speed.reference = motor->rpm_reference.value;
             PI_run(&motor->pi_speed);
     #ifdef MOTOR_PI_SPEED
-            motor->deg_duty += motor->pi_speed.out;
-            VAR_CLAMPF(motor->deg_duty, 0.0f, 1.0f);
+            motor->duty_deg += motor->pi_speed.out;
+            VAR_CLAMPF(motor->duty_deg, 0.0f, 1.0f);
     #else
             motor->deg_duty = 0.5f;
     #endif
@@ -230,7 +230,7 @@ void motor_pwm_cb(MotorParameter *motor)
         ) {
             hall_update(motor);
     #ifdef MOTOR_AUTO_SPIN
-            motor->mode_control = MOTOR_CTRL_120;
+            motor_switch_ctrl(motor, MOTOR_CTRL_120);
             motor->hall_delay = 1;
             motor->deg_duty = 1.0f;
     #endif
@@ -247,6 +247,7 @@ void motor_pwm_cb(MotorParameter *motor)
     
     foc_run(motor);
 
+    uint8_t i;
     switch (motor->mode_control)
     {
         case MOTOR_CTRL_120:
@@ -266,14 +267,18 @@ void motor_pwm_cb(MotorParameter *motor)
     #ifndef MOTOR_FOC_SPIN_DEBUG
         case MOTOR_CTRL_FOC_RATED:
         {
-            motor->pwm_duty_u = motor->foc_duty_u;
-            motor->pwm_duty_v = motor->foc_duty_v;
-            motor->pwm_duty_w = motor->foc_duty_w;
+            motor->duty_load = motor->duty_foc;
+            break;
         }
     #endif
         default: return;
     }
-    motor_pwm_load(motor);
+    for (i = 0; i < 3; i++)
+    {
+        VAR_CLAMPF(motor->duty_load.uvw[i], 0.0f, 1.0f);
+        __HAL_TIM_SET_COMPARE(motor->const_h.PWM_htimx, motor->const_h.PWM_TIM_CHANNEL_x[0],
+            (uint32_t)(motor->tfm_pwm_period * motor->duty_load.uvw[i]));
+    }
 }
 
 #endif
