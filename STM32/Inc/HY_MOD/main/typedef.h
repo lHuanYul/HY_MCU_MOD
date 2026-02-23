@@ -39,9 +39,9 @@ typedef struct GPIOData
 #define GPIO_IF_SET(pin)        HAL_GPIO_ReadPin((pin).GPIOx, (pin).Pin)
 
 #ifdef STM32G431RB
-#define BOARD_LED_TOGGLE    HAL_GPIO_TogglePin(GPIOA,GPIO_PIN_5)
-#define BOARD_LED_ON        HAL_GPIO_WritePin(GPIOA,GPIO_PIN_5,GPIO_PIN_SET)
-#define BOARD_LED_OFF       HAL_GPIO_WritePin(GPIOA,GPIO_PIN_5,GPIO_PIN_RESET)
+#define BOARD_LED_TOGGLE        HAL_GPIO_TogglePin(GPIOA,GPIO_PIN_5)
+#define BOARD_LED_ON            HAL_GPIO_WritePin(GPIOA,GPIO_PIN_5,GPIO_PIN_SET)
+#define BOARD_LED_OFF           HAL_GPIO_WritePin(GPIOA,GPIO_PIN_5,GPIO_PIN_RESET)
 #endif
 
 #endif

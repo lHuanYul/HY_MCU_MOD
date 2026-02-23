@@ -2,7 +2,7 @@
 #include "main/config.h"
 #ifdef HY_MOD_IR_TRSM
 
-#define IR_CODE_LIST_MAX 20
+#define IR_CODE_LIST_MAX 100
 
 typedef struct IRTime
 {
@@ -12,6 +12,8 @@ typedef struct IRTime
     uint16_t bit_0;
     uint16_t bit_1;
 } IRTime;
+
+extern const IRTime ir_heran_fan;
 
 #ifndef __HAL_TIM_SET_OCMODE
 // Only for TIM17
@@ -42,30 +44,22 @@ typedef struct IRConst
 typedef enum IRState
 {
     IR_STATE_IDLE,
-    IR_STATE_LEADER,
-    IR_STATE_DATA,
-    IR_STATE_END,
+    IR_STATE_RUN,
     IR_STATE_CD,
 } IRState;
-
-typedef struct IRCode
-{
-    uint8_t size;
-    uint32_t data;
-} IRCode;
 
 typedef struct IRParameter
 {
     const IRConst const_h;
-    IRState state;
-    uint8_t cd;
+    IRState     state;
+    uint8_t     cd;
     const IRTime  *time;
-    IRCode  list[IR_CODE_LIST_MAX];
-    uint8_t len;
-    uint8_t byte;
-    uint8_t bit;
+    uint32_t    data[IR_CODE_LIST_MAX];
+    uint8_t     len;
+    uint8_t     id;
 } IRParameter;
 
 void ir_code_gen(IRParameter *ir, IRCodes code);
+uint16_t ir_code_time(uint8_t data);
 
 #endif

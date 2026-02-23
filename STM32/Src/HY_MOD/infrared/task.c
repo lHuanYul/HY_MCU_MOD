@@ -15,7 +15,7 @@ void StartIRTask(void *argument)
         if (ir->cd > 0)
         {
             ir->cd--;
-            if (ir->cd == 0) ir->state == IR_STATE_IDLE;
+            if (ir->cd == 0) ir->state = IR_STATE_IDLE;
         }
         else if (ir->state == IR_STATE_CD) ir->cd = 10;
         osDelayUntil(next_wake);

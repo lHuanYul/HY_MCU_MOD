@@ -259,7 +259,7 @@ void motor_pwm_cb(MotorParameter *motor)
                     deg_ctrl_120_load(motor, HALL_DELAY_LOAD);
                 else if (motor->hall_delay == 1)
                     deg_ctrl_120_load(motor, motor->hall_current);
-                // deg_ctrl_120_load(motor, 4);
+                deg_ctrl_120_load(motor, 4);
                 motor->hall_delay--;
             }
             break;
