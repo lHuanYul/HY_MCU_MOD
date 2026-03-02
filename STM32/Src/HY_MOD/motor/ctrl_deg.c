@@ -93,7 +93,6 @@ void deg_ctrl_120_load(MotorParameter *motor, uint8_t id)
             GPIO_WRITE_R(motor->const_h.PWMN_GPIO.uvw[i], 0);
         }
     }
-    motor->duty_load = motor->duty_deg;
 }
 
 void deg_ctrl_180_load(MotorParameter *motor)

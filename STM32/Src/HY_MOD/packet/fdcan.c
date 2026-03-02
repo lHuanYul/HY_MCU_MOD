@@ -51,7 +51,7 @@ Result fdcan_pkt_pool_alloc(FdcanPktPool *pool)
 void fdcan_pkt_pool_free(FdcanPktPool *pool, FdcanPkt *pkt)
 {
     if (pool->remain >= FDCAN_PKT_POOL_CAP) while(1);
-    memset(pkt->data, 0, sizeof(pkt->data));
+    memset(pkt->data, 0, pkt->len);
     pkt->len = 0;
     pkt->next = pool->head;
     pool->head = pkt;

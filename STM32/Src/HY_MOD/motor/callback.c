@@ -168,7 +168,7 @@ static void state_update(MotorParameter *motor)
             motor->duty_deg += motor->pi_speed.out;
             VAR_CLAMPF(motor->duty_deg, 0.0f, 1.0f);
     #else
-            motor->deg_duty = 0.5f;
+            motor->deg_duty = 1.0f;
     #endif
             motor->pi_Iq.reference += motor->pi_speed.out * motor->tfm_duty_Iq;
             VAR_CLAMPF(motor->pi_Iq.reference, motor->pi_Iq.min, motor->pi_Iq.max);
@@ -259,7 +259,8 @@ void motor_pwm_cb(MotorParameter *motor)
                     deg_ctrl_120_load(motor, HALL_DELAY_LOAD);
                 else if (motor->hall_delay == 1)
                     deg_ctrl_120_load(motor, motor->hall_current);
-                deg_ctrl_120_load(motor, 4);
+                // deg_ctrl_120_load(motor, 4);
+                motor->duty_load = motor->duty_deg;
                 motor->hall_delay--;
             }
             break;
@@ -276,7 +277,7 @@ void motor_pwm_cb(MotorParameter *motor)
     for (i = 0; i < 3; i++)
     {
         VAR_CLAMPF(motor->duty_load.uvw[i], 0.0f, 1.0f);
-        __HAL_TIM_SET_COMPARE(motor->const_h.PWM_htimx, motor->const_h.PWM_TIM_CHANNEL_x[0],
+        __HAL_TIM_SET_COMPARE(motor->const_h.PWM_htimx, motor->const_h.PWM_TIM_CHANNEL_x[i],
             (uint32_t)(motor->tfm_pwm_period * motor->duty_load.uvw[i]));
     }
 }
