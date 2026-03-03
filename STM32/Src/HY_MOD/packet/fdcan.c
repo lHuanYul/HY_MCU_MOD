@@ -58,6 +58,7 @@ void fdcan_pkt_pool_free(FdcanPktPool *pool, FdcanPkt *pkt)
     pool->remain++;
 }
 
+// drop=1 > oldest; drop=2 > newest
 Result fdcan_pkt_buf_push(FdcanPktBuf* self, FdcanPkt *pkt, FdcanPktPool *pool, uint8_t drop)
 {
     if (self->len >= self->cap)

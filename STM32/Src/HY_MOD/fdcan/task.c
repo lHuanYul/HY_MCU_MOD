@@ -9,7 +9,7 @@
 #include "HY_MOD/vehicle/main.h"
 #endif
 
-static Result auto_pkt_proc(void)
+static Result auto_pkt_proc(FdcanParametar *fdcan)
 {
     Result result = RESULT_OK(NULL);
 #ifdef MCU_VEHICLE_MAIN
@@ -26,30 +26,30 @@ static Result auto_pkt_proc(void)
         fdcan_motor_send(&motor_h, &fdcan_pkt_pool, &fdcan_trsm_pkt_buf);
     }
 #endif
-    if (fdcan_h.data_store == FNC_ENABLE)
+    if (fdcan->data_store == FNC_ENABLE)
     {
+        fdcan->data_store = FNC_DISABLE;
         #ifdef ENABLE_CON_PKT_TEST
         FdcanPkt *pkt;
-        pkt = RESULT_UNWRAP_HANDLE(fdcan_pkt_pool_alloc());
-        fdcan_pkt_write(pkt, DATA_TYPE_TEST);
-        fdcan_pkt_buf_push(&fdcan_trsm_pkt_buf, pkt);
-        #else
+        pkt = RESULT_UNWRAP_HANDLE(fdcan_pkt_pool_alloc(&fdcan_pkt_pool));
+        fdcan_pkt_write_test(pkt);
+        fdcan_pkt_buf_push(&fdcan_trsm_pkt_buf, pkt, &fdcan_pkt_pool, 1);
         #endif
     }
     return result;
 }
 
-uint32_t fdcan_tick;
 #define TASK_DELAY_MS 5
 void StartFdCanTask(void *argument)
 {
+    FdcanParametar *fdcan = &fdcan_h;
     #ifdef DISABLE_FDCAN
     StopTask();
     #else
     fdcan_pkt_pool_init(&fdcan_pkt_pool);
     ERROR_CHECK_HAL_HANDLE(
         HAL_FDCAN_ConfigGlobalFilter(
-            fdcan_h.const_h.hfdcanx,
+            fdcan->const_h.hfdcanx,
             FDCAN_REJECT,
             FDCAN_REJECT,
             FDCAN_FILTER_REMOTE,
@@ -66,7 +66,7 @@ void StartFdCanTask(void *argument)
     };
     ERROR_CHECK_HAL_HANDLE(
         HAL_FDCAN_ConfigFilter(
-            fdcan_h.const_h.hfdcanx, &fifo0_filter0)
+            fdcan->const_h.hfdcanx, &fifo0_filter0)
     );
     FDCAN_FilterTypeDef fifo1_filter0 = {
         .IdType = FDCAN_STANDARD_ID,
@@ -80,12 +80,12 @@ void StartFdCanTask(void *argument)
     };
     ERROR_CHECK_HAL_HANDLE(
         HAL_FDCAN_ConfigFilter(
-            fdcan_h.const_h.hfdcanx, &fifo1_filter0)
+            fdcan->const_h.hfdcanx, &fifo1_filter0)
     );
-    ERROR_CHECK_HAL_HANDLE(HAL_FDCAN_Start(fdcan_h.const_h.hfdcanx));
+    ERROR_CHECK_HAL_HANDLE(HAL_FDCAN_Start(fdcan->const_h.hfdcanx));
     ERROR_CHECK_HAL_HANDLE(
         HAL_FDCAN_ActivateNotification(
-            fdcan_h.const_h.hfdcanx,
+            fdcan->const_h.hfdcanx,
               FDCAN_IT_BUS_OFF
             | FDCAN_IT_TX_EVT_FIFO_NEW_DATA
             | FDCAN_IT_TX_EVT_FIFO_FULL
@@ -94,7 +94,7 @@ void StartFdCanTask(void *argument)
     );
     ERROR_CHECK_HAL_HANDLE(
         HAL_FDCAN_ActivateNotification(
-            fdcan_h.const_h.hfdcanx,
+            fdcan->const_h.hfdcanx,
             FDCAN_IT_TX_COMPLETE,
               FDCAN_TX_BUFFER0
             | FDCAN_TX_BUFFER1
@@ -103,37 +103,37 @@ void StartFdCanTask(void *argument)
     );
     ERROR_CHECK_HAL_HANDLE(
         HAL_FDCAN_ActivateNotification(
-            fdcan_h.const_h.hfdcanx, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0)
+            fdcan->const_h.hfdcanx, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0)
     );
     ERROR_CHECK_HAL_HANDLE(
         HAL_FDCAN_ActivateNotification(
-            fdcan_h.const_h.hfdcanx, FDCAN_IT_RX_FIFO1_NEW_MESSAGE, 0)
+            fdcan->const_h.hfdcanx, FDCAN_IT_RX_FIFO1_NEW_MESSAGE, 0)
     );
-    fdcan_tick = 0;
+    fdcan->task_tick = 0;
     const uint32_t osPeriod = pdMS_TO_TICKS(TASK_DELAY_MS);
     uint32_t next_wake = osKernelGetTickCount() + osPeriod;
     for(;;)
     {
-        if (fdcan_h.bus_off)
+        if (fdcan->bus_off)
         {
-            fdcan_h.bus_off = false;
-            HAL_FDCAN_Stop(fdcan_h.const_h.hfdcanx);
-            HAL_FDCAN_Start(fdcan_h.const_h.hfdcanx);
+            fdcan->bus_off = false;
+            HAL_FDCAN_Stop(fdcan->const_h.hfdcanx);
+            HAL_FDCAN_Start(fdcan->const_h.hfdcanx);
         }
-        auto_pkt_proc();
+        auto_pkt_proc(fdcan);
         trsm_pkts_proc(&fdcan_pkt_pool, &fdcan_trsm_pkt_buf);
-        if (fdcan_tick % 10 == 0)
+        if (fdcan->task_tick % 10 == 0)
         {
             recv_pkts_proc(&fdcan_pkt_pool, &fdcan_recv_pkt_buf, 5);
         }
-        if (fdcan_tick % 20 == 0)
+        if (fdcan->task_tick % 20 == 0)
         {
-            fdcan_tick = 0;
-            if (fdcan_h.data_store == FNC_ENABLE);
+            fdcan->task_tick = 0;
+            fdcan->data_store = FNC_ENABLE;
         }
         osDelayUntil(next_wake);
         next_wake += osPeriod;
-        fdcan_tick++;
+        fdcan->task_tick++;
     }
     #endif
 }
