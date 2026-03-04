@@ -4,26 +4,33 @@
 #include "HY_MOD/fdcan/pkt_write.h"
 #include "fdcan.h"
 
-void fdcan_error_status_cb(FdcanParametar *fdcan, FDCAN_HandleTypeDef *hfdcan, uint32_t ErrorStatusITs)
-{
+void fdcan_error_status_cb(
+	FdcanParametar *fdcan,
+	FDCAN_HandleTypeDef *hfdcan,
+	uint32_t ErrorStatusITs
+) {
     if (hfdcan != fdcan->const_h.hfdcanx) return;
     if (ITS_CHECK(ErrorStatusITs, FDCAN_IT_BUS_OFF))
     {
-        fdcan->bus_off = true;
+        fdcan->state = FDCAN_STATE_BUS_OFF;
     }
 }
 	
-void fdcan_tx_fifo_cb(FdcanParametar *fdcan, FDCAN_HandleTypeDef *hfdcan, uint32_t TxEventFifoITs)
-{
+void fdcan_tx_fifo_cb(
+	FdcanParametar *fdcan,
+	FDCAN_HandleTypeDef *hfdcan,
+	uint32_t TxEventFifoITs,
+    FdcanPktPool *pool,
+    FdcanPktBuf *buf
+) {
     if (hfdcan != fdcan->const_h.hfdcanx) return;
     fdcan->trsming++;
     if (ITS_CHECK(TxEventFifoITs, FDCAN_IT_TX_EVT_FIFO_NEW_DATA))
     {
-    }
-    if (ITS_CHECK(TxEventFifoITs, FDCAN_IT_TX_EVT_FIFO_FULL))
-    {
         FDCAN_TxEventFifoTypeDef txEvent;
         HAL_FDCAN_GetTxEvent(hfdcan, &txEvent);
+		fdcan_pkt_pool_free(pool, fdcan->tx_pkt);
+		fdcan->tx_pkt = NULL;
     }
     if (ITS_CHECK(TxEventFifoITs, FDCAN_IT_TX_EVT_FIFO_ELT_LOST))
     {
@@ -42,33 +49,45 @@ void fdcan_rx_fifo0_cb(
     fdcan->recving++;
     if(ITS_CHECK(RxFifo0ITs, FDCAN_IT_RX_FIFO0_NEW_MESSAGE))
     {
-        memset(&fdcan->rx_header, 0, sizeof(fdcan->rx_header));
+        FdcanPkt *pkt = RESULT_UNWRAP_HANDLE(fdcan_pkt_pool_alloc(pool));
+		FDCAN_RxHeaderTypeDef header = {0};
         ERROR_CHECK_HAL_HANDLE(HAL_FDCAN_GetRxMessage(
-            hfdcan, FDCAN_RX_FIFO0, &fdcan->rx_header, fdcan->rx_buf));
-        FdcanPkt *pkt = RESULT_UNWRAP_RET_VOID(fdcan_pkt_pool_alloc(pool));
-        RESULT_CHECK_RET_VOID(fdcan_pkt_set_len(pkt, fdcan->rx_header.DataLength));
-        pkt->id = fdcan->rx_header.Identifier;
-        memcpy(pkt->data, fdcan->rx_buf, pkt->len);
+            hfdcan, FDCAN_RX_FIFO0, &header, pkt->data));
+        RESULT_CHECK_HANDLE(fdcan_pkt_set_len(pkt, header.DataLength));
+		fdcan_pkt_set_id(pkt, header.Identifier);
         RESULT_CHECK_HANDLE(fdcan_pkt_buf_push(buf, pkt, pool, 0));
     }
+	if (ITS_CHECK(RxFifo0ITs, FDCAN_IT_RX_FIFO0_MESSAGE_LOST))
+	{
+        Error_Handler();
+	}
 }
 
-__attribute__((weak)) Result fdcan_pkt_ist_read(FdcanPkt *pkt) { return RESULT_ERROR(RES_ERR_NOT_FOUND); }
-void fdcan_rx_fifo1_cb(FdcanParametar *fdcan, FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo1ITs)
-{
+ATTR_WEAK Result fdcan_pkt_ist_read(FdcanPkt *pkt) { return RESULT_ERROR(RES_ERR_NOT_FOUND); }
+void fdcan_rx_fifo1_cb(
+	FdcanParametar *fdcan,
+	FDCAN_HandleTypeDef *hfdcan,
+	uint32_t RxFifo1ITs,
+    FdcanPktPool *pool,
+    FdcanPktBuf *buf
+) {
     if (hfdcan != fdcan->const_h.hfdcanx) return;
     fdcan->recving++;
     if(ITS_CHECK(RxFifo1ITs, FDCAN_IT_RX_FIFO1_NEW_MESSAGE))
     {
-        memset(&fdcan->rx_header, 0, sizeof(fdcan->rx_header));
+		FdcanPkt *pkt = RESULT_UNWRAP_HANDLE(fdcan_pkt_pool_alloc(pool));
+		FDCAN_RxHeaderTypeDef header = {0};
         ERROR_CHECK_HAL_HANDLE(HAL_FDCAN_GetRxMessage(
-            hfdcan, FDCAN_RX_FIFO1, &fdcan->rx_header, fdcan->rx_buf));
-        FdcanPkt pkt = {0};
-        RESULT_CHECK_RET_VOID(fdcan_pkt_set_len(&pkt, fdcan->rx_header.DataLength));
-        pkt.id = fdcan->rx_header.Identifier;
-        memcpy(pkt.data, fdcan->rx_buf, pkt.len);
-        fdcan_pkt_ist_read(&pkt);
+            hfdcan, FDCAN_RX_FIFO1, &header, pkt->data));
+        RESULT_CHECK_HANDLE(fdcan_pkt_set_len(pkt, header.DataLength));
+		fdcan_pkt_set_id(pkt, header.Identifier);
+        fdcan_pkt_ist_read(pkt);
+		fdcan_pkt_pool_free(pool, pkt);
     }
+	if (ITS_CHECK(RxFifo1ITs, FDCAN_IT_RX_FIFO1_MESSAGE_LOST))
+	{
+        Error_Handler();
+	}
 }
 
 #endif

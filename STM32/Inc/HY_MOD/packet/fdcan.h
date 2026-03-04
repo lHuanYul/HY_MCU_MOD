@@ -13,6 +13,7 @@ typedef struct FdcanPkt
 } FdcanPkt;
 bool fdcan_pkt_check_len(FdcanPkt *pkt, uint8_t len);
 Result fdcan_pkt_get_byte(FdcanPkt *pkt, uint8_t id, uint8_t* container);
+Result fdcan_pkt_set_id(FdcanPkt *pkt, uint16_t id);
 Result fdcan_pkt_set_len(FdcanPkt *pkt, uint8_t len);
 
 typedef struct FdcanPktPool

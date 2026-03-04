@@ -16,6 +16,12 @@ Result fdcan_pkt_get_byte(FdcanPkt *pkt, uint8_t id, uint8_t* container)
     return RESULT_OK(container);
 }
 
+Result fdcan_pkt_set_id(FdcanPkt *pkt, uint16_t id)
+{
+    pkt->id = id;
+    return RESULT_OK(pkt);
+}
+
 Result fdcan_pkt_set_len(FdcanPkt *pkt, uint8_t len)
 {
     if (len > FDCAN_PKT_LEN) return RESULT_ERROR(RES_ERR_FULL);

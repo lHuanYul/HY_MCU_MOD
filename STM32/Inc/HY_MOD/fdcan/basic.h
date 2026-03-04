@@ -9,6 +9,7 @@
 typedef enum FdcanState
 {
     FDCAN_STATE_FINISH,
+    FDCAN_STATE_BUS_OFF,
 } FdcanState;
 
 typedef struct FdcanConst
@@ -21,9 +22,8 @@ typedef struct FdcanParametar
     const FdcanConst const_h;
     uint8_t task_tick;
     FdcanState state;
-    bool bus_off;
-    uint8_t rx_buf[FDCAN_PKT_LEN];
-    FDCAN_RxHeaderTypeDef rx_header;
+    FdcanPkt *tx_pkt;
+    FdcanPkt *rx_pkt;
     FncState data_store;
     uint8_t trsming;
     uint8_t recving;
