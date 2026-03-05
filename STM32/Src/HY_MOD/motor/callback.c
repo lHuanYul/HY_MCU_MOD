@@ -232,7 +232,7 @@ void motor_pwm_cb(MotorParameter *motor)
     #ifdef MOTOR_AUTO_SPIN
             motor_switch_ctrl(motor, MOTOR_CTRL_120);
             motor->hall_delay = 1;
-            motor->deg_duty = 1.0f;
+//            motor->deg_duty = 1.0f;
     #endif
         }
         if (
