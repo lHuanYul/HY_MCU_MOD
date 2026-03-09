@@ -168,7 +168,7 @@ static void state_update(MotorParameter *motor)
             motor->duty_deg += motor->pi_speed.out;
             VAR_CLAMPF(motor->duty_deg, 0.0f, 1.0f);
     #else
-            motor->deg_duty = 1.0f;
+            motor->deg_duty = 0.5f;
     #endif
             motor->pi_Iq.reference += motor->pi_speed.out * motor->tfm_duty_Iq;
             VAR_CLAMPF(motor->pi_Iq.reference, motor->pi_Iq.min, motor->pi_Iq.max);
