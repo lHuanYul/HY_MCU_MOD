@@ -87,8 +87,9 @@ void motor_hall_exti_cb(MotorParameter *motor)
     rpm_update(motor);
 }
 
-// --------------------------------------------------------------------------------
-
+/*
+void HAL_TIM_PeriodElapsedCallback_OWN(TIM_HandleTypeDef *htim)
+*/
 void motor_stop_cb(MotorParameter *motor)
 {
     motor->stop_spin_time = HAL_GetTick();
@@ -101,8 +102,6 @@ void motor_stop_cb(MotorParameter *motor)
     motor->duty_deg = 0.0f;
 #endif
 }
-
-// --------------------------------------------------------------------------------
 
 static void ctrl_start(MotorParameter *motor)
 {
