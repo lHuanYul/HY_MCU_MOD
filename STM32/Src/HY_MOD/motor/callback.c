@@ -1,6 +1,7 @@
 #include "HY_MOD/motor/callback.h"
 #ifdef HY_MOD_STM32_MOTOR
 
+#include "HY_MOD/motor/main.h"
 #include "HY_MOD/motor/ctrl_deg.h"
 #include "HY_MOD/motor/ctrl_foc.h"
 #include "HY_MOD/motor/trigonometric.h"
@@ -24,7 +25,7 @@ static void hall_update(MotorParameter *motor)
     motor_vec_ctrl_hall_angle_trf(motor);
 }
 
-static void hall_check(MotorParameter *motor)
+static void rotate_check(MotorParameter *motor)
 {
     if (motor->hall_current == hall_seq_ccw[motor->hall_chk_last])
     {
@@ -82,9 +83,11 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 void motor_hall_exti_cb(MotorParameter *motor)
 {
     hall_update(motor);
-    hall_check(motor);
+    rotate_check(motor);
     rpm_update(motor);
 }
+
+// --------------------------------------------------------------------------------
 
 void motor_stop_cb(MotorParameter *motor)
 {
@@ -99,6 +102,8 @@ void motor_stop_cb(MotorParameter *motor)
 #endif
 }
 
+// --------------------------------------------------------------------------------
+
 static void ctrl_start(MotorParameter *motor)
 {
     // !
@@ -107,7 +112,7 @@ static void ctrl_start(MotorParameter *motor)
     motor_set_rpm(motor, 0, 500.0f);
 }
 
-static void state_update(MotorParameter *motor)
+static void status_update(MotorParameter *motor)
 {
     motor->mode_rot_ref = motor->mode_rot_user;
     motor->rpm_reference.reverse = motor->rpm_user.reverse;
@@ -116,18 +121,18 @@ static void state_update(MotorParameter *motor)
     bool ref_fbk_same_dir = (motor->rpm_user.reverse == motor->rpm_feedback.reverse) ? 1 : 0;
     switch (motor->dict_state)
     {
-        case DIRECTION_NORMAL:
+        case DIRECT_NORMAL:
         {
             if (ref_fbk_same_dir) break;
-            motor->dict_state = DIRECTION_SWITCHING;
+            motor->dict_state = DIRECT_SWITCHING;
         }
-        case DIRECTION_SWITCHING:
+        case DIRECT_SWITCHING:
         {
             // rpm來不及算到就煞停了
             if (motor->mode_rot_ref == MOTOR_ROT_COAST) break;
             if (save_stop)
             {
-                motor->dict_state = DIRECTION_NORMAL;
+                motor->dict_state = DIRECT_NORMAL;
                 motor->exti_hall_acc = 0;
                 motor->rpm_feedback.value = 0;
                 break;
@@ -194,82 +199,97 @@ void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef *hadc)
 void motor_pwm_cb(MotorParameter *motor)
 {
     motor_vec_ctrl_adcs_upd(motor);
-    if (motor->mode_control == MOTOR_CTRL_INIT)
-    {
-        if (motor->tim_it_acc >= 20000)
-        {
-            motor->tim_it_acc = 0;
-            motor_vec_ctrl_adcs_reset(motor);
-            ctrl_start(motor);
-        }
-        else
-        {
-            motor->tim_it_acc++;
-            return;
-        }
-    }
-    if (motor->tim_it_acc % 1000 == 0)
-    {
-        state_update(motor);
-    }
-    if (motor->tim_it_acc % 2000 == 0)
-    {
-        if (
-            motor->rpm_feedback.value == 0.0f &&
-            motor->rpm_reference.value != 0.0f
-        ) {
-            hall_update(motor);
-    #ifdef MOTOR_AUTO_SPIN
-            motor_switch_ctrl(motor, MOTOR_CTRL_120);
-            motor->hall_delay = 1;
-//            motor->deg_duty = 1.0f;
-    #endif
-        }
-        if (
-            motor->fdcan_enable
-        ) {
-            motor->fdcan_send = 1;
-            motor_history_write(motor);
-        }
-    }
-    motor->tim_it_acc++;
-    if (motor->tim_it_acc >= 20000) motor->tim_it_acc = 0;
-    
-    foc_run(motor);
 
-    uint8_t i;
+    if (
+        motor->fdcan_enable &&
+        motor->tim_it_acc % 2000 == 0
+    ) {
+        motor->fdcan_send = 1;
+        motor_history_write(motor);
+    }
+    
     switch (motor->mode_control)
     {
+        case MOTOR_CTRL_INIT:
+        {
+            if (motor->tim_it_acc >= 20000)
+            {
+                motor->tim_it_acc = 0;
+                motor_vec_ctrl_adcs_reset(motor);
+                ctrl_start(motor);
+            }
+            break;
+        }
+        case MOTOR_CTRL_TEST_H:
+        case MOTOR_CTRL_TEST_L:
+        {
+            deg_ctrl_test(motor);
+            break;
+        }
         case MOTOR_CTRL_120:
         {
-            uint16_t hall_delay = motor->hall_delay;
-            if (hall_delay > 0)
+            if (motor->tim_it_acc % 1000 == 0)
             {
-                if (hall_delay == HALL_DELAY)
+                status_update(motor);
+            }
+            if (motor->tim_it_acc % 2000 == 0)
+            {
+                if (
+                    motor->rpm_feedback.value == 0.0f &&
+                    motor->rpm_reference.value != 0.0f
+                ) {
+                    hall_update(motor);
+                #ifdef MOTOR_AUTO_SPIN
+                    motor_switch_ctrl(motor, MOTOR_CTRL_120);
+                    motor->hall_delay = 1;
+                    motor->deg_duty = 1.0f;
+                #endif
+                }
+            }
+            foc_run(motor);
+            if (motor->hall_delay > 0)
+            {
+                motor->duty_load = motor->duty_deg;
+                if (motor->hall_delay == HALL_DELAY)
                     deg_ctrl_120_load(motor, HALL_DELAY_LOAD);
                 else if (motor->hall_delay == 1)
                     deg_ctrl_120_load(motor, motor->hall_current);
                 // deg_ctrl_120_load(motor, 4);
-                motor->duty_load = motor->duty_deg;
                 motor->hall_delay--;
             }
             break;
         }
-    #ifndef MOTOR_FOC_SPIN_DEBUG
         case MOTOR_CTRL_FOC_RATED:
         {
+        #ifndef MOTOR_FOC_SPIN_DEBUG
+            if (motor->tim_it_acc % 1000 == 0)
+            {
+                status_update(motor);
+            }
+            if (motor->tim_it_acc % 2000 == 0)
+            {
+                if (
+                    motor->rpm_feedback.value == 0.0f &&
+                    motor->rpm_reference.value != 0.0f
+                ) {
+                    hall_update(motor);
+                #ifdef MOTOR_AUTO_SPIN
+                    motor_switch_ctrl(motor, MOTOR_CTRL_120);
+                    motor->hall_delay = 1;
+                    motor->deg_duty = 1.0f;
+                #endif
+                }
+            }
+            foc_run(motor);
             motor->duty_load = motor->duty_foc;
+            motor_timer_load(motor);
+        #endif
             break;
         }
-    #endif
         default: return;
     }
-    for (i = 0; i < 3; i++)
-    {
-        VAR_CLAMPF(motor->duty_load.uvw[i], 0.0f, 1.0f);
-        __HAL_TIM_SET_COMPARE(motor->const_h.PWM_htimx, motor->const_h.PWM_TIM_CHANNEL_x[i],
-            (uint32_t)(motor->tfm_pwm_period * motor->duty_load.uvw[i]));
-    }
+    motor->tim_it_acc++;
+    if (motor->tim_it_acc >= 20000) motor->tim_it_acc = 0;
 }
 
 #endif

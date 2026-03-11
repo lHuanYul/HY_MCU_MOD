@@ -57,4 +57,15 @@ void motor_setup(MotorParameter *motor)
     HAL_TIMEx_HallSensor_Start_IT(motor->const_h.Hall_htimx);
 }
 
+void motor_timer_load(MotorParameter *motor)
+{
+    uint8_t i;
+    for (i = 0; i < 3; i++)
+    {
+        VAR_CLAMPF(motor->duty_load.uvw[i], 0.0f, 1.0f);
+        __HAL_TIM_SET_COMPARE(motor->const_h.PWM_htimx, motor->const_h.PWM_TIM_CHANNEL_x[i],
+            (uint32_t)(motor->tfm_pwm_period * motor->duty_load.uvw[i]));
+    }
+}
+
 #endif

@@ -74,8 +74,9 @@ typedef enum MotorModeControl
 {
     MOTOR_CTRL_INIT,
     MOTOR_CTRL_TEST_H,
+    MOTOR_CTRL_TEST_L,
     MOTOR_CTRL_120,
-    MOTOR_CTRL_180,
+    // MOTOR_CTRL_180,
     MOTOR_CTRL_FOC_RATED,
     MOTOR_CTRL_FOC_PEAK,
 } MotorModeControl;
@@ -91,8 +92,8 @@ typedef enum MotorModeRotate
 
 typedef enum DirectionState
 {
-    DIRECTION_NORMAL,
-    DIRECTION_SWITCHING,
+    DIRECT_NORMAL,
+    DIRECT_SWITCHING,
 } DirectionState;
 
 typedef struct MotorRpm

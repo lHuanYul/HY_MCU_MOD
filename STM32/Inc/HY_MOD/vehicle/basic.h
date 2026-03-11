@@ -43,8 +43,8 @@ typedef enum VehicleDirection
 
 typedef enum DirectionState
 {
-    DIRECTION_NORMAL,
-    DIRECTION_SWITCHING,
+    DIRECT_NORMAL,
+    DIRECT_SWITCHING,
 } DirectionState;
 
 typedef struct VehicleFreeP

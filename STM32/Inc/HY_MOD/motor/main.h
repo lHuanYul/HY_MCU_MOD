@@ -5,8 +5,6 @@
 #include "HY_MOD/main/fn_state.h"
 
 void motor_setup(MotorParameter *motor);
-void motor_hall_exti_cb(MotorParameter *motor);
-void motor_pwm_cb(MotorParameter *motor);
-void motor_stop_cb(MotorParameter *motor);
+void motor_timer_load(MotorParameter *motor);
 
 #endif

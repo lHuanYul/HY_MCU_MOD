@@ -130,6 +130,8 @@ void motor_switch_ctrl(MotorParameter *motor, MotorModeControl ctrl)
 
     switch (ctrl)
     {
+        case MOTOR_CTRL_TEST_H:
+        case MOTOR_CTRL_TEST_L:
         case MOTOR_CTRL_120:
         {
             for (i = 0; i < 3; i++)

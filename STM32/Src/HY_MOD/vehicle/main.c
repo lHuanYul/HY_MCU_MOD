@@ -111,12 +111,12 @@ static void direction_update(VehicleParameter *vehicle)
 {
     switch (vehicle->dict_state)
     {
-        case DIRECTION_NORMAL:
+        case DIRECT_NORMAL:
         {
             if (vehicle->dict_ref == vehicle->dict_fbk) break;
-            vehicle->dict_state = DIRECTION_SWITCHING;
+            vehicle->dict_state = DIRECT_SWITCHING;
         }
-        case DIRECTION_SWITCHING:
+        case DIRECT_SWITCHING:
         {
             uint8_t unstop = 2;
             if ((vehicle->motor_left.value_fbk < MOTOR_STOP_GATE))
@@ -131,7 +131,7 @@ static void direction_update(VehicleParameter *vehicle)
             }
             if (unstop == 0)
             {
-                vehicle->dict_state = DIRECTION_NORMAL;
+                vehicle->dict_state = DIRECT_NORMAL;
                 break;
             }
             vehicle->dict_ref = vehicle->dict_fbk;
