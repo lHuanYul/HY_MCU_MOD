@@ -3,6 +3,7 @@
 #ifdef HY_MOD_ESP32_SPI
 
 #include "HY_MOD/main/fn_state.h"
+#include "HY_MOD/main/variable_cal.h"
 #include "HY_MOD/packet/json.h"
 #include "driver/gpio.h"
 #include "driver/spi_slave.h"

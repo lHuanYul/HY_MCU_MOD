@@ -84,16 +84,6 @@ void motor_hall_exti_cb(MotorParameter *motor)
     hall_update(motor);
     hall_check(motor);
     rpm_update(motor);
-// #ifndef MOTOR_FOC_SPIN_DEBUG
-//     pwm_update(motor, motor->hall_current);
-// #else
-//     if (expected && (motor->reverse == reverse))
-//     {
-//         motor->tim_angle_acc = 0.0f;
-//     }
-//     RESULT_CHECK_RET_VOID(motor_vec_ctrl_hall_angle_trf(motor));
-//     deg_ctrl_load(motor);
-// #endif
 }
 
 void motor_stop_cb(MotorParameter *motor)

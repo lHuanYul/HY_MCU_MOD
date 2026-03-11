@@ -73,6 +73,7 @@ typedef struct MotorConst
 typedef enum MotorModeControl
 {
     MOTOR_CTRL_INIT,
+    MOTOR_CTRL_TEST_H,
     MOTOR_CTRL_120,
     MOTOR_CTRL_180,
     MOTOR_CTRL_FOC_RATED,
