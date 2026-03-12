@@ -56,6 +56,7 @@ void deg_ctrl_test(MotorParameter *motor)
         for (i = 0; i < 3; i++) seq[i] = seq_map_120[6][i];
     else
         for (i = 0; i < 3; i++) seq[i] = seq_map_120[7][i];
+    motor->duty_load = motor->duty_deg;
     ctrl_load(motor, seq, 1.0f);
 }
 
@@ -97,6 +98,7 @@ void deg_ctrl_120_load(MotorParameter *motor, uint8_t id)
             break;
         }
     }
+    motor->duty_load = motor->duty_deg;
     ctrl_load(motor, seq, motor->deg_duty);
 }
 

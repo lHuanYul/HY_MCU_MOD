@@ -103,14 +103,6 @@ void motor_stop_cb(MotorParameter *motor)
 #endif
 }
 
-static void ctrl_start(MotorParameter *motor)
-{
-    // !
-    motor_set_rotate_mode(motor, MOTOR_ROT_NORMAL);
-    motor_switch_ctrl(motor, MOTOR_CTRL_120);
-    motor_set_rpm(motor, 0, 500.0f);
-}
-
 static void status_update(MotorParameter *motor)
 {
     motor->mode_rot_ref = motor->mode_rot_user;
@@ -211,18 +203,20 @@ void motor_pwm_cb(MotorParameter *motor)
     {
         case MOTOR_CTRL_INIT:
         {
-            if (motor->tim_it_acc >= 20000)
+            if (motor->tim_it_acc >= 19999)
             {
-                motor->tim_it_acc = 0;
                 motor_vec_ctrl_adcs_reset(motor);
-                ctrl_start(motor);
+                motor_set_rotate_mode(motor, MOTOR_ROT_NORMAL);
+                motor_switch_ctrl(motor, MOTOR_CTRL_TEST_H);
+                motor_set_rpm(motor, 0, 500.0f);
             }
             break;
         }
         case MOTOR_CTRL_TEST_H:
         case MOTOR_CTRL_TEST_L:
         {
-            deg_ctrl_test(motor);
+        	if (motor->tim_it_acc == 0)
+        		deg_ctrl_test(motor);
             break;
         }
         case MOTOR_CTRL_120:
@@ -248,7 +242,6 @@ void motor_pwm_cb(MotorParameter *motor)
             foc_run(motor);
             if (motor->hall_delay > 0)
             {
-                motor->duty_load = motor->duty_deg;
                 if (motor->hall_delay == HALL_DELAY)
                     deg_ctrl_120_load(motor, HALL_DELAY_LOAD);
                 else if (motor->hall_delay == 1)
