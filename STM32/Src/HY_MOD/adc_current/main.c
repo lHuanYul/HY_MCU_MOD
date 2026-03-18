@@ -5,22 +5,22 @@
 
 static uint16_t ADC_Values[ADC_COUNT * ADC_NEED_LEN] = {0};
 
-// static uint16_t adc_cnt[2560] = {0};
+// static uint16_t adc.wnt[2560] = {0};
 // static ATTR_UNUSED Result middle(uint8_t adc_id, uint16_t *adc_store)
 // {
-//     memset(adc_cnt, 0, sizeof(adc_cnt));
+//     memset(adc.wnt, 0, sizeof(adc.wnt));
 //     uint16_t i, val;
 //     for (i = 0; i < ADC_NEED_LEN; i++)
 //     {
 //         val = ADC_Values[i * ADC_COUNT + adc_id];
 //         if(val > 2559) continue;
-//         adc_cnt[val]++;
+//         adc.wnt[val]++;
 //     }
 //     const uint16_t target = (ADC_NEED_LEN-1)/2;
 //     uint16_t acc = 0;
 //     for (i = 500; i < 2500; i++)
 //     {
-//         acc += adc_cnt[i];
+//         acc += adc.wnt[i];
 //         if (acc > target)
 //         {
 //             *adc_store = i;

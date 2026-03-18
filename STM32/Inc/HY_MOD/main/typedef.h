@@ -30,6 +30,12 @@ typedef struct GPIOData
     uint16_t        Pin;
 } GPIOData;
 
+typedef struct TIMData
+{
+    TIM_HandleTypeDef   *GPIOx;
+    uint32_t            Pin;
+} TIMData;
+
 #define GPIO_TOGGLE(pin)        HAL_GPIO_TogglePin((pin).GPIOx, (pin).Pin)
 #define GPIO_WRITE(pin,set)     HAL_GPIO_WritePin((pin).GPIOx, (pin).Pin, set)
 #define GPIO_WRITE_R(pin,set)   ((pin).GPIOx->BSRR = (uint32_t)(pin).Pin << (16 * (1 - (uint32_t)(set))))

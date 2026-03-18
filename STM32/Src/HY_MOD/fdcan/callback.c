@@ -24,6 +24,7 @@ void fdcan_tx_fifo_cb(
     FdcanPktBuf *buf
 ) {
     if (hfdcan != fdcan->const_h.hfdcanx) return;
+    fdcan->alive_tick = HAL_GetTick();
     fdcan->trsming++;
     if (ITS_CHECK(TxEventFifoITs, FDCAN_IT_TX_EVT_FIFO_NEW_DATA))
     {
@@ -46,6 +47,7 @@ void fdcan_rx_fifo0_cb(
     FdcanPktBuf *buf
 ) {
     if (hfdcan != fdcan->const_h.hfdcanx) return;
+    fdcan->alive_tick = HAL_GetTick();
     fdcan->recving++;
     if(ITS_CHECK(RxFifo0ITs, FDCAN_IT_RX_FIFO0_NEW_MESSAGE))
     {
@@ -72,6 +74,7 @@ void fdcan_rx_fifo1_cb(
     FdcanPktBuf *buf
 ) {
     if (hfdcan != fdcan->const_h.hfdcanx) return;
+    fdcan->alive_tick = HAL_GetTick();
     fdcan->recving++;
     if(ITS_CHECK(RxFifo1ITs, FDCAN_IT_RX_FIFO1_NEW_MESSAGE))
     {

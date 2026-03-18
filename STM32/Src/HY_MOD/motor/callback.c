@@ -132,7 +132,7 @@ static void status_update(MotorParameter *motor)
             break;
         }
     }
-    // if (HAL_GetTick() - motor->alive_tick >= 1000)
+    // if (HAL_GetTick() - motor->fdcan_alive >= 1000)
     // {
     //     motor_set_rotate_mode(motor, MOTOR_ROT_COAST);
     // }

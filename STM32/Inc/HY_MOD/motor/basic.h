@@ -23,31 +23,31 @@ typedef union MotorPhaseGPIOData
     GPIOData uvw[3];
 } MotorPhaseGPIOData;
 
-typedef struct MotorPwmGpio
+typedef union MotorPhasePwmCH
+{
+    struct {
+        uint32_t u;
+        uint32_t v;
+        uint32_t w;
+    };
+    uint32_t uvw[3];
+} MotorPhasePwmCH;
+
+typedef struct MotorPwmNGpio
 {
     uint32_t MODEx;
     uint32_t MODEx_0;
     uint32_t MODEx_1;
-} MotorPwmGpio;
-typedef union MotorPhasePwmGPIO
+} MotorPwmNGpio;
+typedef union MotorPhaseNPwmGPIO
 {
     struct {
-        MotorPwmGpio u;
-        MotorPwmGpio v;
-        MotorPwmGpio w;
+        MotorPwmNGpio u;
+        MotorPwmNGpio v;
+        MotorPwmNGpio w;
     };
-    MotorPwmGpio uvw[3];
-} MotorPhasePwmGPIO;
-
-typedef union MotorPhaseDuty
-{
-    struct {
-        float32_t u;
-        float32_t v;
-        float32_t w;
-    };
-    float32_t uvw[3];
-} MotorPhaseDuty;
+    MotorPwmNGpio uvw[3];
+} MotorPhaseNPwmGPIO;
 
 typedef struct MotorConst
 {
@@ -55,11 +55,11 @@ typedef struct MotorConst
     MotorPhaseGPIOData  Hall_GPIO;
     // PWM timer
     TIM_HandleTypeDef   *PWM_htimx;
-    uint32_t            PWM_TIM_CHANNEL_x[3];
     uint32_t            *PWM_tim_clk;
+    MotorPhasePwmCH     PWM_TIM_CHANNEL_x;
     uint32_t            PWM_MID_TIM_CH_x;
     MotorPhaseGPIOData  PWMN_GPIO;
-    MotorPhasePwmGPIO   PWMN_GPIO_set;
+    MotorPhaseNPwmGPIO  PWMN_GPIO_set;
     // 霍爾計時器
     TIM_HandleTypeDef   *Hall_htimx;
     uint32_t            *Hall_tim_clk;
@@ -102,6 +102,26 @@ typedef struct MotorRpm
     volatile float32_t value;
 } MotorRpm;
 
+typedef union MotorADC
+{
+    struct {
+        AdcCurrentParameter *u;
+        AdcCurrentParameter *v;
+        AdcCurrentParameter *w;
+    };
+    AdcCurrentParameter *uvw[3];
+} MotorADC;
+
+typedef union MotorPhaseDuty
+{
+    struct {
+        float32_t u;
+        float32_t v;
+        float32_t w;
+    };
+    float32_t uvw[3];
+} MotorPhaseDuty;
+
 typedef struct MotorHistoryData
 {
     float32_t spd_ref;
@@ -139,7 +159,7 @@ typedef struct MotorParameter
 
     bool                fdcan_send;
     
-    uint32_t            alive_tick;
+    uint32_t            fdcan_alive;
     // 馬達控制模式
     MotorModeControl    mode_control;
     // 馬達旋轉模式
@@ -181,17 +201,10 @@ typedef struct MotorParameter
     uint8_t             hall_start;
     // 上次霍爾相位
     uint8_t             hall_chk_last;
-
-    // uint8_t             hall_chk_curent;
     // 從尾往轉子 順時針value為負
     PI_CTRL             pi_speed;
-    
     // 電流 ADC
-    AdcCurrentParameter *adc_a;
-    // 電流 ADC
-    AdcCurrentParameter *adc_b;
-    // 電流 ADC
-    AdcCurrentParameter *adc_c;
+    MotorADC            adc;
     // clarke
     CLARKE              clarke;
     // park
@@ -208,11 +221,12 @@ typedef struct MotorParameter
     float32_t           v_ref;
     // DEG duty
     float32_t           deg_duty;
-    MotorPhaseDuty           duty_deg;
+    // DEG duty
+    MotorPhaseDuty      duty_deg;
     // FOC duty
-    MotorPhaseDuty           duty_foc;
-    // PWM duty
-    MotorPhaseDuty           duty_load;
+    MotorPhaseDuty      duty_foc;
+    // PWM load duty
+    MotorPhaseDuty      duty_load;
 
     MotorHistoryArray   history;
 } MotorParameter;
@@ -222,9 +236,7 @@ void motor_init(MotorParameter *motor);
 // 從尾往轉子 順時針為負
 void motor_set_rpm(MotorParameter *motor, bool reverse, float32_t speed);
 void motor_set_rotate_mode(MotorParameter *motor, MotorModeRotate mode);
-void motor_alive(MotorParameter *motor);
 void motor_switch_ctrl(MotorParameter *motor, MotorModeControl ctrl);
-void motor_pwm_load(MotorParameter *motor);
 void motor_history_write(MotorParameter *motor);
 
 #endif

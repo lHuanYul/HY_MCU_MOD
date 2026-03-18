@@ -20,13 +20,14 @@ typedef struct FdcanConst
 typedef struct FdcanParametar
 {
     const FdcanConst const_h;
-    uint8_t task_tick;
-    FdcanState state;
-    FdcanPkt *tx_pkt;
-    FdcanPkt *rx_pkt;
-    FncState data_store;
-    uint8_t trsming;
-    uint8_t recving;
+    uint8_t     task_tick;
+    FdcanState  state;
+    uint32_t    alive_tick;
+    FdcanPkt    *tx_pkt;
+    FdcanPkt    *rx_pkt;
+    FncState    data_store;
+    uint8_t     trsming;
+    uint8_t     recving;
 } FdcanParametar;
 
 #endif

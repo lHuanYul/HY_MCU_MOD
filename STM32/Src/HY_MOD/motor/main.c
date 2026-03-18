@@ -39,10 +39,10 @@ void motor_setup(MotorParameter *motor)
     motor->tfm_foc_it_angle_itpl =
         PWM_tim_t / SPD_tim_t * (float32_t)(motor->const_h.PWM_htimx->Init.Period) * PI_DIV_3;
 
-    ERROR_CHECK_HAL_HANDLE(HAL_ADCEx_Calibration_Start(motor->adc_a->adc.hadcx, ADC_SINGLE_ENDED));
-    ERROR_CHECK_HAL_HANDLE(HAL_ADCEx_Calibration_Start(motor->adc_b->adc.hadcx, ADC_SINGLE_ENDED));
-    ERROR_CHECK_HAL_HANDLE(HAL_ADCEx_Calibration_Start(motor->adc_c->adc.hadcx, ADC_SINGLE_ENDED));
-    ERROR_CHECK_HAL_HANDLE(HAL_ADCEx_InjectedStart_IT(motor->adc_a->adc.hadcx));
+    ERROR_CHECK_HAL_HANDLE(HAL_ADCEx_Calibration_Start(motor->adc.u->adc.hadcx, ADC_SINGLE_ENDED));
+    ERROR_CHECK_HAL_HANDLE(HAL_ADCEx_Calibration_Start(motor->adc.v->adc.hadcx, ADC_SINGLE_ENDED));
+    ERROR_CHECK_HAL_HANDLE(HAL_ADCEx_Calibration_Start(motor->adc.w->adc.hadcx, ADC_SINGLE_ENDED));
+    ERROR_CHECK_HAL_HANDLE(HAL_ADCEx_InjectedStart_IT(motor->adc.u->adc.hadcx));
 
     __HAL_TIM_SET_COMPARE(motor->const_h.PWM_htimx, motor->const_h.PWM_MID_TIM_CH_x,
         motor->const_h.PWM_htimx->Init.Period - 1);
@@ -51,8 +51,8 @@ void motor_setup(MotorParameter *motor)
     uint8_t i;
     for (i = 0; i < 3; i++)
     {
-        HAL_TIM_PWM_Start(motor->const_h.PWM_htimx, motor->const_h.PWM_TIM_CHANNEL_x[i]);
-        HAL_TIMEx_PWMN_Start(motor->const_h.PWM_htimx, motor->const_h.PWM_TIM_CHANNEL_x[i]);
+        HAL_TIM_PWM_Start(motor->const_h.PWM_htimx, motor->const_h.PWM_TIM_CHANNEL_x.uvw[i]);
+        HAL_TIMEx_PWMN_Start(motor->const_h.PWM_htimx, motor->const_h.PWM_TIM_CHANNEL_x.uvw[i]);
     }
     HAL_TIMEx_HallSensor_Start_IT(motor->const_h.Hall_htimx);
 }
@@ -63,7 +63,7 @@ void motor_timer_load(MotorParameter *motor)
     for (i = 0; i < 3; i++)
     {
         VAR_CLAMPF(motor->duty_load.uvw[i], 0.0f, 1.0f);
-        __HAL_TIM_SET_COMPARE(motor->const_h.PWM_htimx, motor->const_h.PWM_TIM_CHANNEL_x[i],
+        __HAL_TIM_SET_COMPARE(motor->const_h.PWM_htimx, motor->const_h.PWM_TIM_CHANNEL_x.uvw[i],
             (uint32_t)(motor->tfm_pwm_period * motor->duty_load.uvw[i]));
     }
 }

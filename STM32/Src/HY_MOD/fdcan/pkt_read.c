@@ -13,40 +13,41 @@ Result fdcan_pkt_ist_read(FdcanPkt *pkt)
     {
         case FDCAN_WHEEL_SET_ID:
         {
-            motor_alive(&motor_h);
+            MotorParameter *motor = &motor_h;
+            motor->fdcan_alive = HAL_GetTick();
             RESULT_CHECK_RET_RES(fdcan_pkt_get_byte(pkt, 0, &code));
             switch (code)
             {
                 case CMD_WHEEL_B0_COAST:
                 {
-                    motor_set_rotate_mode(&motor_h, MOTOR_ROT_COAST);
+                    motor_set_rotate_mode(motor, MOTOR_ROT_COAST);
                     return RESULT_OK(NULL);
                 }
                 case CMD_WHEEL_B0_BREAK:
                 {
-                    motor_set_rotate_mode(&motor_h, MOTOR_ROT_BREAK);
+                    motor_set_rotate_mode(motor, MOTOR_ROT_BREAK);
                     return RESULT_OK(NULL);
                 }
                 case CMD_WHEEL_B0_NORMAL:
                 {
                     if (pkt->len < 6) break;
-                    motor_set_rotate_mode(&motor_h, MOTOR_ROT_NORMAL);
+                    motor_set_rotate_mode(motor, MOTOR_ROT_NORMAL);
                     code = (pkt->data[1]) ? 1 : 0;
                     uint8_t u8s[sizeof(float32_t)];
                     memcpy(u8s, pkt->data + 2, sizeof(float32_t));
-                    motor_set_rpm(&motor_h, code, var_u8_to_f32_be(u8s));
+                    motor_set_rpm(motor, code, var_u8_to_f32_be(u8s));
                     return RESULT_OK(NULL);
                 }
                 case CMD_WHEEL_B0_LOCK:
                 {
-                    motor_set_rotate_mode(&motor_h, MOTOR_ROT_LOCK);
+                    motor_set_rotate_mode(motor, MOTOR_ROT_LOCK);
                     return RESULT_OK(NULL);
                 }
                 case CMD_WHEEL_B0_FDCAN:
                 {
                     RESULT_CHECK_RET_RES(fdcan_pkt_get_byte(pkt, 1, &code));
-                    if (code == 0) motor_h.fdcan_enable = 0;
-                    else motor_h.fdcan_enable = 1;
+                    if (code == 0) motor->fdcan_enable = 0;
+                    else motor->fdcan_enable = 1;
                     return RESULT_OK(NULL);
                 }
                 default: break;

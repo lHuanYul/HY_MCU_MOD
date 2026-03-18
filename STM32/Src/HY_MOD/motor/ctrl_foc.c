@@ -19,16 +19,16 @@ static const float32_t hall_elec_angle[8] = {
 
 inline void motor_vec_ctrl_adcs_reset(MotorParameter *motor)
 {
-    adc_current_reset(motor->adc_a);
-    adc_current_reset(motor->adc_b);
-    adc_current_reset(motor->adc_c);
+    adc_current_reset(motor->adc.u);
+    adc_current_reset(motor->adc.v);
+    adc_current_reset(motor->adc.w);
 }
 
 inline void motor_vec_ctrl_adcs_upd(MotorParameter *motor)
 {
-    RESULT_CHECK_RET_VOID(adc_current_upd(motor->adc_a));
-    RESULT_CHECK_RET_VOID(adc_current_upd(motor->adc_b));
-    RESULT_CHECK_RET_VOID(adc_current_upd(motor->adc_c));
+    RESULT_CHECK_RET_VOID(adc_current_upd(motor->adc.u));
+    RESULT_CHECK_RET_VOID(adc_current_upd(motor->adc.v));
+    RESULT_CHECK_RET_VOID(adc_current_upd(motor->adc.w));
 }
 
 inline void motor_vec_ctrl_hall_angle_trf(MotorParameter *motor)
@@ -46,10 +46,10 @@ float32_t current_zero;
 inline void motor_vec_ctrl_clarke(MotorParameter *motor)
 {
     // 電流進motor為 正
-    current_zero = (motor->adc_a->current + motor->adc_b->current + motor->adc_c->current) / 3.0f;
-    motor->clarke.As = (motor->adc_a->current - current_zero);
-    motor->clarke.Bs = (motor->adc_b->current - current_zero);
-    motor->clarke.Cs = (motor->adc_c->current - current_zero);
+    current_zero = (motor->adc.u->current + motor->adc.v->current + motor->adc.w->current) / 3.0f;
+    motor->clarke.As = (motor->adc.u->current - current_zero);
+    motor->clarke.Bs = (motor->adc.v->current - current_zero);
+    motor->clarke.Cs = (motor->adc.w->current - current_zero);
     CLARKE_run_ideal(&motor->clarke);
     return;
 }
