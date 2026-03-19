@@ -207,7 +207,7 @@ void motor_pwm_cb(MotorParameter *motor)
             {
                 motor_vec_ctrl_adcs_reset(motor);
                 motor_set_rotate_mode(motor, MOTOR_ROT_NORMAL);
-                motor_switch_ctrl(motor, MOTOR_CTRL_TEST_H);
+                motor_switch_ctrl(motor, MOTOR_CTRL_120);
                 motor_set_rpm(motor, 0, 500.0f);
             }
             break;
