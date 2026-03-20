@@ -55,6 +55,7 @@ void motor_setup(MotorParameter *motor)
         HAL_TIMEx_PWMN_Start(motor->const_h.PWM_htimx, motor->const_h.PWM_TIM_CHANNEL_x.uvw[i]);
     }
     HAL_TIMEx_HallSensor_Start_IT(motor->const_h.Hall_htimx);
+    HAL_TIM_Base_Start_IT(motor->const_h.Hall_htimx);
 }
 
 void motor_timer_load(MotorParameter *motor)
