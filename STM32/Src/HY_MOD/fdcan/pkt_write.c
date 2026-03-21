@@ -22,8 +22,8 @@ static Result motor_fbk(FdcanPkt *pkt, MotorParameter *motor)
     pkt->id = FDCAN_WHEEL_FBK_ID;
     RESULT_CHECK_HANDLE(fdcan_pkt_set_len(pkt, 2 + sizeof(float32_t)));
     pkt->data[0] = motor->mode_rot_ref;
-    pkt->data[1] = motor->rpm_feedback.reverse;
-    var_f32_to_u8_be(motor->rpm_feedback.value, pkt->data + 2);
+    pkt->data[1] = motor->rpm_h.feedback.reverse;
+    var_f32_to_u8_be(motor->rpm_h.feedback.value, pkt->data + 2);
     return RESULT_OK(pkt);
 }
 

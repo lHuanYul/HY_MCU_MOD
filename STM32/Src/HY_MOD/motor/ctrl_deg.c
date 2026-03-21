@@ -25,23 +25,23 @@ static void ctrl_load(MotorParameter *motor, int8_t seq[3], float32_t duty)
     uint8_t i;
     for (i = 0; i < 3; i++)
     {
-        __HAL_TIM_SET_COMPARE(motor->const_h.PWM_htimx, motor->const_h.PWM_TIM_CHANNEL_x.uvw[i], 0);
+        __HAL_TIM_SET_COMPARE(motor->const_h.PWM_htimx, motor->const_h.PWM_TIM_CH_x.uvw[i], 0);
     }
     for (i = 0; i < 3; i++)
     {
         if (seq[i] == HIGH_PASS)
         {
-            motor->duty_deg.uvw[i] = duty;
+            motor->deg_h.duty_h.uvw[i] = duty;
             GPIO_WRITE_R(motor->const_h.PWMN_GPIO.uvw[i], 0);
         }
         else if (seq[i] == LOW__PASS)
         {
-            motor->duty_deg.uvw[i] = 0.0f;
+            motor->deg_h.duty_h.uvw[i] = 0.0f;
             GPIO_WRITE_R(motor->const_h.PWMN_GPIO.uvw[i], 1);
         }
         else
         {
-            motor->duty_deg.uvw[i] = 0.0f;
+            motor->deg_h.duty_h.uvw[i] = 0.0f;
             GPIO_WRITE_R(motor->const_h.PWMN_GPIO.uvw[i], 0);
         }
     }
@@ -56,7 +56,7 @@ void deg_ctrl_test(MotorParameter *motor)
         for (i = 0; i < 3; i++) seq[i] = seq_map_120[6][i];
     else
         for (i = 0; i < 3; i++) seq[i] = seq_map_120[7][i];
-    motor->duty_load = motor->duty_deg;
+    motor->duty_load = motor->deg_h.duty_h;
     ctrl_load(motor, seq, 1.0f);
 }
 
@@ -68,7 +68,7 @@ void deg_ctrl_120_load(MotorParameter *motor, uint8_t id)
     {
         case MOTOR_ROT_COAST:
         {
-            motor->deg_duty = 1.0f;
+            motor->deg_h.duty_val = 1.0f;
             for (i = 0; i < 3; i++) seq[i] = seq_map_120[8][i];
             break;
         }
@@ -82,7 +82,7 @@ void deg_ctrl_120_load(MotorParameter *motor, uint8_t id)
         {
             for (i = 0; i < 3; i++)
             {
-                if (!motor->rpm_reference.reverse)
+                if (!motor->rpm_h.reference.reverse)
                     seq[i] = seq_map_120[index_120_ccw[id]][i];
                 else
                     seq[i] = seq_map_120[ index_120_cw[id]][i];
@@ -91,15 +91,15 @@ void deg_ctrl_120_load(MotorParameter *motor, uint8_t id)
         }
         case MOTOR_ROT_LOCK_FIN:
         {
-            motor->deg_duty = 0.2f;
+            motor->deg_h.duty_val = 0.2f;
             // !
             for (i = 0; i < 3; i++)
                 seq[i] = seq_map_120[index_120_ccw[id]][i];
             break;
         }
     }
-    motor->duty_load = motor->duty_deg;
-    ctrl_load(motor, seq, motor->deg_duty);
+    motor->duty_load = motor->deg_h.duty_h;
+    ctrl_load(motor, seq, motor->deg_h.duty_val);
 }
 
 // static const int8_t seq_map_180[][3] = {
@@ -117,14 +117,14 @@ void deg_ctrl_120_load(MotorParameter *motor, uint8_t id)
 // static const uint8_t index_180_cw[]   = {7, 2, 0, 1, 4, 3, 5, 7};
 // void deg_ctrl_180_load(MotorParameter *motor)
 // {
-//     if (motor->hall_current == UINT8_MAX) return;
+//     if (motor->hall_h.current == UINT8_MAX) return;
 //     uint8_t i;
 //     int8_t seq[3] = {0};
 //     switch (motor->mode_rot_ref)
 //     {
 //         case MOTOR_ROT_COAST:
 //         {
-//             motor->deg_duty = 1.0f;
+//             motor->deg_h.duty_val = 1.0f;
 //             for (i = 0; i < 3; i++) seq[i] = seq_map_180[6][i];
 //             break;
 //         }
@@ -138,18 +138,18 @@ void deg_ctrl_120_load(MotorParameter *motor, uint8_t id)
 //         {
 //             for (i = 0; i < 3; i++)
 //             {
-//                 if (!motor->rpm_reference.reverse)
-//                     seq[i] = seq_map_180[index_180_ccw[motor->hall_current]][i];
+//                 if (!motor->rpm_h.reference.reverse)
+//                     seq[i] = seq_map_180[index_180_ccw[motor->hall_h.current]][i];
 //                 else
-//                     seq[i] = seq_map_180[ index_180_cw[motor->hall_current]][i];
+//                     seq[i] = seq_map_180[ index_180_cw[motor->hall_h.current]][i];
 //             }
 //             break;
 //         }
 //         case MOTOR_ROT_LOCK_FIN:
 //         {
-//             motor->deg_duty = 0.2f;
+//             motor->deg_h.duty_val = 0.2f;
 //             for (i = 0; i < 3; i++)
-//                 seq[i] = seq_map_180[index_180_lock[motor->hall_current]][i];
+//                 seq[i] = seq_map_180[index_180_lock[motor->hall_h.current]][i];
 //             break;
 //         }
 //     }
@@ -157,11 +157,11 @@ void deg_ctrl_120_load(MotorParameter *motor, uint8_t id)
 //     {
 //         if (seq[i] == HIGH_PASS)
 //         {
-//             motor->duty_deg.uvw[i] = motor->deg_duty;
+//             motor->deg_h.duty_h.uvw[i] = motor->deg_h.duty_val;
 //         }
 //         else
 //         {
-//             motor->duty_deg.uvw[i] = 0;
+//             motor->deg_h.duty_h.uvw[i] = 0;
 //         }
 //     }
 // }

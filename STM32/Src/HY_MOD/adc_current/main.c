@@ -51,9 +51,9 @@ static inline void iir(uint8_t adc_id, float32_t *adc_store)
 
 Result adc_current_upd(AdcCurrentParameter *adc)
 {
-    adc_upd_injected(&adc->adc);
+    adc_upd_injected(&adc->basic);
     // iir(adc->const_h.rankx, &adc->adc_value);
-    adc->current = ((float32_t)(adc->adc.value - adc->val_zero)) * adc->current_trs;
+    adc->current = ((float32_t)(adc->basic.value - adc->val_offset)) * adc->current_trs;
     return RESULT_OK(NULL);
 }
 
@@ -61,7 +61,7 @@ void adc_current_reset(AdcCurrentParameter *adc)
 {
     adc->current_trs = ADC_TO_VOL / ADC_VOL_SEP / adc->sensitive;
     // average(adc->const_h.id, &adc->adc_value);
-    adc->val_zero = adc->adc.value;
+    adc->val_offset = adc->basic.value;
 }
 
 #endif

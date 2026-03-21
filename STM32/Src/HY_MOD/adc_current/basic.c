@@ -3,42 +3,34 @@
 
 #include "adc.h"
 
-AdcCurrentParameter adc_test = {
-    .adc = {
-        .hadcx = &hadc1,
-        .rankx = 3,
+AdcCurrentParameter adc_current_h[ADC_COUNT] = {
+    {
+        // ADC1 CH11 PB12 0.097
+        .basic = {
+            .hadcx = &hadc1,
+            .rankx = ADC_INJECTED_RANK_1,
+        },
+        .sensitive = 0.1f,
+        .current_trs = 1.0f,
     },
-    .sensitive = 0.1f,
-};
-
-// CH11 PB12 0.097
-AdcCurrentParameter adc_0 = {
-    .adc = {
-        .hadcx = &hadc1,
-        .rankx = ADC_INJECTED_RANK_1,
+    {
+        // ADC2 CH12 PB2
+        .basic = {
+            .hadcx = &hadc2,
+            .rankx = ADC_INJECTED_RANK_1,
+        },
+        .sensitive = 0.1f,
+        .current_trs = 1.0f,
     },
-    .sensitive = 0.1f,
-    .current_trs = 1.0f,
-};
-
-// CH12 PB1
-AdcCurrentParameter adc_1 = {
-    .adc = {
-        .hadcx = &hadc1,
-        .rankx = ADC_INJECTED_RANK_2,
+    {
+        // ADC1 CH14 PB11
+        .basic = {
+            .hadcx = &hadc1,
+            .rankx = ADC_INJECTED_RANK_2,
+        },
+        .sensitive = 0.1f,
+        .current_trs = 1.0f,
     },
-    .sensitive = 0.1f,
-    .current_trs = 1.0f,
-};
-
-// CH14 PB11
-AdcCurrentParameter adc_2 = {
-    .adc = {
-        .hadcx = &hadc1,
-        .rankx = ADC_INJECTED_RANK_3,
-    },
-    .sensitive = 0.1f,
-    .current_trs = 1.0f,
 };
 
 #endif

@@ -8,6 +8,8 @@ typedef struct AdcParameter
     ADC_HandleTypeDef *hadcx;
     const uint32_t rankx;
     uint16_t    value;
+    uint16_t    max;
+    uint16_t    min;
 } AdcParameter;
 
 #endif

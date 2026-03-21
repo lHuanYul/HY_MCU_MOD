@@ -23,14 +23,17 @@ typedef union MotorPhaseGPIOData
     GPIOData uvw[3];
 } MotorPhaseGPIOData;
 
-typedef union MotorPhasePwmCH
+typedef struct MotorPhasePwmCH
 {
-    struct {
-        uint32_t u;
-        uint32_t v;
-        uint32_t w;
+    union {
+        struct {
+            uint32_t u;
+            uint32_t v;
+            uint32_t w;
+        };
+        uint32_t uvw[3];
     };
-    uint32_t uvw[3];
+    uint32_t mid;
 } MotorPhasePwmCH;
 
 typedef struct MotorPwmNGpio
@@ -49,6 +52,7 @@ typedef union MotorPhaseNPwmGPIO
     MotorPwmNGpio uvw[3];
 } MotorPhaseNPwmGPIO;
 
+// CONST: constant
 typedef struct MotorConst
 {
     // HALL PIN
@@ -56,8 +60,7 @@ typedef struct MotorConst
     // PWM timer
     TIM_HandleTypeDef   *PWM_htimx;
     uint32_t            *PWM_tim_clk;
-    MotorPhasePwmCH     PWM_TIM_CHANNEL_x;
-    uint32_t            PWM_MID_TIM_CH_x;
+    MotorPhasePwmCH     PWM_TIM_CH_x;
     MotorPhaseGPIOData  PWMN_GPIO;
     MotorPhaseNPwmGPIO  PWMN_GPIO_set;
     // 霍爾計時器
@@ -69,6 +72,26 @@ typedef struct MotorConst
     float32_t           peak_trorque;
     float32_t           peak_current;
 } MotorConst;
+
+// TFM: transformation
+typedef struct MotorTfm
+{
+    // 霍爾間隔 → 輸出軸轉速(RPM) 轉換常數
+    // RPM = [SPD_tim_f * 60] / [6 × (POLE/2) × GEAR × htim_cnt]
+    float32_t           rpm_fbk;
+    // PWM 週期 → 電角度內插轉換常數
+    // Δθ_elec(rad) = [ (TIM_tim_t * ARR) / ELE_tim_t ] × (π/3) / htim_cnt
+    float32_t           foc_it_angle_itpl;
+
+    float32_t           duty_Iq;
+} MotorTfm;
+
+// DBG: debug
+typedef struct MotorDbg
+{
+    // 計時器頻率
+    float32_t           pwm_freq;
+} MotorDbg;
 
 typedef enum MotorModeControl
 {
@@ -90,17 +113,69 @@ typedef enum MotorModeRotate
     MOTOR_ROT_LOCK_FIN,
 } MotorModeRotate;
 
-typedef enum DirectionState
+typedef enum MotorDirectState
 {
     DIRECT_NORMAL,
     DIRECT_SWITCHING,
-} DirectionState;
+} MotorDirectState;
 
 typedef struct MotorRpm
 {
     volatile bool reverse;
     volatile float32_t value;
 } MotorRpm;
+
+// RPM Parameter
+typedef struct MotorRpmParameter
+{
+    MotorRpm    user_set;
+
+    MotorRpm    feedback;
+
+    MotorRpm    reference;
+
+    float32_t   save_stop_val;
+} MotorRpmParameter;
+
+// Hall Parameter
+typedef struct MotorHallParameter
+{
+    // 霍爾計數
+    uint8_t             it_cnt;
+    // 目前霍爾相位
+    volatile uint8_t    current;
+
+    volatile uint8_t    wrong;
+
+    volatile uint16_t   delay;
+
+    uint32_t            time_cnt;
+    
+    uint8_t             auto_spin;
+    // 上次霍爾相位
+    uint8_t             chk_last;
+    // 停轉時間
+    uint32_t            stop_tick;
+} MotorHallParameter;
+
+typedef union MotorPhaseDuty
+{
+    struct {
+        float32_t u;
+        float32_t v;
+        float32_t w;
+    };
+    float32_t uvw[3];
+} MotorPhaseDuty;
+
+// DEG Parameter
+typedef struct MotorDEGParameter
+{
+    // DEG duty
+    float32_t           duty_val;
+    // DEG duty
+    MotorPhaseDuty      duty_h;
+} MotorDEGParameter;
 
 typedef union MotorADC
 {
@@ -112,15 +187,36 @@ typedef union MotorADC
     AdcCurrentParameter *uvw[3];
 } MotorADC;
 
-typedef union MotorPhaseDuty
+// FOC Parameter
+typedef struct MotorFOCParameter
 {
-    struct {
-        float32_t u;
-        float32_t v;
-        float32_t w;
-    };
-    float32_t uvw[3];
-} MotorPhaseDuty;
+    // 電流 ADC
+    MotorADC            adc_h;
+    // 目前霍爾相位
+    float32_t           hall_rad;
+    // clarke
+    CLARKE              clarke_h;
+    // FOC 應補角度 (Angle Interpolation)
+    volatile float32_t  angle_itpl;
+    // park
+    PARK                park_h;
+    // FOC 角度累積插值 angle_acc += angle_itpl; 過一霍爾中斷後重置
+    float32_t           angle_acc;
+
+    PI_CTRL             pi_Iq_h;
+
+    PI_CTRL             pi_Id_h;
+    // 電角度
+    float32_t           elec_theta_rad;
+    // ipark
+    IPARK               ipark_h;
+    // svgendq
+    SVGENDQ             svgendq_h;
+    
+    float32_t           Vref;
+    // FOC duty
+    MotorPhaseDuty      duty_h;
+} MotorFOCParameter;
 
 typedef struct MotorHistoryData
 {
@@ -140,20 +236,10 @@ typedef struct MotorParameter
 {
     // 常數
     const MotorConst    const_h;
-    // 霍爾間隔 → 輸出軸轉速(RPM) 轉換常數
-    // RPM = [SPD_tim_f * 60] / [6 × (POLE/2) × GEAR × htim_cnt]
-    float32_t           tfm_rpm_fbk;
 
-    float32_t           tfm_pwm_period;
-    // PWM 週期 → 電角度內插轉換常數
-    // Δθ_elec(rad) = [ (TIM_tim_t * ARR) / ELE_tim_t ] × (π/3) / htim_cnt
-    float32_t           tfm_foc_it_angle_itpl;
+    MotorTfm            tfm_h;
 
-    float32_t           tfm_duty_Iq;
-
-    float32_t           dbg_pwm_freq;
-    // 計時器頻率
-    float32_t           dbg_tim_it_freq;
+    MotorDbg            dbg_h;
 
     bool                fdcan_enable;
 
@@ -167,64 +253,19 @@ typedef struct MotorParameter
     // 馬達旋轉模式
     MotorModeRotate     mode_rot_ref;
 
-    MotorRpm            rpm_user;
+    MotorRpmParameter   rpm_h;
 
-    MotorRpm            rpm_feedback;
-
-    MotorRpm            rpm_reference;
-
-    float32_t           rpm_save_stop;
-
-    DirectionState      dict_state;
-    // 目前霍爾相位
-    volatile float32_t  exti_hall_rad;
-    // 電角度
-    float32_t           elec_theta_rad;
-    // FOC 應補角度 (Angle Interpolation)
-    volatile float32_t  foc_angle_itpl;
-    // FOC 角度累積插值
-    // foc_angle_acc += foc_angle_itpl; 過一霍爾中斷後重置
-    float32_t           foc_angle_acc;
-    // 霍爾計數
-    uint8_t             exti_hall_acc;
+    MotorDirectState    dict_state;
     // 計時中斷計數
-    uint32_t            tim_it_acc;
-    // 停轉時間
-    uint32_t            stop_spin_time;
-
-    volatile uint32_t   hall_wrong;
-    // 目前霍爾相位
-    volatile uint8_t    hall_current;
-
-    volatile uint16_t   hall_delay;
-
-    uint8_t             hall_start;
-    // 上次霍爾相位
-    uint8_t             hall_chk_last;
+    uint32_t            tim_it_cnt;
     // 從尾往轉子 順時針value為負
     PI_CTRL             pi_speed;
-    // 電流 ADC
-    MotorADC            adc;
-    // clarke
-    CLARKE              clarke;
-    // park
-    PARK                park;
 
-    PI_CTRL             pi_Iq;
+    MotorHallParameter  hall_h;
 
-    PI_CTRL             pi_Id;
-    // ipark
-    IPARK               ipark;
-    // svgendq
-    SVGENDQ             svgendq;
-    
-    float32_t           v_ref;
-    // DEG duty
-    float32_t           deg_duty;
-    // DEG duty
-    MotorPhaseDuty      duty_deg;
-    // FOC duty
-    MotorPhaseDuty      duty_foc;
+    MotorDEGParameter   deg_h;
+
+    MotorFOCParameter   foc_h;
     // PWM load duty
     MotorPhaseDuty      duty_load;
 
