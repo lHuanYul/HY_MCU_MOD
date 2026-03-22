@@ -54,6 +54,7 @@ static void rpm_update(MotorParameter *motor)
 {
     motor->hall_h.time_cnt +=
         __HAL_TIM_GET_COMPARE(motor->const_h.Hall_htimx, TIM_CHANNEL_1);
+    motor->hall_h.it_cnt++;
     if (motor->hall_h.it_cnt >= MOTOR_RPM_CNT)
     {
         motor->hall_h.it_cnt = 0;
@@ -64,7 +65,6 @@ static void rpm_update(MotorParameter *motor)
             -motor->tfm_h.foc_it_angle_itpl / (float32_t)motor->hall_h.time_cnt;
         motor->hall_h.time_cnt = 0;
     }
-    motor->hall_h.it_cnt++;
 }
 
 /*
