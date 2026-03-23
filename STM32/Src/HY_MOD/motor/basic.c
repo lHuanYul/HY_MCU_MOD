@@ -55,11 +55,6 @@ MotorParameter motor_h = {
             .v = { .GPIOx = GPIOA, .Pin = GPIO_PIN_1  },
             .w = { .GPIOx = GPIOB, .Pin = GPIO_PIN_10 },
         },
-        // .Hall_GPIO = {
-        //     .u = { .GPIOx = GPIOC, .Pin = GPIO_PIN_10 },
-        //     .v = { .GPIOx = GPIOC, .Pin = GPIO_PIN_11 },
-        //     .w = { .GPIOx = GPIOC, .Pin = GPIO_PIN_12 },
-        // },
         // 42BLF01
         .rated_current  = MOTOR_42BLF01_RATED_CURRENT,
         .peak_current   = MOTOR_42BLF01_PEAK_CURRENT,

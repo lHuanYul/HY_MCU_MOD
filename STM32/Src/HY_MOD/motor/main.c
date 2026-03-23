@@ -38,12 +38,14 @@ void motor_setup(MotorParameter *motor)
         PWM_tim_t /
         HALL_tim_t * (float32_t)(motor->const_h.PWM_htimx->Init.Period * 2.0f) * PI_DIV_3;
 
+    uint8_t i;
+    for (i = 0; i < 3; i++)
+    {
+        ERROR_CHECK_HAL_HANDLE(HAL_ADCEx_Calibration_Start(
+            motor->foc_h.adc_h.uvw[i]->basic.hadcx, ADC_SINGLE_ENDED));
+    }
     ERROR_CHECK_HAL_HANDLE(
-        HAL_ADCEx_Calibration_Start(motor->foc_h.adc_h.u->basic.hadcx, ADC_SINGLE_ENDED));
-    ERROR_CHECK_HAL_HANDLE(
-        HAL_ADCEx_Calibration_Start(motor->foc_h.adc_h.v->basic.hadcx, ADC_SINGLE_ENDED));
-    ERROR_CHECK_HAL_HANDLE(
-        HAL_ADCEx_Calibration_Start(motor->foc_h.adc_h.w->basic.hadcx, ADC_SINGLE_ENDED));
+        HAL_ADCEx_InjectedStart_IT(motor->foc_h.adc_h.v->basic.hadcx));
     ERROR_CHECK_HAL_HANDLE(
         HAL_ADCEx_InjectedStart_IT(motor->foc_h.adc_h.u->basic.hadcx));
 
@@ -52,7 +54,6 @@ void motor_setup(MotorParameter *motor)
     ERROR_CHECK_HAL_HANDLE(HAL_TIM_Base_Start(motor->const_h.PWM_htimx));
     ERROR_CHECK_HAL_HANDLE(
         HAL_TIM_PWM_Start(motor->const_h.PWM_htimx, motor->const_h.PWM_TIM_CH_x.mid));
-    uint8_t i;
     for (i = 0; i < 3; i++)
     {
         HAL_TIM_PWM_Start(motor->const_h.PWM_htimx, motor->const_h.PWM_TIM_CH_x.uvw[i]);
