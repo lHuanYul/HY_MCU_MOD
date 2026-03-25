@@ -86,7 +86,7 @@ void motor_stop_cb(MotorParameter *motor)
     motor->hall_h.it_cnt = 0;
     motor->hall_h.time_cnt = 0;
     motor->rpm_h.feedback.value = 0;
-    motor->foc_h.pi_Iq_h.out = 0;
+    motor->foc_h.pi_Iq_h.out_fix = 0;
     motor->foc_h.angle_acc = 0.0f;
     PI_reset(&motor->pi_speed);
 #ifdef MOTOR_PI_SPEED
@@ -144,12 +144,12 @@ static void status_update(MotorParameter *motor)
             motor->pi_speed.reference = motor->rpm_h.reference.value;
             PI_run(&motor->pi_speed);
     #ifdef MOTOR_PI_SPEED
-            motor->deg_h.duty_h += motor->pi_speed.out;
+            motor->deg_h.duty_h += motor->pi_speed.out_fix;
             VAR_CLAMPF(motor->deg_h.duty_h, 0.0f, 1.0f);
     #else
             motor->deg_h.duty_val = 0.5f;
     #endif
-            motor->foc_h.pi_Iq_h.reference += motor->pi_speed.out * motor->tfm_h.duty_Iq;
+            motor->foc_h.pi_Iq_h.reference += motor->pi_speed.out_fix * motor->tfm_h.duty_Iq;
             VAR_CLAMPF(motor->foc_h.pi_Iq_h.reference, motor->foc_h.pi_Iq_h.min, motor->foc_h.pi_Iq_h.max);
             break;
         }
@@ -163,7 +163,7 @@ static void status_update(MotorParameter *motor)
 
     motor->foc_h.pi_Iq_h.reference = (!motor->rpm_h.user_set.reverse) ?
         motor->const_h.rated_current : -motor->const_h.rated_current;
-    // motor->tfm_h.duty_Iq = var_clampf((motor->tfm_h.duty_Iq + motor->pi_speed.out), 0.15f, 0.2f);
+    // motor->tfm_h.duty_Iq = var_clampf((motor->tfm_h.duty_Iq + motor->pi_speed.out_fix), 0.15f, 0.2f);
 }
 
 static void foc_run(MotorParameter *motor)

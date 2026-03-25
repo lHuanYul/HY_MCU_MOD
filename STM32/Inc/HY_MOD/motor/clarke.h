@@ -6,9 +6,14 @@
 #include "HY_MOD/main/typedef.h"
 
 typedef struct CLARKE {
-    float32_t As;       // Input: phase-a stator variable
-    float32_t Bs;       // Input: phase-b stator variable
-    float32_t Cs;       // Input: phase-c stator variable  
+    union {
+        struct {
+            float32_t As;       // Input: phase-a stator variable
+            float32_t Bs;       // Input: phase-b stator variable
+            float32_t Cs;       // Input: phase-c stator variable  
+        };
+        float32_t ABC[3];
+    };
     float32_t Alpha;    // Output: stationary d-axis stator variable 
     float32_t Beta;     // Output: stationary q-axis stator variable
 } CLARKE;
