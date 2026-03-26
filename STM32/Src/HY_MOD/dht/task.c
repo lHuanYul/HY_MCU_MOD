@@ -1,7 +1,7 @@
 #include "HY_MOD/dht/main.h"
 #ifdef HY_MOD_STM32_DHT
 
-#include "main/dht.h"
+#include "main/main.h"
 
 void StartDht11Task(void *argument)
 {

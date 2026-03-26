@@ -6,7 +6,6 @@
 // Motor setup
 void motor_setup(MotorParameter *motor)
 {
-    motor_init(motor);
     const float32_t PWM_tim_f =
         (float32_t)*motor->const_h.PWM_tim_clk /
         (float32_t)(motor->const_h.PWM_htimx->Init.Prescaler + 1U);
@@ -38,6 +37,9 @@ void motor_setup(MotorParameter *motor)
         PWM_tim_t /
         HALL_tim_t * (float32_t)(motor->const_h.PWM_htimx->Init.Period * 2.0f) * PI_DIV_3;
 
+    motor->foc_h.pi_Iq_h.max =  motor->const_h.rated_current;
+    motor->foc_h.pi_Iq_h.min = -motor->const_h.rated_current;
+    
     uint8_t i;
     for (i = 0; i < 3; i++)
     {
@@ -73,6 +75,83 @@ void motor_timer_load(MotorParameter *motor)
         __HAL_TIM_SET_COMPARE(motor->const_h.PWM_htimx, motor->const_h.PWM_TIM_CH_x.uvw[i],
             (uint32_t)(motor->const_h.PWM_htimx->Init.Period * motor->duty_load.uvw[i]));
     }
+}
+
+void motor_set_rpm(MotorParameter *motor, bool reverse, float32_t speed)
+{
+    if (speed != 0) motor->rpm_h.ref_ori.reverse = reverse;
+    motor->rpm_h.ref_ori.value = speed;
+}
+
+void motor_set_rotate_mode(MotorParameter *motor, MotorRot mode)
+{
+    if (
+        mode != MOTOR_ROT_COAST &&
+        mode != MOTOR_ROT_BREAK &&
+        mode != MOTOR_ROT_NORMAL &&
+        mode != MOTOR_ROT_LOCK &&
+        mode != MOTOR_ROT_LOCK_FIN
+    ) return;
+    if (mode == MOTOR_ROT_LOCK_FIN) mode = MOTOR_ROT_LOCK;
+    motor->rotate_h.ref_ori = mode;
+}
+
+void motor_switch_ctrl(MotorParameter *motor, MotorCtrl ctrl)
+{
+    const MotorConst *const_h = &motor->const_h;
+    uint8_t i;
+    uint32_t temp;
+    #define SET_PWM_OFF(pin, data) \
+    do { \
+        temp = (pin).GPIOx->MODER; \
+        temp &= ~(data.MODEx); \
+        temp |= (data.MODEx_0); \
+        (pin).GPIOx->MODER = temp; \
+    } while(0)
+    #define SET_PWM_ON(pin, data) \
+    do { \
+        temp = (pin).GPIOx->MODER; \
+        temp &= ~(data.MODEx); \
+        temp |= (data.MODEx_1); \
+        (pin).GPIOx->MODER = temp; \
+    } while(0)
+
+    switch (ctrl)
+    {
+        case MOTOR_CTRL_TEST_H:
+        case MOTOR_CTRL_TEST_L:
+        case MOTOR_CTRL_120:
+        {
+            for (i = 0; i < 3; i++)
+                SET_PWM_OFF(const_h->PWMN_GPIO.uvw[i], const_h->PWMN_GPIO_set.uvw[i]);
+            break;
+        }
+        case MOTOR_CTRL_FOC_RATED:
+        {
+            for (i = 0; i < 3; i++)
+                SET_PWM_ON(const_h->PWMN_GPIO.uvw[i], const_h->PWMN_GPIO_set.uvw[i]);
+            break;
+        }
+        default: return;
+    }
+    motor->ctrl_h.ref_fix = ctrl;
+}
+
+void motor_history_write(MotorParameter *motor)
+{
+    uint16_t idx = motor->history.head;
+    motor->history.data[idx].spd_ref = (!motor->rpm_h.ref_fix.reverse) ?
+        motor->rpm_h.ref_fix.value : -motor->rpm_h.ref_fix.value;
+    motor->history.data[idx].spd_fbk = (!motor->rpm_h.fb.reverse) ?
+        motor->rpm_h.fb.value  : -motor->rpm_h.fb.value;
+    motor->history.cnt++;
+    idx++;
+    if (idx >= MOTOR_HISTORY_LEN)
+    {
+        idx = 0;
+        motor->history.is_full = 1;
+    }
+    motor->history.head = idx;
 }
 
 #endif

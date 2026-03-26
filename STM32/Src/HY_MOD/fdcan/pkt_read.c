@@ -1,10 +1,12 @@
 #include "HY_MOD/fdcan/pkt_read.h"
 #ifdef HY_MOD_STM32_FDCAN
+
+#include "main/main.h"
 #include "HY_MOD/cmds.h"
 #include "HY_MOD/main/variable_cal.h"
 
 #ifdef MCU_MOTOR_CTRL
-#include "HY_MOD/motor/basic.h"
+#include "HY_MOD/motor/main.h"
 
 Result fdcan_pkt_ist_read(FdcanPkt *pkt)
 {

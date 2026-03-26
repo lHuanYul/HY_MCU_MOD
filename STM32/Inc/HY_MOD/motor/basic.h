@@ -93,7 +93,7 @@ typedef struct MotorDbg
     float32_t           pwm_freq;
 } MotorDbg;
 
-typedef enum MotorModeControl
+typedef enum MotorCtrl
 {
     MOTOR_CTRL_INIT,
     MOTOR_CTRL_TEST_H,
@@ -102,16 +102,30 @@ typedef enum MotorModeControl
     // MOTOR_CTRL_180,
     MOTOR_CTRL_FOC_RATED,
     MOTOR_CTRL_FOC_PEAK,
-} MotorModeControl;
+} MotorCtrl;
 
-typedef enum MotorModeRotate
+// Control Parameter
+typedef struct MotorCtrlParameter
+{
+    MotorCtrl    ref_ori;
+    MotorCtrl    ref_fix;
+} MotorCtrlParameter;
+
+typedef enum MotorRot
 {
     MOTOR_ROT_COAST,
     MOTOR_ROT_BREAK,
     MOTOR_ROT_NORMAL,
     MOTOR_ROT_LOCK,
     MOTOR_ROT_LOCK_FIN,
-} MotorModeRotate;
+} MotorRot;
+
+// Rotate Parameter
+typedef struct MotorRotParameter
+{
+    MotorRot    ref_ori;
+    MotorRot    ref_fix;
+} MotorRotParameter;
 
 typedef enum MotorDirectState
 {
@@ -128,12 +142,9 @@ typedef struct MotorRpm
 // RPM Parameter
 typedef struct MotorRpmParameter
 {
-    MotorRpm    user_set;
-
-    MotorRpm    feedback;
-
-    MotorRpm    reference;
-
+    MotorRpm    ref_ori;
+    MotorRpm    ref_fix;
+    MotorRpm    fb;
     float32_t   save_stop_val;
 } MotorRpmParameter;
 
@@ -247,11 +258,9 @@ typedef struct MotorParameter
     
     uint32_t            fdcan_alive;
     // 馬達控制模式
-    MotorModeControl    mode_control;
+    MotorCtrlParameter  ctrl_h;
     // 馬達旋轉模式
-    MotorModeRotate     mode_rot_user;
-    // 馬達旋轉模式
-    MotorModeRotate     mode_rot_ref;
+    MotorRotParameter   rotate_h;
 
     MotorRpmParameter   rpm_h;
 
@@ -271,13 +280,5 @@ typedef struct MotorParameter
 
     MotorHistoryArray   history;
 } MotorParameter;
-extern MotorParameter motor_h;
-void motor_init(MotorParameter *motor);
-
-// 從尾往轉子 順時針為負
-void motor_set_rpm(MotorParameter *motor, bool reverse, float32_t speed);
-void motor_set_rotate_mode(MotorParameter *motor, MotorModeRotate mode);
-void motor_switch_ctrl(MotorParameter *motor, MotorModeControl ctrl);
-void motor_history_write(MotorParameter *motor);
 
 #endif

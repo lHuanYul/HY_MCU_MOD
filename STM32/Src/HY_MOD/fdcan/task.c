@@ -1,7 +1,7 @@
 #include "HY_MOD/fdcan/main.h"
 #ifdef HY_MOD_STM32_FDCAN
 
-#include "main/fdcan.h"
+#include "main/main.h"
 #include "HY_MOD/fdcan/main.h"
 #include "HY_MOD/fdcan/pkt_write.h"
 

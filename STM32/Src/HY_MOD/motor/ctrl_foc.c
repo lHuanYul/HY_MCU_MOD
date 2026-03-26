@@ -69,9 +69,9 @@ inline void motor_vec_ctrl_park(MotorParameter *motor)
 
 inline void motor_vec_ctrl_pi_id_iq(MotorParameter *motor)
 {
-    if(motor->rpm_h.feedback.value == 0.0f)
+    if(motor->rpm_h.fb.value == 0.0f)
     {
-        motor->foc_h.pi_Iq_h.out_fix = (!motor->rpm_h.reference.reverse) ?
+        motor->foc_h.pi_Iq_h.out_fix = (!motor->rpm_h.ref_fix.reverse) ?
             motor->const_h.peak_current : -motor->const_h.peak_current;
         return;
     }

@@ -1,5 +1,7 @@
 #include "HY_MOD/fdcan/pkt_write.h"
 #ifdef HY_MOD_STM32_FDCAN
+
+#include "main/main.h"
 #include "HY_MOD/fdcan/pkt_read.h"
 #include "HY_MOD/main/variable_cal.h"
 
@@ -16,14 +18,15 @@ Result fdcan_pkt_write_test(FdcanPkt *pkt)
 }
 
 #ifdef MCU_MOTOR_CTRL
+
 static Result motor_fbk(FdcanPkt *pkt, MotorParameter *motor)
 {
     if (pkt == NULL) return RESULT_ERROR(RES_ERR_MEMORY_ERROR);
     pkt->id = FDCAN_WHEEL_FBK_ID;
     RESULT_CHECK_HANDLE(fdcan_pkt_set_len(pkt, 2 + sizeof(float32_t)));
-    pkt->data[0] = motor->mode_rot_ref;
-    pkt->data[1] = motor->rpm_h.feedback.reverse;
-    var_f32_to_u8_be(motor->rpm_h.feedback.value, pkt->data + 2);
+    pkt->data[0] = motor->rotate_h.ref_fix;
+    pkt->data[1] = motor->rpm_h.fb.reverse;
+    var_f32_to_u8_be(motor->rpm_h.fb.value, pkt->data + 2);
     return RESULT_OK(pkt);
 }
 

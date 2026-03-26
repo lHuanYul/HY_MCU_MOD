@@ -52,7 +52,7 @@ void deg_ctrl_test(MotorParameter *motor)
 {
     uint8_t i;
     int8_t seq[3] = {0};
-    if (motor->mode_control == MOTOR_CTRL_TEST_H)
+    if (motor->ctrl_h.ref_fix == MOTOR_CTRL_TEST_H)
         for (i = 0; i < 3; i++) seq[i] = seq_map_120[6][i];
     else
         for (i = 0; i < 3; i++) seq[i] = seq_map_120[7][i];
@@ -64,7 +64,7 @@ void deg_ctrl_120_load(MotorParameter *motor, uint8_t id)
 {
     uint8_t i;
     int8_t seq[3] = {0};
-    switch (motor->mode_rot_ref)
+    switch (motor->rotate_h.ref_fix)
     {
         case MOTOR_ROT_COAST:
         {
@@ -82,7 +82,7 @@ void deg_ctrl_120_load(MotorParameter *motor, uint8_t id)
         {
             for (i = 0; i < 3; i++)
             {
-                if (!motor->rpm_h.reference.reverse)
+                if (!motor->rpm_h.ref_fix.reverse)
                     seq[i] = seq_map_120[index_120_ccw[id]][i];
                 else
                     seq[i] = seq_map_120[ index_120_cw[id]][i];
@@ -120,7 +120,7 @@ void deg_ctrl_120_load(MotorParameter *motor, uint8_t id)
 //     if (motor->hall_h.current == UINT8_MAX) return;
 //     uint8_t i;
 //     int8_t seq[3] = {0};
-//     switch (motor->mode_rot_ref)
+//     switch (motor->rotate_h.ref_fix)
 //     {
 //         case MOTOR_ROT_COAST:
 //         {
