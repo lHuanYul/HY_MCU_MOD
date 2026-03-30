@@ -37,9 +37,15 @@ void motor_setup(MotorParameter *motor)
         PWM_tim_t /
         HALL_tim_t * (float32_t)(motor->const_h.PWM_htimx->Init.Period * 2.0f) * PI_DIV_3;
 
-    motor->foc_h.pi_Iq_h.max =  motor->const_h.rated_current;
-    motor->foc_h.pi_Iq_h.min = -motor->const_h.rated_current;
-    
+    motor->foc_h.pi_Iq_h.Kp = MOTOR_LL * 1000.0f;
+    motor->foc_h.pi_Iq_h.Ki = 1.0f / MOTOR_TAU * PWM_tim_t;
+    motor->foc_h.pi_Iq_h.max = 0.577f;
+    motor->foc_h.pi_Iq_h.min = -0.577f;
+    motor->foc_h.pi_Id_h.Kp = MOTOR_LL * 1000.0f;
+    motor->foc_h.pi_Id_h.Ki = 1.0f / MOTOR_TAU * PWM_tim_t;
+    motor->foc_h.pi_Id_h.max = 0.577f;
+    motor->foc_h.pi_Id_h.min = -0.577f;
+
     uint8_t i;
     for (i = 0; i < 3; i++)
     {
