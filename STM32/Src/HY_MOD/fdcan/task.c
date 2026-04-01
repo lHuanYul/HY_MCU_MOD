@@ -88,13 +88,6 @@ static Result fdcan_auto_pkt_proc(FdcanParametar *fdcan)
         fdcan_vehicle_motor_send(&vehicle_h, &fdcan_pkt_pool, &fdcan_trsm_pkt_buf);
     }
 #endif
-#ifdef MCU_MOTOR_CTRL
-    if (motor_h.fdcan_send)
-    {
-        motor_h.fdcan_send = 0;
-        fdcan_motor_send(&motor_h, &fdcan_pkt_pool, &fdcan_trsm_pkt_buf);
-    }
-#endif
     if (fdcan->data_store == FNC_ENABLE)
     {
         fdcan->data_store = FNC_DISABLE;
@@ -108,7 +101,7 @@ static Result fdcan_auto_pkt_proc(FdcanParametar *fdcan)
     return result;
 }
 
-#define TASK_DELAY_MS 5
+#define TASK_DELAY_MS 1
 void StartFdCanTask(void *argument)
 {
     FdcanParametar *fdcan = &fdcan_h;
@@ -137,8 +130,11 @@ void StartFdCanTask(void *argument)
         }
         if (fdcan->task_tick % 20 == 0)
         {
-            fdcan->task_tick = 0;
             fdcan->data_store = FNC_ENABLE;
+        }
+        if (fdcan->task_tick % 1000 == 0)
+        {
+            fdcan->task_tick = 0;
         }
         osDelayUntil(next_wake);
         next_wake += osPeriod;

@@ -20,7 +20,7 @@ typedef struct FdcanConst
 typedef struct FdcanParametar
 {
     const FdcanConst const_h;
-    uint8_t     task_tick;
+    uint16_t    task_tick;
     FdcanState  state;
     uint32_t    alive_tick;
     FdcanPkt    *tx_pkt;

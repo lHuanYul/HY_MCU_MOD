@@ -49,7 +49,11 @@ Result fdcan_pkt_ist_read(FdcanPkt *pkt)
                 {
                     RESULT_CHECK_RET_RES(fdcan_pkt_get_byte(pkt, 1, &code));
                     if (code == 0) motor->fdcan_enable = 0;
-                    else motor->fdcan_enable = 1;
+                    else
+                    {
+                        motor->fdcan_enable = 1;
+                        motor->fdcan_tick = 0;
+                    }
                     return RESULT_OK(NULL);
                 }
                 default: break;

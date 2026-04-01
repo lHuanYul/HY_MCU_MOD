@@ -1,6 +1,7 @@
 #include "HY_MOD/motor/callback.h"
 #ifdef HY_MOD_STM32_MOTOR
 
+#include "main/main.h"
 #include "HY_MOD/motor/main.h"
 #include "HY_MOD/motor/ctrl_deg.h"
 #include "HY_MOD/motor/ctrl_foc.h"
@@ -188,8 +189,9 @@ void motor_pwm_cb(MotorParameter *motor)
         motor->fdcan_enable &&
         motor->tim_it_cnt % 2000 == 0
     ) {
-        motor->fdcan_send = 1;
-        motor_history_write(motor);
+        // motor_history_write(motor);
+        fdcan_motor_send(motor, &fdcan_pkt_pool, &fdcan_trsm_pkt_buf);
+        motor->fdcan_tick++;
     }
     
     switch (motor->ctrl_h.ref_fix)
