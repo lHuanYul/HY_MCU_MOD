@@ -28,10 +28,11 @@
 //      CMD_DATA_B3_VALUE                           // 資料編號(can)    // 目標ID(車輛位置)
 
 //----------------------------------------------------------------------------------------------------
-#define CAN_ID_WHEEL_LEFT_SPD_FBK   (uint16_t)0x100
-#define CAN_ID_WHEEL_RIGHT_SPD_FBK  (uint16_t)0x101
-#define CAN_ID_WHEEL_LEFT_SET       (uint16_t)0x140
-#define CAN_ID_WHEEL_RIGHT_SET      (uint16_t)0x141
+#define CAN_ID_WHEEL_LEFT_RET_RPM   (uint16_t)0x100
+#define CAN_ID_WHEEL_LEFT_RET_RPM_FIX   (uint16_t)0x100
+#define CAN_ID_WHEEL_RIGHT_RET_RPM  (uint16_t)0x101
+#define CAN_ID_WHEEL_LEFT_SET_RPM       (uint16_t)0x140
+#define CAN_ID_WHEEL_RIGHT_SET_RPM      (uint16_t)0x141
 #define CMD_WHEEL_B0_COAST          (uint8_t)0x00
 #define CMD_WHEEL_B0_BREAK          (uint8_t)0x01
 #define CMD_WHEEL_B0_NORMAL         (uint8_t)0x02

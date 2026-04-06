@@ -256,7 +256,7 @@ typedef struct MotorParameter
     
     uint32_t            fdcan_alive;
 
-    uint16_t            fdcan_tick;
+    uint32_t            fdcan_tick;
     // 馬達控制模式
     MotorCtrlParameter  ctrl_h;
     // 馬達旋轉模式

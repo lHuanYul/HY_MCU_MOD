@@ -8,13 +8,14 @@
 
 Result fdcan_pkt_transmit(FdcanParametar *fdcan)
 {
+    FdcanPkt *pkt = fdcan->tx_pkt;
     FDCAN_TxHeaderTypeDef header = {
+        .IdType = FDCAN_EXTENDED_ID,
         .ErrorStateIndicator = FDCAN_ESI_PASSIVE,
         .TxEventFifoControl = FDCAN_STORE_TX_EVENTS,
+        .Identifier = pkt->id,
+        .DataLength = pkt->len,
     };
-    FdcanPkt *pkt = fdcan->tx_pkt;
-    header.Identifier = pkt->id;
-    header.DataLength = pkt->len;
     ERROR_CHECK_HAL_RET_RES(
         HAL_FDCAN_AddMessageToTxFifoQ(fdcan->const_h.hfdcanx, &header, pkt->data)
     );

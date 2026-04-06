@@ -22,10 +22,12 @@ Result fdcan_pkt_write_test(FdcanPkt *pkt)
 static Result rpm_fbk(FdcanPkt *pkt, MotorParameter *motor)
 {
     if (pkt == NULL) return RESULT_ERROR(RES_ERR_MEMORY_ERROR);
-    pkt->id = FDCAN_WHEEL_FBK_ID;
-    RESULT_CHECK_HANDLE(fdcan_pkt_set_len(pkt, 4 + sizeof(float32_t)));
-    pkt->data[0] = 0;
-    var_u16_to_u8_be(motor->fdcan_tick, pkt->data + 1);
+    pkt->id = CAN_ID_WHEEL_RET_RPM;
+    RESULT_CHECK_HANDLE(fdcan_pkt_set_len(pkt, sizeof(uint16_t) + 2 + sizeof(float32_t)));
+    var_u32_to_u8_be(motor->fdcan_tick, pkt->data);
+    pkt->data[0] = pkt->data[2];
+    pkt->data[1] = pkt->data[3];
+    pkt->data[2] = 0;
     pkt->data[3] = motor->rpm_h.fb.reverse;
     var_f32_to_u8_be(motor->rpm_h.fb.value, pkt->data + 4);
     return RESULT_OK(pkt);
@@ -34,10 +36,12 @@ static Result rpm_fbk(FdcanPkt *pkt, MotorParameter *motor)
 static Result rpm_ref(FdcanPkt *pkt, MotorParameter *motor)
 {
     if (pkt == NULL) return RESULT_ERROR(RES_ERR_MEMORY_ERROR);
-    pkt->id = FDCAN_WHEEL_FBK_ID;
-    RESULT_CHECK_HANDLE(fdcan_pkt_set_len(pkt, 4 + sizeof(float32_t)));
-    pkt->data[0] = 1;
-    var_u16_to_u8_be(motor->fdcan_tick, pkt->data + 1);
+    pkt->id = CAN_ID_WHEEL_RET_RPM;
+    RESULT_CHECK_HANDLE(fdcan_pkt_set_len(pkt, sizeof(uint16_t) + 2 + sizeof(float32_t)));
+    var_u32_to_u8_be(motor->fdcan_tick, pkt->data);
+    pkt->data[0] = pkt->data[2];
+    pkt->data[1] = pkt->data[3];
+    pkt->data[2] = 1;
     pkt->data[3] = motor->rpm_h.ref_fix.reverse;
     var_f32_to_u8_be(motor->rpm_h.ref_fix.value, pkt->data + 4);
     return RESULT_OK(pkt);

@@ -13,11 +13,11 @@ VehicleParameter vehicle_h = {
         .speed = 25.0f,
     },
     .motor_left = {
-        .fdcan_id = CAN_ID_WHEEL_LEFT_SET,
+        .fdcan_id = CAN_ID_WHEEL_LEFT_SET_RPM,
         .rpm_max = 1000.0f,
     },
     .motor_right = {
-        .fdcan_id = CAN_ID_WHEEL_RIGHT_SET,
+        .fdcan_id = CAN_ID_WHEEL_RIGHT_SET_RPM,
         .rpm_max = 1000.0f,
     },
 };

@@ -13,7 +13,7 @@ Result fdcan_pkt_ist_read(FdcanPkt *pkt)
     uint8_t code;
     switch (pkt->id)
     {
-        case FDCAN_WHEEL_SET_ID:
+        case CAN_ID_WHEEL_SET_RPM:
         {
             MotorParameter *motor = &motor_h;
             motor->fdcan_alive = HAL_GetTick();
@@ -107,11 +107,11 @@ Result fdcan_pkt_ist_read(FdcanPkt *pkt)
     uint8_t code;
     switch (pkt->id)
     {
-        case CAN_ID_WHEEL_LEFT_SPD_FBK:
+        case CAN_ID_WHEEL_LEFT_RET_RPM:
         {
             return motor_pkt(pkt, &vehicle_h.motor_left);
         }
-        case CAN_ID_WHEEL_RIGHT_SPD_FBK:
+        case CAN_ID_WHEEL_RIGHT_RET_RPM:
         {
             return motor_pkt(pkt, &vehicle_h.motor_right);
         }

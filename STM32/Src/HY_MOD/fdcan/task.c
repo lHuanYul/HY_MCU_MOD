@@ -21,8 +21,8 @@ static void filter_set(FdcanParametar *fdcan)
         )
     );
     FDCAN_FilterTypeDef fifo0_filter0 = {
-        .IdType = FDCAN_STANDARD_ID,
-        .FilterIndex = 0,
+        .IdType = FDCAN_EXTENDED_ID,
+        .FilterIndex = 1,
         .FilterType = FDCAN_FILTER_RANGE,
         .FilterConfig = FDCAN_FILTER_TO_RXFIFO0,
         .FilterID1 = FDCAN_FIFO0_FILTER0_ID_MIN,
@@ -32,13 +32,14 @@ static void filter_set(FdcanParametar *fdcan)
         HAL_FDCAN_ConfigFilter(
             fdcan->const_h.hfdcanx, &fifo0_filter0)
     );
+    // Inmidiet filter
     FDCAN_FilterTypeDef fifo1_filter0 = {
-        .IdType = FDCAN_STANDARD_ID,
+        .IdType = FDCAN_EXTENDED_ID,
         .FilterIndex = 1,
         .FilterType = FDCAN_FILTER_RANGE,
         .FilterConfig = FDCAN_FILTER_TO_RXFIFO1,
-        .FilterID1 = 0x000,
-        .FilterID2 = 0x7FF,
+        .FilterID1 = 0x0,
+        .FilterID2 = 0x1FFFFFFF,
         // .FilterID1 = FDCAN_FIFO1_FILTER0_ID_MIN,
         // .FilterID2 = FDCAN_FIFO1_FILTER0_ID_MAX,
     };
