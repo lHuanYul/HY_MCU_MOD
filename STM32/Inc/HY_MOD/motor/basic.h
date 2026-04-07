@@ -186,6 +186,8 @@ typedef struct MotorDEGParameter
     float32_t           duty_val;
     // DEG duty
     MotorPhaseDuty      duty_h;
+
+    PI_CTRL             pi_rpm;
 } MotorDEGParameter;
 
 typedef union MotorADC
@@ -203,6 +205,8 @@ typedef struct MotorFOCParameter
 {
     // 電流 ADC
     MotorADC            adc_h;
+
+    uint32_t            start_cnt;
     // 目前霍爾相位
     float32_t           hall_rad;
     // clarke
@@ -213,6 +217,8 @@ typedef struct MotorFOCParameter
     PARK                park_h;
     // FOC 角度累積插值 angle_acc += angle_itpl; 過一霍爾中斷後重置
     float32_t           angle_acc;
+
+    PI_CTRL             pi_rpm;
 
     PI_CTRL             pi_Iq_h;
 
@@ -261,14 +267,12 @@ typedef struct MotorParameter
     MotorCtrlParameter  ctrl_h;
     // 馬達旋轉模式
     MotorRotParameter   rotate_h;
-
+    // 從尾往轉子 順時針value為負
     MotorRpmParameter   rpm_h;
 
     MotorDirectState    dict_state;
     // 計時中斷計數
     uint32_t            tim_it_cnt;
-    // 從尾往轉子 順時針value為負
-    PI_CTRL             pi_speed;
 
     MotorHallParameter  hall_h;
 

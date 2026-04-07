@@ -89,10 +89,7 @@ void motor_stop_cb(MotorParameter *motor)
     motor->rpm_h.fb.value = 0;
     motor->foc_h.pi_Iq_h.out_fix = 0;
     motor->foc_h.angle_acc = 0.0f;
-    PI_reset(&motor->pi_speed);
-#ifdef MOTOR_PI_SPEED
-    motor->deg_h.duty_h = 0.0f;
-#endif
+    PI_reset(&motor->deg_h.pi_rpm);
 }
 
 static void status_update(MotorParameter *motor)
@@ -130,28 +127,14 @@ static void status_update(MotorParameter *motor)
     // {
     //     motor_set_rotate_mode(motor, MOTOR_ROT_COAST);
     // }
-    motor->pi_speed.feedback = motor->rpm_h.fb.value;
+    motor->deg_h.pi_rpm.feedback = motor->rpm_h.fb.value;
     switch (motor->rotate_h.ref_fix)
     {
         case MOTOR_ROT_COAST:
         case MOTOR_ROT_BREAK:
         case MOTOR_ROT_LOCK_FIN:
         {
-            PI_reset(&motor->pi_speed);
-            break;
-        }
-        case MOTOR_ROT_NORMAL:
-        {
-            motor->pi_speed.reference = motor->rpm_h.ref_fix.value;
-            PI_run(&motor->pi_speed);
-    #ifdef MOTOR_PI_SPEED
-            motor->deg_h.duty_h += motor->pi_speed.out_fix;
-            VAR_CLAMPF(motor->deg_h.duty_h, 0.0f, 1.0f);
-    #else
-            motor->deg_h.duty_val = 0.5f;
-    #endif
-            motor->foc_h.pi_Iq_h.reference += motor->pi_speed.out_fix * motor->tfm_h.duty_Iq;
-            VAR_CLAMPF(motor->foc_h.pi_Iq_h.reference, motor->foc_h.pi_Iq_h.min, motor->foc_h.pi_Iq_h.max);
+            PI_reset(&motor->deg_h.pi_rpm);
             break;
         }
         case MOTOR_ROT_LOCK:
@@ -160,27 +143,31 @@ static void status_update(MotorParameter *motor)
             if (save_stop) motor->rotate_h.ref_fix = MOTOR_ROT_LOCK_FIN;
             break;
         }
+        case MOTOR_ROT_NORMAL:
+        {
+            motor->deg_h.pi_rpm.reference = motor->rpm_h.ref_fix.value;
+            motor->foc_h.pi_rpm.reference = motor->rpm_h.ref_fix.value;
+            PI_run(&motor->deg_h.pi_rpm);
+            PI_run(&motor->foc_h.pi_rpm);
+    #ifdef MOTOR_PI_RPM
+            motor->deg_h.duty_h += motor->pi_duty.out_fix;
+            // motor->foc_h.pi_Iq_h.reference += motor->foc_h.pi_rpm.out_fix * motor->tfm_h.duty_Iq;
+            // VAR_CLAMPF(motor->foc_h.pi_Iq_h.reference, motor->foc_h.pi_Iq_h.min, motor->foc_h.pi_Iq_h.max);
+            // motor->foc_h.pi_Iq_h.reference = (!motor->rpm_h.ref_ori.reverse) ?
+            //     motor->const_h.rated_current : -motor->const_h.rated_current;
+            // motor->tfm_h.duty_Iq = var_clampf((motor->tfm_h.duty_Iq + motor->foc_h.pi_rpm.out_fix), 0.15f, 0.2f);
+    #else
+            motor->deg_h.duty_val = 0.5f;
+    #endif
+            break;
+        }
     }
-
-    motor->foc_h.pi_Iq_h.reference = (!motor->rpm_h.ref_ori.reverse) ?
-        motor->const_h.rated_current : -motor->const_h.rated_current;
-    // motor->tfm_h.duty_Iq = var_clampf((motor->tfm_h.duty_Iq + motor->pi_speed.out_fix), 0.15f, 0.2f);
-}
-
-static void foc_run(MotorParameter *motor)
-{
-    RESULT_CHECK_RET_VOID(motor_vec_ctrl_angle_upd(motor));
-    motor_vec_ctrl_clarke(motor);
-    motor_vec_ctrl_park(motor);
-    motor_vec_ctrl_pi_id_iq(motor);
-    motor_vec_ctrl_ipark(motor);
-    motor_vec_ctrl_svgen(motor);
-    motor_vec_ctrl_svpwm(motor);
 }
 
 /* 20kHz
 void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef *hadc)
 */
+#define PWM_TIM_IT_CNT_MAX 20000
 void motor_pwm_cb(MotorParameter *motor)
 {
     motor_vec_ctrl_adcs_upd(motor);
@@ -198,12 +185,12 @@ void motor_pwm_cb(MotorParameter *motor)
     {
         case MOTOR_CTRL_INIT:
         {
-            if (motor->tim_it_cnt >= 19999)
+            if (motor->tim_it_cnt >= PWM_TIM_IT_CNT_MAX - 1)
             {
                 motor_vec_ctrl_adcs_reset(motor);
                 motor_set_rotate_mode(motor, MOTOR_ROT_NORMAL);
                 motor_switch_ctrl(motor, MOTOR_CTRL_120);
-                motor_set_rpm(motor, 0, 500.0f);
+                motor_set_rpm(motor, 0, 50.0f);
             }
             break;
         }
@@ -216,58 +203,50 @@ void motor_pwm_cb(MotorParameter *motor)
         }
         case MOTOR_CTRL_120:
         {
-            if (motor->tim_it_cnt % 1000 == 0)
-            {
-                status_update(motor);
-            }
             if (motor->tim_it_cnt % 2000 == 0)
             {
+                status_update(motor);
                 if (
                     motor->rpm_h.fb.value == 0.0f &&
                     motor->rpm_h.ref_fix.value != 0.0f
                 ) {
                     hall_update(motor);
                 #ifdef MOTOR_AUTO_SPIN
-                    motor_switch_ctrl(motor, MOTOR_CTRL_120);
                     motor->hall_h.delay = 1;
                     motor->deg_h.duty_val = 1.0f;
                 #endif
                 }
             }
-            foc_run(motor);
+            motor_foc_run(motor);
             if (motor->hall_h.delay > 0)
             {
                 if (motor->hall_h.delay == HALL_DELAY)
                     deg_ctrl_120_load(motor, HALL_DELAY_LOAD);
-                else if (motor->hall_h.delay == 1)
-                    deg_ctrl_120_load(motor, motor->hall_h.current);
-                // deg_ctrl_120_load(motor, 4);
                 motor->hall_h.delay--;
+                if (motor->hall_h.delay == 0)
+                    deg_ctrl_120_load(motor, motor->hall_h.current);
             }
             break;
         }
         case MOTOR_CTRL_FOC_RATED:
         {
         #ifndef MOTOR_FOC_SPIN_DEBUG
-            if (motor->tim_it_cnt % 1000 == 0)
-            {
-                status_update(motor);
-            }
             if (motor->tim_it_cnt % 2000 == 0)
             {
+                status_update(motor);
                 if (
                     motor->rpm_h.fb.value == 0.0f &&
                     motor->rpm_h.ref_fix.value != 0.0f
                 ) {
                     hall_update(motor);
                 #ifdef MOTOR_AUTO_SPIN
-                    motor_switch_ctrl(motor, MOTOR_CTRL_120);
+                    motor_switch_ctrl_inner(motor, MOTOR_CTRL_120);
                     motor->hall_h.delay = 1;
                     motor->deg_h.duty_val = 1.0f;
                 #endif
                 }
             }
-            foc_run(motor);
+            motor_foc_run(motor);
             motor->duty_load = motor->foc_h.duty_h;
             motor_timer_load(motor);
         #endif
@@ -276,7 +255,7 @@ void motor_pwm_cb(MotorParameter *motor)
         default: return;
     }
     motor->tim_it_cnt++;
-    if (motor->tim_it_cnt >= 20000) motor->tim_it_cnt = 0;
+    if (motor->tim_it_cnt >= PWM_TIM_IT_CNT_MAX) motor->tim_it_cnt = 0;
 }
 
 #endif

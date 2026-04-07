@@ -2,9 +2,18 @@
 #ifdef HY_MOD_STM32_MOTOR
 
 #include "HY_MOD/main/variable_cal.h"
+#include "HY_MOD/motor/main.h"
 #include "HY_MOD/motor/trigonometric.h"
 #include "HY_MOD/adc_current/main.h"
 #include "tim.h"
+
+void motor_foc_set(MotorParameter *motor)
+{
+    motor->foc_h.angle_itpl = 0.0f;
+    motor->foc_h.angle_acc = 0.0f;
+    motor->foc_h.pi_Iq_h.out_fix = 0.0f;
+    motor->foc_h.pi_Id_h.out_fix = 0.0f;
+}
 
 inline void motor_vec_ctrl_adcs_reset(MotorParameter *motor)
 {
@@ -30,7 +39,7 @@ static const float32_t hall_elec_angle[8] = {
     1.0f * PI_DIV_3,
     F32_MAX,
 };
-inline Result motor_vec_ctrl_angle_upd(MotorParameter *motor)
+static inline Result motor_vec_ctrl_angle_upd(MotorParameter *motor)
 {
     if (motor->hall_h.current == UINT8_MAX) return RESULT_ERROR(RES_ERR_NOT_FOUND);
     motor->foc_h.hall_rad = hall_elec_angle[motor->hall_h.current];
@@ -38,7 +47,7 @@ inline Result motor_vec_ctrl_angle_upd(MotorParameter *motor)
 }
 
 float32_t current_zero;
-inline void motor_vec_ctrl_clarke(MotorParameter *motor)
+static inline void motor_vec_ctrl_clarke(MotorParameter *motor)
 {
     // 電流進motor為 正
     uint8_t i;
@@ -54,7 +63,7 @@ inline void motor_vec_ctrl_clarke(MotorParameter *motor)
     CLARKE_run_ideal(&motor->foc_h.clarke_h);
 }
 
-inline void motor_vec_ctrl_park(MotorParameter *motor)
+static inline void motor_vec_ctrl_park(MotorParameter *motor)
 {
     motor->foc_h.park_h.Alpha = motor->foc_h.clarke_h.Alpha;
     motor->foc_h.park_h.Beta = motor->foc_h.clarke_h.Beta;
@@ -67,7 +76,7 @@ inline void motor_vec_ctrl_park(MotorParameter *motor)
     PARK_run(&motor->foc_h.park_h);
 }
 
-inline void motor_vec_ctrl_pi_id_iq(MotorParameter *motor)
+static inline void motor_vec_ctrl_pi_id_iq(MotorParameter *motor)
 {
     if(motor->rpm_h.fb.value == 0.0f)
     {
@@ -87,7 +96,7 @@ inline void motor_vec_ctrl_pi_id_iq(MotorParameter *motor)
     VAR_CLAMPF(motor->foc_h.pi_Iq_h.out_fix, -0.75f, 0.75f);
 }
 
-inline void motor_vec_ctrl_ipark(MotorParameter *motor)
+static inline void motor_vec_ctrl_ipark(MotorParameter *motor)
 {
     // Todo: motor->foc_h.ipark_h.Vdref = motor->foc_h.pi_Id_h.out_fix;
     motor->foc_h.ipark_h.Vdref += motor->foc_h.pi_Id_h.out_fix;
@@ -106,7 +115,7 @@ inline void motor_vec_ctrl_ipark(MotorParameter *motor)
 float32_t sec_chk[30] = {0};
 uint8_t chk_cnt = 0;
 uint8_t sec_mem = 0;
-inline void motor_vec_ctrl_svgen(MotorParameter *motor)
+static inline void motor_vec_ctrl_svgen(MotorParameter *motor)
 {
     motor->foc_h.svgendq_h.Ualpha = motor->foc_h.ipark_h.Alpha;
     motor->foc_h.svgendq_h.Ubeta  = motor->foc_h.ipark_h.Beta ;
@@ -123,7 +132,7 @@ inline void motor_vec_ctrl_svgen(MotorParameter *motor)
 }
 
 #define SQUARE(x) (x*x)
-inline void motor_vec_ctrl_svpwm(MotorParameter *motor)
+static inline void motor_vec_ctrl_svpwm(MotorParameter *motor)
 {
     if (
         arm_sqrt_f32(
@@ -185,6 +194,24 @@ inline void motor_vec_ctrl_svpwm(MotorParameter *motor)
             break;
         }
     }
+}
+
+void motor_foc_run(MotorParameter *motor)
+{
+    RESULT_CHECK_RET_VOID(motor_vec_ctrl_angle_upd(motor));
+    if (motor->foc_h.start_cnt > 0)
+    {
+        motor->foc_h.start_cnt--;
+        if (motor->foc_h.start_cnt == 0)
+            motor_switch_ctrl_inner(motor, motor->ctrl_h.ref_ori);
+        return;
+    }
+    motor_vec_ctrl_clarke(motor);
+    motor_vec_ctrl_park(motor);
+    motor_vec_ctrl_pi_id_iq(motor);
+    motor_vec_ctrl_ipark(motor);
+    motor_vec_ctrl_svgen(motor);
+    motor_vec_ctrl_svpwm(motor);
 }
 
 #endif
