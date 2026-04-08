@@ -91,6 +91,7 @@ void motor_set_rpm(MotorParameter *motor, bool reverse, float32_t speed)
 
 void motor_set_rotate_mode(MotorParameter *motor, MotorRot mode)
 {
+    if (motor->rotate_h.ref_ori == mode) return;
     switch (mode)
     {
         case MOTOR_ROT_LOCK_FIN:
@@ -100,13 +101,8 @@ void motor_set_rotate_mode(MotorParameter *motor, MotorRot mode)
         case MOTOR_ROT_COAST:
         case MOTOR_ROT_BREAK:
         case MOTOR_ROT_LOCK:
-        {
-            motor_switch_ctrl_inner(motor, MOTOR_CTRL_120);
-            break;
-        }
         case MOTOR_ROT_NORMAL:
         {
-            motor_switch_ctrl_inner(motor, motor->ctrl_h.ref_ori);
             break;
         }
         default: return;
@@ -116,19 +112,20 @@ void motor_set_rotate_mode(MotorParameter *motor, MotorRot mode)
 
 void motor_switch_ctrl(MotorParameter *motor, MotorCtrl ctrl)
 {
+    if (motor->ctrl_h.ref_ori == ctrl) return;
     switch (ctrl)
     {
         case MOTOR_CTRL_TEST_H:
         case MOTOR_CTRL_TEST_L:
         case MOTOR_CTRL_120:
         {
-            motor_switch_ctrl_inner(motor, ctrl);
+            motor_switch_ctrl_fix(motor, ctrl);
             break;
         }
         case MOTOR_CTRL_FOC_RATED:
         {
-            motor_switch_ctrl_inner(motor, MOTOR_CTRL_120);
-            motor->foc_h.start_cnt = 100;
+            motor_switch_ctrl_fix(motor, MOTOR_CTRL_120);
+            motor->foc_h.init_cnt = 100;
             break;
         }
         default: return;
@@ -136,7 +133,7 @@ void motor_switch_ctrl(MotorParameter *motor, MotorCtrl ctrl)
     motor->ctrl_h.ref_ori = ctrl;
 }
 
-void motor_switch_ctrl_inner(MotorParameter *motor, MotorCtrl ctrl)
+void motor_switch_ctrl_fix(MotorParameter *motor, MotorCtrl ctrl)
 {
     if (motor->ctrl_h.ref_fix == ctrl) return;
     const MotorConst *const_h = &motor->const_h;

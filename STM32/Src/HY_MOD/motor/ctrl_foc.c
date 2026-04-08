@@ -199,11 +199,11 @@ static inline void motor_vec_ctrl_svpwm(MotorParameter *motor)
 void motor_foc_run(MotorParameter *motor)
 {
     RESULT_CHECK_RET_VOID(motor_vec_ctrl_angle_upd(motor));
-    if (motor->foc_h.start_cnt > 0)
+    if (motor->foc_h.init_cnt > 0)
     {
-        motor->foc_h.start_cnt--;
-        if (motor->foc_h.start_cnt == 0)
-            motor_switch_ctrl_inner(motor, motor->ctrl_h.ref_ori);
+        motor->foc_h.init_cnt--;
+        if (motor->foc_h.init_cnt == 0)
+            motor_switch_ctrl_fix(motor, motor->ctrl_h.ref_ori);
         return;
     }
     motor_vec_ctrl_clarke(motor);

@@ -206,7 +206,7 @@ typedef struct MotorFOCParameter
     // 電流 ADC
     MotorADC            adc_h;
 
-    uint32_t            start_cnt;
+    uint32_t            init_cnt;
     // 目前霍爾相位
     float32_t           hall_rad;
     // clarke
@@ -263,6 +263,8 @@ typedef struct MotorParameter
     uint32_t            fdcan_alive;
 
     uint32_t            fdcan_tick;
+    
+    uint32_t            init_cnt;
     // 馬達控制模式
     MotorCtrlParameter  ctrl_h;
     // 馬達旋轉模式
