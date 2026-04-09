@@ -63,6 +63,7 @@ static inline void motor_vec_ctrl_clarke(MotorParameter *motor)
     CLARKE_run_ideal(&motor->foc_h.clarke_h);
 }
 
+float32_t test_deg = 0.0f;
 static inline void motor_vec_ctrl_park(MotorParameter *motor)
 {
     motor->foc_h.park_h.Alpha = motor->foc_h.clarke_h.Alpha;
@@ -70,8 +71,13 @@ static inline void motor_vec_ctrl_park(MotorParameter *motor)
     motor->foc_h.angle_acc += motor->foc_h.angle_itpl;
     VAR_CLAMPF(motor->foc_h.angle_acc, -PI_DIV_3, PI_DIV_3);
     // 電壓向量應提前90度 +PI_DIV_2
+    // Todo 強制旋轉測試
+    // test_deg += 0.01f;
+    // Todo 轉子定位測試
+    test_deg = var_wrap_pos(test_deg, PI_MUL_2);
     RESULT_CHECK_HANDLE(trigo_sin_cosf(
-        motor->foc_h.hall_rad + motor->foc_h.angle_acc + MOTOR_42BLF01_ANGLE + PI_DIV_2,
+        // motor->foc_h.hall_rad + motor->foc_h.angle_acc + MOTOR_42BLF01_ANGLE + PI_DIV_2,
+        test_deg,
         &motor->foc_h.park_h.Sin, &motor->foc_h.park_h.Cos));
     PARK_run(&motor->foc_h.park_h);
 }
@@ -90,7 +96,7 @@ static inline void motor_vec_ctrl_pi_id_iq(MotorParameter *motor)
     motor->foc_h.pi_Iq_h.feedback = motor->foc_h.park_h.Qs;
     PI_run(&motor->foc_h.pi_Iq_h);
 
-    // Todo: remove?
+    // ! remove?
     VAR_CLAMPF(motor->foc_h.pi_Iq_h.Term_p, -0.1f, 0.1f);
     motor->foc_h.pi_Iq_h.out_fix = motor->foc_h.pi_Iq_h.reference + motor->foc_h.pi_Iq_h.Term_p;
     VAR_CLAMPF(motor->foc_h.pi_Iq_h.out_fix, -0.75f, 0.75f);
@@ -98,37 +104,30 @@ static inline void motor_vec_ctrl_pi_id_iq(MotorParameter *motor)
 
 static inline void motor_vec_ctrl_ipark(MotorParameter *motor)
 {
-    // Todo: motor->foc_h.ipark_h.Vdref = motor->foc_h.pi_Id_h.out_fix;
-    motor->foc_h.ipark_h.Vdref += motor->foc_h.pi_Id_h.out_fix;
-    VAR_CLAMPF(motor->foc_h.ipark_h.Vdref, -0.06f, 0.06f);
+    // Todo motor->foc_h.ipark_h.Vdref = motor->foc_h.pi_Id_h.out_fix;
+    // motor->foc_h.ipark_h.Vdref += motor->foc_h.pi_Id_h.out_fix;
+    // VAR_CLAMPF(motor->foc_h.ipark_h.Vdref, -0.06f, 0.06f);
+    // motor->foc_h.ipark_h.Vqref = motor->foc_h.pi_Iq_h.out_fix;
 
-    motor->foc_h.ipark_h.Vqref = motor->foc_h.pi_Iq_h.out_fix;
+    // Todo 轉子定位測試
+    motor->foc_h.ipark_h.Vdref = 0.1f; // 歸一化電壓，給 10% 即可
+    motor->foc_h.ipark_h.Vqref = 0.0f;\
+    // Todo 強制旋轉測試
+    // motor->foc_h.ipark_h.Vdref = 0.0f; 
+    // motor->foc_h.ipark_h.Vqref = 0.15f;
+
     motor->foc_h.ipark_h.Sin = motor->foc_h.park_h.Sin;
     motor->foc_h.ipark_h.Cos = motor->foc_h.park_h.Cos;
     IPARK_run(&motor->foc_h.ipark_h);
     RESULT_CHECK_HANDLE(trigo_atan(
         motor->foc_h.ipark_h.Alpha, motor->foc_h.ipark_h.Beta, &motor->foc_h.elec_theta_rad));
-    // motor->foc_h.elec_theta_rad = var_wrap_pos(motor->foc_h.elec_theta_rad, PI_MUL_2);
-    motor->foc_h.elec_theta_rad = var_wrap_pos(motor->foc_h.elec_theta_rad, PI_DIV_3);
 }
 
-float32_t sec_chk[30] = {0};
-uint8_t chk_cnt = 0;
-uint8_t sec_mem = 0;
 static inline void motor_vec_ctrl_svgen(MotorParameter *motor)
 {
     motor->foc_h.svgendq_h.Ualpha = motor->foc_h.ipark_h.Alpha;
     motor->foc_h.svgendq_h.Ubeta  = motor->foc_h.ipark_h.Beta ;
     SVGEN_run(&motor->foc_h.svgendq_h);
-
-    if (motor->foc_h.svgendq_h.Sector != sec_mem)
-    {
-        sec_chk[chk_cnt++] = motor->hall_h.current;
-        // sec_chk[chk_cnt++] = motor->foc_h.elec_theta_rad;
-        sec_chk[chk_cnt++] = motor->foc_h.svgendq_h.Sector;
-        if (chk_cnt >= 30) chk_cnt = 0;
-    }
-    sec_mem = motor->foc_h.svgendq_h.Sector;
 }
 
 #define SQUARE(x) (x*x)
@@ -139,12 +138,12 @@ static inline void motor_vec_ctrl_svpwm(MotorParameter *motor)
             SQUARE(motor->foc_h.svgendq_h.Ualpha) + SQUARE(motor->foc_h.svgendq_h.Ubeta),
             &motor->foc_h.Vref) != ARM_MATH_SUCCESS
     ) while (1) {};
-    // float32_t theta = var_wrap_pos(motor->foc_h.elec_theta_rad, PI_DIV_3);
+    float32_t theta = var_wrap_pos(motor->foc_h.elec_theta_rad, PI_DIV_3);
     // T1: 第一個有源向量導通時間 在該sector內靠近前一個主向量的時間比例(由sin(π/3−θ)決定)
     // T2: 第二個有源向量導通時間 在該sector內靠近下一個主向量的時間比例(由sin(θ)決定)
     float32_t T1, T2;
-    RESULT_CHECK_HANDLE(trigo_sin_cosf(PI_DIV_3 - motor->foc_h.elec_theta_rad, &T1, NULL));
-    RESULT_CHECK_HANDLE(trigo_sin_cosf(motor->foc_h.elec_theta_rad, &T2, NULL));
+    RESULT_CHECK_HANDLE(trigo_sin_cosf(PI_DIV_3 - theta, &T1, NULL));
+    RESULT_CHECK_HANDLE(trigo_sin_cosf(theta, &T2, NULL));
     T1 *= motor->foc_h.Vref;
     T2 *= motor->foc_h.Vref;
     // T0div2: 零向量時間的一半 將整個零向量時間平均分配到PWM週期的前後兩端 讓波形中心對稱
