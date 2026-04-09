@@ -90,6 +90,7 @@ void motor_stop_cb(MotorParameter *motor)
     motor->foc_h.pi_Iq_h.out_fix = 0;
     motor->foc_h.angle_acc = 0.0f;
     PI_reset(&motor->deg_h.pi_rpm);
+    PI_reset(&motor->foc_h.pi_rpm);
 }
 
 static void direction_update(MotorParameter *motor)
@@ -136,7 +137,7 @@ static void status_update(MotorParameter *motor)
         case MOTOR_ROT_BREAK:
         case MOTOR_ROT_LOCK_FIN:
         {
-            PI_reset(&motor->deg_h.pi_rpm);
+            motor->deg_h.duty_val = 0.5f;
             motor_switch_ctrl_fix(motor, MOTOR_CTRL_120);
             break;
         }
@@ -157,7 +158,7 @@ static void status_update(MotorParameter *motor)
             PI_run(&motor->deg_h.pi_rpm);
             PI_run(&motor->foc_h.pi_rpm);
     #ifdef MOTOR_PI_RPM
-            motor->deg_h.duty_h += motor->pi_duty.out_fix;
+            motor->deg_h.duty_val = motor->deg_h.pi_rpm.out_fix;
             // motor->foc_h.pi_Iq_h.reference += motor->foc_h.pi_rpm.out_fix * motor->tfm_h.duty_Iq;
             // VAR_CLAMPF(motor->foc_h.pi_Iq_h.reference, motor->foc_h.pi_Iq_h.min, motor->foc_h.pi_Iq_h.max);
             // motor->foc_h.pi_Iq_h.reference = (!motor->rpm_h.ref_ori.reverse) ?
@@ -166,21 +167,21 @@ static void status_update(MotorParameter *motor)
     #else
             motor->deg_h.duty_val = 0.5f;
     #endif
+            // Auto start spin
+            if (
+                motor->rpm_h.fb.value == 0.0f &&
+                motor->rpm_h.ref_fix.value != 0.0f
+            ) {
+                hall_update(motor);
+            #ifdef MOTOR_AUTO_SPIN
+                motor_switch_ctrl_fix(motor, MOTOR_CTRL_120);
+                motor->hall_h.delay = 1;
+                motor->deg_h.duty_val = 1.0f;
+            #endif
+            }
             motor_switch_ctrl_fix(motor, motor->ctrl_h.ref_ori);
             break;
         }
-    }
-    // Auto start spin
-    if (
-        motor->rpm_h.fb.value == 0.0f &&
-        motor->rpm_h.ref_fix.value != 0.0f
-    ) {
-        hall_update(motor);
-    #ifdef MOTOR_AUTO_SPIN
-        motor_switch_ctrl_fix(motor, MOTOR_CTRL_120);
-        motor->hall_h.delay = 1;
-        motor->deg_h.duty_val = 1.0f;
-    #endif
     }
 }
 
@@ -243,7 +244,7 @@ void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef *hadc)
 void motor_pwm_cb(MotorParameter *motor)
 {
     motor_vec_ctrl_adcs_upd(motor);
-    if (motor->tim_it_cnt % 2000 == 0)
+    if (motor->tim_it_cnt % 200 == 0)
     {
         if (motor->fdcan_enable)
         {
