@@ -94,7 +94,10 @@ typedef struct MotorDbg
 
     float32_t   current_zero;
 
-    float32_t   test_deg;
+    uint8_t     his_cnt;
+    float32_t   his_test_rad[12];
+    float32_t   his_ele_rad[12];
+    uint8_t     his_sector[12];
 } MotorDbg;
 
 typedef enum MotorCtrl
@@ -213,10 +216,12 @@ typedef struct MotorFOCParameter
     uint32_t            init_cnt;
     // 目前霍爾相位
     float32_t           hall_rad;
+    // 轉子位置
+    float32_t           rotor_rad;
     // clarke
     CLARKE              clarke_h;
     // FOC 應補角度 (Angle Interpolation)
-    volatile float32_t  angle_itpl;
+    float32_t           angle_itpl;
     // park
     PARK                park_h;
     // FOC 角度累積插值 angle_acc += angle_itpl; 過一霍爾中斷後重置
@@ -227,8 +232,8 @@ typedef struct MotorFOCParameter
     PI_CTRL             pi_Iq_h;
 
     PI_CTRL             pi_Id_h;
-    // 電角度
-    float32_t           elec_theta_rad;
+    // 磁場位置
+    float32_t           magn_rad;
     // ipark
     IPARK               ipark_h;
     // svgendq

@@ -39,21 +39,15 @@ void motor_setup(MotorParameter *motor)
 
     motor->foc_h.pi_Iq_h.Kp = MOTOR_LL * 1000.0f;
     motor->foc_h.pi_Iq_h.Ki = 1.0f / MOTOR_TAU * PWM_tim_t;
-    motor->foc_h.pi_Iq_h.max = 0.577f;
-    motor->foc_h.pi_Iq_h.min = -0.577f;
     motor->foc_h.pi_Id_h.Kp = MOTOR_LL * 1000.0f;
     motor->foc_h.pi_Id_h.Ki = 1.0f / MOTOR_TAU * PWM_tim_t;
-    motor->foc_h.pi_Id_h.max = 0.577f;
-    motor->foc_h.pi_Id_h.min = -0.577f;
 
-    uint8_t i;
-    for (i = 0; i < 3; i++)
-    {
-        ERROR_CHECK_HAL_HANDLE(HAL_ADCEx_Calibration_Start(
-            motor->foc_h.adc_h.uvw[i]->basic.hadcx, ADC_SINGLE_ENDED));
-    }
+    ERROR_CHECK_HAL_HANDLE(HAL_ADCEx_Calibration_Start(
+        motor->foc_h.adc_h.v->basic.hadcx, ADC_SINGLE_ENDED));
+    ERROR_CHECK_HAL_HANDLE(HAL_ADCEx_Calibration_Start(
+        motor->foc_h.adc_h.u->basic.hadcx, ADC_SINGLE_ENDED));
     ERROR_CHECK_HAL_HANDLE(
-        HAL_ADCEx_InjectedStart_IT(motor->foc_h.adc_h.v->basic.hadcx));
+        HAL_ADCEx_InjectedStart(motor->foc_h.adc_h.v->basic.hadcx));
     ERROR_CHECK_HAL_HANDLE(
         HAL_ADCEx_InjectedStart_IT(motor->foc_h.adc_h.u->basic.hadcx));
 
@@ -62,6 +56,7 @@ void motor_setup(MotorParameter *motor)
     ERROR_CHECK_HAL_HANDLE(HAL_TIM_Base_Start(motor->const_h.PWM_htimx));
     ERROR_CHECK_HAL_HANDLE(
         HAL_TIM_PWM_Start(motor->const_h.PWM_htimx, motor->const_h.PWM_TIM_CH_x.mid));
+    uint8_t i;
     for (i = 0; i < 3; i++)
     {
         HAL_TIM_PWM_Start(motor->const_h.PWM_htimx, motor->const_h.PWM_TIM_CH_x.uvw[i]);

@@ -198,7 +198,7 @@ static void control_update(MotorParameter *motor)
                 {
                     motor_vec_ctrl_adcs_reset(motor);
                     motor_set_rotate_mode(motor, MOTOR_ROT_NORMAL);
-                    motor_switch_ctrl(motor, MOTOR_CTRL_120);
+                    motor_switch_ctrl(motor, MOTOR_CTRL_FOC_RATED);
                     motor_set_rpm(motor, 0, 50.0f);
                 }
             }

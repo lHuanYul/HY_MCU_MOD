@@ -83,6 +83,7 @@ float32_t var_wrap_pos(float32_t x, float32_t value)
     return x;
 }
 
+// -pi ~ +pi
 float32_t var_wrap_pi(float32_t x, float32_t value)
 {
     int32_t n = (int32_t)(x / value);

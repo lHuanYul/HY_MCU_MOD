@@ -1920,10 +1920,10 @@ Result trigo_atan(float32_t x, float32_t y, float32_t *theta)
     x /= norm;
     y /= norm;
     int32_t in[2], out;
-    in[0] = (int32_t)(x * 2147483648.0f);  
+    in[0] = (int32_t)(x * 2147483648.0f);
     in[1] = (int32_t)(y * 2147483648.0f);
     ERROR_CHECK_HAL_RET_RES(HAL_CORDIC_Calculate(&hcordic, in, &out, 1, HAL_MAX_DELAY));
-    float32_t angle = (float32_t)out / 2147483648.0f; // [-π, π)
+    float32_t angle = (float32_t)out / 2147483648.0f * PI; // [-π, π)
     if (angle < 0) angle += PI_MUL_2;
     *theta = angle;
     return RESULT_OK(NULL);
