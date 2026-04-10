@@ -41,6 +41,7 @@
 #define RAD_TO_DEG      (180.0f / PI)
 #define DIV_1_3         (1.0f / 3.0f)   // 1/3
 #define DIV_2_3         (2.0f / 3.0f)   // 2/3
+#define SQRT3           1.73205080756888f   // 根號3
 #define ONE_DIV_SQRT3   0.577350269189626f  // 1/(根號3)
 #define SQRT3_DIV_2     0.866025403784439f  // (根號3)/2
 #define RPM_TO_RAD      (PI_MUL_2 / 60.0f)  //

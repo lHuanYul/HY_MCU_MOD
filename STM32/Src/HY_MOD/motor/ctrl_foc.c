@@ -46,24 +46,22 @@ static inline Result motor_vec_ctrl_angle_upd(MotorParameter *motor)
     return RESULT_OK(motor);
 }
 
-float32_t current_zero;
 static inline void motor_vec_ctrl_clarke(MotorParameter *motor)
 {
     // 電流進motor為 正
     uint8_t i;
     
     // Todo: motor->foc_h.clarke_h.ABC[i] = motor->foc_h.adc_h.uvw[i]->current;
-    current_zero = 0.0f;
+    motor->dbg_h.current_zero = 0.0f;
     for (i = 0; i < 3; i++)
-        current_zero += motor->foc_h.adc_h.uvw[i]->current;
-    current_zero /= 3.0f;
+        motor->dbg_h.current_zero += motor->foc_h.adc_h.uvw[i]->current;
+    motor->dbg_h.current_zero /= 3.0f;
     for (i = 0; i < 3; i++)
-        motor->foc_h.clarke_h.ABC[i] = motor->foc_h.adc_h.uvw[i]->current - current_zero;
+        motor->foc_h.clarke_h.ABC[i] = motor->foc_h.adc_h.uvw[i]->current - motor->dbg_h.current_zero;
     
     CLARKE_run_ideal(&motor->foc_h.clarke_h);
 }
 
-float32_t test_deg = 0.0f;
 static inline void motor_vec_ctrl_park(MotorParameter *motor)
 {
     motor->foc_h.park_h.Alpha = motor->foc_h.clarke_h.Alpha;
@@ -72,12 +70,13 @@ static inline void motor_vec_ctrl_park(MotorParameter *motor)
     VAR_CLAMPF(motor->foc_h.angle_acc, -PI_DIV_3, PI_DIV_3);
     // 電壓向量應提前90度 +PI_DIV_2
     // Todo 強制旋轉測試
-    // test_deg += 0.01f;
+    // motor->dbg_h.test_deg += 0.01f;
     // Todo 轉子定位測試
-    test_deg = var_wrap_pos(test_deg, PI_MUL_2);
+    motor->dbg_h.test_deg = 0.0f;
+    motor->dbg_h.test_deg = var_wrap_pos(motor->dbg_h.test_deg, PI_MUL_2);
     RESULT_CHECK_HANDLE(trigo_sin_cosf(
         // motor->foc_h.hall_rad + motor->foc_h.angle_acc + MOTOR_42BLF01_ANGLE + PI_DIV_2,
-        test_deg,
+        motor->dbg_h.test_deg,
         &motor->foc_h.park_h.Sin, &motor->foc_h.park_h.Cos));
     PARK_run(&motor->foc_h.park_h);
 }
@@ -111,7 +110,7 @@ static inline void motor_vec_ctrl_ipark(MotorParameter *motor)
 
     // Todo 轉子定位測試
     motor->foc_h.ipark_h.Vdref = 0.1f; // 歸一化電壓，給 10% 即可
-    motor->foc_h.ipark_h.Vqref = 0.0f;\
+    motor->foc_h.ipark_h.Vqref = 0.0f;
     // Todo 強制旋轉測試
     // motor->foc_h.ipark_h.Vdref = 0.0f; 
     // motor->foc_h.ipark_h.Vqref = 0.15f;

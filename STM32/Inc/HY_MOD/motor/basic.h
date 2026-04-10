@@ -90,7 +90,11 @@ typedef struct MotorTfm
 typedef struct MotorDbg
 {
     // 計時器頻率
-    float32_t           pwm_freq;
+    float32_t   pwm_freq;
+
+    float32_t   current_zero;
+
+    float32_t   test_deg;
 } MotorDbg;
 
 typedef enum MotorCtrl
@@ -135,8 +139,8 @@ typedef enum MotorDirectState
 
 typedef struct MotorRpm
 {
-    volatile bool reverse;
-    volatile float32_t value;
+    volatile bool       reverse;
+    volatile float32_t  value;
 } MotorRpm;
 
 // RPM Parameter
@@ -263,7 +267,7 @@ typedef struct MotorParameter
     uint32_t            fdcan_alive;
 
     uint32_t            fdcan_tick;
-    
+
     uint32_t            init_cnt;
     // 馬達控制模式
     MotorCtrlParameter  ctrl_h;
