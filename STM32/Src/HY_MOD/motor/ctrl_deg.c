@@ -48,16 +48,24 @@ static void ctrl_load(MotorParameter *motor, int8_t seq[3], float32_t duty)
     motor_timer_load(motor);
 }
 
-void deg_ctrl_test(MotorParameter *motor)
+void deg_ctrl_test_HL(MotorParameter *motor)
 {
     uint8_t i;
     int8_t seq[3] = {0};
-    if (motor->ctrl_h.ref_fix == MOTOR_CTRL_TEST_H)
+    if (motor->ctrl_h.ref_fix == MOTOR_CTRL_TEST_HIGH)
         for (i = 0; i < 3; i++) seq[i] = seq_map_120[6][i];
     else
         for (i = 0; i < 3; i++) seq[i] = seq_map_120[7][i];
     motor->duty_load = motor->deg_h.duty_h;
     ctrl_load(motor, seq, 1.0f);
+}
+
+void deg_ctrl_test_WAVE(MotorParameter *motor)
+{
+    uint8_t i;
+    int8_t seq[3] = {0};
+    for (i = 0; i < 3; i++) seq[i] = seq_map_120[6][i];
+    ctrl_load(motor, seq, 0.3f);
 }
 
 void deg_ctrl_120_load(MotorParameter *motor, uint8_t id)

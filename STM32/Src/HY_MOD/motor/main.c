@@ -110,17 +110,18 @@ void motor_switch_ctrl(MotorParameter *motor, MotorCtrl ctrl)
     if (motor->ctrl_h.ref_ori == ctrl) return;
     switch (ctrl)
     {
-        case MOTOR_CTRL_TEST_H:
-        case MOTOR_CTRL_TEST_L:
+        case MOTOR_CTRL_TEST_HIGH:
+        case MOTOR_CTRL_TEST_LOW:
+        case MOTOR_CTRL_TEST_WAVE:
         case MOTOR_CTRL_120:
         {
             motor_switch_ctrl_fix(motor, ctrl);
             break;
         }
-        case MOTOR_CTRL_FOC_RATED:
+        case MOTOR_CTRL_FOC:
         {
-            motor_switch_ctrl_fix(motor, MOTOR_CTRL_120);
-            motor->foc_h.init_cnt = 100;
+            motor_switch_ctrl_fix(motor, MOTOR_CTRL_FOC);
+            motor->foc_h.init_cnt = 2000;
             break;
         }
         default: return;
@@ -151,15 +152,18 @@ void motor_switch_ctrl_fix(MotorParameter *motor, MotorCtrl ctrl)
 
     switch (ctrl)
     {
-        case MOTOR_CTRL_TEST_H:
-        case MOTOR_CTRL_TEST_L:
+        case MOTOR_CTRL_TEST_HIGH:
+        case MOTOR_CTRL_TEST_LOW:
         case MOTOR_CTRL_120:
+        case MOTOR_CTRL_120_SW:
+        case MOTOR_CTRL_FOC_INIT:
         {
             for (i = 0; i < 3; i++)
                 SET_PWM_OFF(const_h->PWMN_GPIO.uvw[i], const_h->PWMN_GPIO_set.uvw[i]);
             break;
         }
-        case MOTOR_CTRL_FOC_RATED:
+        case MOTOR_CTRL_TEST_WAVE:
+        case MOTOR_CTRL_FOC:
         {
             for (i = 0; i < 3; i++)
                 SET_PWM_ON(const_h->PWMN_GPIO.uvw[i], const_h->PWMN_GPIO_set.uvw[i]);

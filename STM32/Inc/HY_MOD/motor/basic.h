@@ -103,12 +103,14 @@ typedef struct MotorDbg
 typedef enum MotorCtrl
 {
     MOTOR_CTRL_INIT,
-    MOTOR_CTRL_TEST_H,
-    MOTOR_CTRL_TEST_L,
+    MOTOR_CTRL_TEST_HIGH,
+    MOTOR_CTRL_TEST_LOW,
+    MOTOR_CTRL_TEST_WAVE,
     MOTOR_CTRL_120,
+    MOTOR_CTRL_120_SW,
     // MOTOR_CTRL_180,
-    MOTOR_CTRL_FOC_RATED,
-    MOTOR_CTRL_FOC_PEAK,
+    MOTOR_CTRL_FOC,
+    MOTOR_CTRL_FOC_INIT,
 } MotorCtrl;
 
 // Control Parameter
@@ -133,12 +135,6 @@ typedef struct MotorRotParameter
     MotorRot    ref_ori;
     MotorRot    ref_fix;
 } MotorRotParameter;
-
-typedef enum MotorDirectState
-{
-    DIRECT_NORMAL,
-    DIRECT_SWITCHING,
-} MotorDirectState;
 
 typedef struct MotorRpm
 {
@@ -229,9 +225,9 @@ typedef struct MotorFOCParameter
 
     PI_CTRL             pi_rpm;
 
-    PI_CTRL             pi_Iq_h;
-
     PI_CTRL             pi_Id_h;
+
+    PI_CTRL             pi_Iq_h;
     // 磁場位置
     float32_t           magn_rad;
     // ipark
@@ -280,8 +276,6 @@ typedef struct MotorParameter
     MotorRotParameter   rotate_h;
     // 從尾往轉子 順時針value為負
     MotorRpmParameter   rpm_h;
-
-    MotorDirectState    dict_state;
     // 計時中斷計數
     uint32_t            tim_it_cnt;
 

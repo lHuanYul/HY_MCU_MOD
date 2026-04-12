@@ -94,7 +94,6 @@ static inline void motor_vec_ctrl_ipark(MotorParameter *motor)
     // motor->foc_h.ipark_h.Vqref = 0.15f;
     motor->foc_h.ipark_h.Vdref = motor->foc_h.pi_Id_h.out_fix;
     motor->foc_h.ipark_h.Vqref = motor->foc_h.pi_Iq_h.out_fix;
-
     motor->foc_h.ipark_h.Sin = motor->foc_h.park_h.Sin;
     motor->foc_h.ipark_h.Cos = motor->foc_h.park_h.Cos;
     IPARK_run(&motor->foc_h.ipark_h);

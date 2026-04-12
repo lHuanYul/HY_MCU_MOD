@@ -27,7 +27,7 @@ static void hall_update(MotorParameter *motor)
 
 static void rotate_check(MotorParameter *motor)
 {
-    if (motor->hall_h.current == hall_seq_ccw[motor->hall_h.chk_last])
+    if      (motor->hall_h.current == hall_seq_ccw[motor->hall_h.chk_last])
     {
         motor->rpm_h.fb.reverse = 0;
         motor->hall_h.wrong = 0;
@@ -40,9 +40,9 @@ static void rotate_check(MotorParameter *motor)
     else
     {
         motor->hall_h.wrong++;
-        if (motor->hall_h.wrong >= 6)
+        if (motor->hall_h.wrong >= 3)
         {
-            motor->hall_h.wrong = 6;
+            motor->hall_h.wrong = 3;
             motor->rpm_h.fb.reverse = 0;
             motor->rpm_h.fb.value = 0.0f;
             motor->foc_h.angle_itpl = 0.0f;
@@ -56,16 +56,14 @@ static void rpm_update(MotorParameter *motor)
     motor->hall_h.time_cnt +=
         __HAL_TIM_GET_COMPARE(motor->const_h.Hall_htimx, TIM_CHANNEL_1);
     motor->hall_h.it_cnt++;
-    if (motor->hall_h.it_cnt >= MOTOR_RPM_CNT)
-    {
-        motor->hall_h.it_cnt = 0;
-        motor->rpm_h.fb.value =
-            motor->tfm_h.rpm_fbk / (float32_t)motor->hall_h.time_cnt;
-        motor->foc_h.angle_itpl = (!motor->rpm_h.fb.reverse) ?
-             motor->tfm_h.foc_it_angle_itpl / (float32_t)motor->hall_h.time_cnt :
-            -motor->tfm_h.foc_it_angle_itpl / (float32_t)motor->hall_h.time_cnt;
-        motor->hall_h.time_cnt = 0;
-    }
+    if (motor->hall_h.it_cnt < MOTOR_RPM_CNT) return;
+    motor->hall_h.it_cnt = 0;
+    motor->rpm_h.fb.value =
+        motor->tfm_h.rpm_fbk / (float32_t)motor->hall_h.time_cnt;
+    motor->foc_h.angle_itpl = (!motor->rpm_h.fb.reverse) ?
+         motor->tfm_h.foc_it_angle_itpl / (float32_t)motor->hall_h.time_cnt :
+        -motor->tfm_h.foc_it_angle_itpl / (float32_t)motor->hall_h.time_cnt;
+    motor->hall_h.time_cnt = 0;
 }
 
 /*
@@ -84,13 +82,16 @@ void HAL_TIM_PeriodElapsedCallback_OWN(TIM_HandleTypeDef *htim)
 void motor_stop_cb(MotorParameter *motor)
 {
     motor->hall_h.stop_tick = HAL_GetTick();
-    motor->hall_h.it_cnt = 0;
-    motor->hall_h.time_cnt = 0;
-    motor->rpm_h.fb.value = 0;
-    motor->foc_h.pi_Iq_h.out_fix = 0;
-    motor->foc_h.angle_acc = 0.0f;
+    motor->hall_h.it_cnt    = 0;
+    motor->hall_h.time_cnt  = 0;
+    motor->rpm_h.fb.reverse = 0;
+    motor->rpm_h.fb.value   = 0.0f;
+    motor->foc_h.angle_itpl = 0.0f;
+    motor->foc_h.angle_acc  = 0.0f;
     PI_reset(&motor->deg_h.pi_rpm);
     PI_reset(&motor->foc_h.pi_rpm);
+    PI_reset(&motor->foc_h.pi_Id_h);
+    PI_reset(&motor->foc_h.pi_Iq_h);
 }
 
 static void direction_update(MotorParameter *motor)
@@ -100,20 +101,20 @@ static void direction_update(MotorParameter *motor)
     motor->rpm_h.ref_fix.value = motor->rpm_h.ref_ori.value;
     bool ref_fbk_same_dir =
         (motor->rpm_h.ref_ori.reverse == motor->rpm_h.fb.reverse) ? 1 : 0;
-    switch (motor->dict_state)
+    switch (motor->ctrl_h.ref_fix)
     {
-        case DIRECT_NORMAL:
+        case MOTOR_CTRL_120:
         {
             if (ref_fbk_same_dir) break;
-            motor->dict_state = DIRECT_SWITCHING;
+            motor_switch_ctrl_fix(motor, MOTOR_CTRL_120_SW);
         }
-        case DIRECT_SWITCHING:
+        case MOTOR_CTRL_120_SW:
         {
             // rpm來不及算到就煞停了
             if (motor->rotate_h.ref_fix == MOTOR_ROT_COAST) break;
             if (motor->rpm_h.fb.value < motor->rpm_h.save_stop_val)
             {
-                motor->dict_state = DIRECT_NORMAL;
+                motor_switch_ctrl_fix(motor, MOTOR_CTRL_120);
                 motor->hall_h.it_cnt = 0;
                 motor->rpm_h.fb.value = 0;
                 break;
@@ -121,6 +122,7 @@ static void direction_update(MotorParameter *motor)
             motor->rotate_h.ref_fix = MOTOR_ROT_BREAK;
             break;
         }
+        default: break;
     }
 }
 
@@ -197,21 +199,29 @@ static void control_update(MotorParameter *motor)
                 if (motor->init_cnt == 0)
                 {
                     motor_vec_ctrl_adcs_reset(motor);
-                    motor_set_rotate_mode(motor, MOTOR_ROT_NORMAL);
-                    motor_switch_ctrl(motor, MOTOR_CTRL_FOC_RATED);
+                    hall_update(motor);
                     motor_set_rpm(motor, 0, 50.0f);
+                    motor_set_rotate_mode(motor, MOTOR_ROT_NORMAL);
+                    motor_switch_ctrl(motor, MOTOR_CTRL_FOC);
                 }
             }
             break;
         }
-        case MOTOR_CTRL_TEST_H:
-        case MOTOR_CTRL_TEST_L:
+        case MOTOR_CTRL_TEST_HIGH:
+        case MOTOR_CTRL_TEST_LOW:
         {
-        	if (motor->tim_it_cnt == 0)
-        		deg_ctrl_test(motor);
+            if (motor->tim_it_cnt % 1000 == 0)
+                deg_ctrl_test_HL(motor);
+            break;
+        }
+        case MOTOR_CTRL_TEST_WAVE:
+        {
+            if (motor->tim_it_cnt % 1000 == 0)
+                deg_ctrl_test_WAVE(motor);
             break;
         }
         case MOTOR_CTRL_120:
+        case MOTOR_CTRL_120_SW:
         {
             motor_foc_run(motor);
             if (motor->hall_h.delay > 0)
@@ -224,7 +234,8 @@ static void control_update(MotorParameter *motor)
             }
             break;
         }
-        case MOTOR_CTRL_FOC_RATED:
+        case MOTOR_CTRL_FOC_INIT:
+        case MOTOR_CTRL_FOC:
         {
         #ifndef MOTOR_FOC_SPIN_DEBUG
             motor_foc_run(motor);
@@ -233,7 +244,6 @@ static void control_update(MotorParameter *motor)
         #endif
             break;
         }
-        default: return;
     }
 }
 
