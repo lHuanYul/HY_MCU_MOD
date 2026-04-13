@@ -239,8 +239,7 @@ static void control_update(MotorParameter *motor)
         {
         #ifndef MOTOR_FOC_SPIN_DEBUG
             motor_foc_run(motor);
-            motor->duty_load = motor->foc_h.duty_h;
-            motor_timer_load(motor);
+            motor_foc_load(motor);
         #endif
             break;
         }
@@ -254,7 +253,7 @@ void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef *hadc)
 void motor_pwm_cb(MotorParameter *motor)
 {
     motor_vec_ctrl_adcs_upd(motor);
-    if (motor->tim_it_cnt % 200 == 0)
+    if (motor->tim_it_cnt % 1000 == 0)
     {
         if (motor->fdcan_enable)
         {
@@ -262,6 +261,9 @@ void motor_pwm_cb(MotorParameter *motor)
             fdcan_motor_send(motor, &fdcan_pkt_pool, &fdcan_trsm_pkt_buf);
             motor->fdcan_tick++;
         }
+    }
+    if (motor->tim_it_cnt % 200 == 0)
+    {
         direction_update(motor);
         status_update(motor);
     }
