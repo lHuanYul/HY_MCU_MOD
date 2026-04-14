@@ -19,41 +19,24 @@ Result fdcan_pkt_write_test(FdcanPkt *pkt)
 
 #ifdef MCU_MOTOR_CTRL
 
-static Result rpm_fbk(FdcanPkt *pkt, MotorParameter *motor)
-{
-    if (pkt == NULL) return RESULT_ERROR(RES_ERR_MEMORY_ERROR);
-    pkt->id = CAN_ID_WHEEL_RET_RPM;
-    RESULT_CHECK_HANDLE(fdcan_pkt_set_len(pkt, sizeof(uint16_t) + 2 + sizeof(float32_t)));
-    var_u32_to_u8_be(motor->fdcan_tick, pkt->data);
-    pkt->data[0] = pkt->data[2];
-    pkt->data[1] = pkt->data[3];
-    pkt->data[2] = 0;
-    pkt->data[3] = motor->rpm_h.fb.reverse;
-    var_f32_to_u8_be(motor->rpm_h.fb.value, pkt->data + 4);
-    return RESULT_OK(pkt);
-}
-
-static Result rpm_ref(FdcanPkt *pkt, MotorParameter *motor)
-{
-    if (pkt == NULL) return RESULT_ERROR(RES_ERR_MEMORY_ERROR);
-    pkt->id = CAN_ID_WHEEL_RET_RPM;
-    RESULT_CHECK_HANDLE(fdcan_pkt_set_len(pkt, sizeof(uint16_t) + 2 + sizeof(float32_t)));
-    var_u32_to_u8_be(motor->fdcan_tick, pkt->data);
-    pkt->data[0] = pkt->data[2];
-    pkt->data[1] = pkt->data[3];
-    pkt->data[2] = 1;
-    pkt->data[3] = motor->rpm_h.ref_fix.reverse;
-    var_f32_to_u8_be(motor->rpm_h.ref_fix.value, pkt->data + 4);
-    return RESULT_OK(pkt);
-}
-
 Result fdcan_motor_send(MotorParameter *motor, FdcanPktPool *pool, FdcanPktBuf *buf)
 {
     FdcanPkt *pkt = RESULT_UNWRAP_RET_RES(fdcan_pkt_pool_alloc(pool));
-    rpm_ref(pkt, motor);
-    RESULT_CHECK_HANDLE(fdcan_pkt_buf_push(buf, pkt, pool, 1));
-    pkt = RESULT_UNWRAP_RET_RES(fdcan_pkt_pool_alloc(pool));
-    rpm_fbk(pkt, motor);
+    pkt->id = CAN_ID_WHEEL_RET_RPM;
+    RESULT_CHECK_HANDLE(fdcan_pkt_set_len(pkt, sizeof(uint32_t) + sizeof(float32_t) * 4));
+
+    var_u32_to_u8_be(motor->fdcan_tick, pkt->data);
+
+    float32_t f32 = (motor->rpm_h.ref_fix.reverse) ?
+        -motor->rpm_h.ref_fix.value : motor->rpm_h.ref_fix.value;
+    var_f32_to_u8_be(f32, pkt->data + 4);
+    f32 = (motor->rpm_h.fb.reverse) ?
+        -motor->rpm_h.fb.value : motor->rpm_h.fb.value;
+    var_f32_to_u8_be(f32, pkt->data + 8);
+
+    var_f32_to_u8_be(motor->foc_h.pi_Id_h.out_fix, pkt->data + 12);
+    var_f32_to_u8_be(motor->foc_h.pi_Iq_h.out_fix, pkt->data + 16);
+    
     RESULT_CHECK_HANDLE(fdcan_pkt_buf_push(buf, pkt, pool, 1));
     return RESULT_OK(NULL);
 }
