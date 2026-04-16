@@ -3,7 +3,7 @@
 #ifdef HY_MOD_STM32_FDCAN
 
 #include "HY_MOD/main/typedef.h"
-#include "HY_MOD/packet/fdcan.h"
+#include "HY_MOD/fdcan/packet.h"
 #include "fdcan.h"
 
 typedef enum FdcanState
@@ -15,19 +15,36 @@ typedef enum FdcanState
 typedef struct FdcanConst
 {
     FDCAN_HandleTypeDef *hfdcanx;
+    TIM_HandleTypeDef   *htimx;
+    uint32_t            *tim_clk;
 } FdcanConst;
+
+// DBG: debug
+typedef struct FdcanDbg
+{
+    // 計時器頻率
+    float32_t   tim_freq;
+} FdcanDbg;
 
 typedef struct FdcanParametar
 {
     const FdcanConst const_h;
-    uint16_t    task_tick;
+    FdcanDbg    dbg_h;
+    FdcanPktPool pool;
+    FdcanPktBuf trsm_buf;
+    FdcanPktBuf recv_buf;
+    uint32_t    tim_tick;
     FdcanState  state;
     uint32_t    alive_tick;
-    FdcanPkt    *tx_pkt;
-    FdcanPkt    *rx_pkt;
-    FncState    data_store;
     uint8_t     trsming;
     uint8_t     recving;
+#ifdef MCU_MOTOR_CTRL
+    uint32_t        motor_alive;
+    bool            motor_ret_en;
+    volatile bool   motor_rpm_en;
+    volatile bool   motor_idq_en1;
+    volatile bool   motor_idq_en2;
+#endif
 } FdcanParametar;
 
 #endif

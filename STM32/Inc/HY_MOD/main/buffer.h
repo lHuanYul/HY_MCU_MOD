@@ -11,10 +11,6 @@
     #define ALIGN_32(x) x
 #endif
 
-#ifdef HY_MOD_STM32_FDCAN
-extern uint8_t fdcan_buffers[FDCAN_PKT_POOL_CAP][FDCAN_PKT_LEN];
-#endif
-
 #ifdef HY_MOD_STM32_JSON
 extern uint8_t json_buffers[JSON_PKT_POOL_CAP][ALIGN_32(JSON_PKT_LEN)];
 #endif

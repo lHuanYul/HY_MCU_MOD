@@ -240,18 +240,11 @@ typedef struct MotorFOCParameter
     MotorPhaseDuty      duty_h;
 } MotorFOCParameter;
 
-typedef struct MotorHistoryData
-{
-    float32_t spd_ref;
-    float32_t spd_fbk;
-} MotorHistoryData;
-
 typedef struct MotorHistoryArray
 {
-    MotorHistoryData data[MOTOR_HISTORY_LEN];
-    uint16_t head;
-    bool is_full;
-    uint32_t cnt;
+    uint8_t     tick;
+    volatile float32_t  id[10];
+    volatile float32_t  iq[10];
 } MotorHistoryArray;
 
 typedef struct MotorParameter
@@ -263,12 +256,6 @@ typedef struct MotorParameter
 
     MotorDbg            dbg_h;
 
-    bool                fdcan_enable;
-    
-    uint32_t            fdcan_alive;
-
-    uint32_t            fdcan_tick;
-
     uint32_t            init_cnt;
     // 馬達控制模式
     MotorCtrlParameter  ctrl_h;
@@ -277,7 +264,7 @@ typedef struct MotorParameter
     // 從尾往轉子 順時針value為負
     MotorRpmParameter   rpm_h;
     // 計時中斷計數
-    uint32_t            tim_it_cnt;
+    uint32_t            tim_tick;
 
     MotorHallParameter  hall_h;
 

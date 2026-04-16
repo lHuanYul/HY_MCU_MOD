@@ -210,13 +210,13 @@ static void control_update(MotorParameter *motor)
         case MOTOR_CTRL_TEST_HIGH:
         case MOTOR_CTRL_TEST_LOW:
         {
-            if (motor->tim_it_cnt % 1000 == 0)
+            if (motor->tim_tick % 1000 == 0)
                 deg_ctrl_test_HL(motor);
             break;
         }
         case MOTOR_CTRL_TEST_WAVE:
         {
-            if (motor->tim_it_cnt % 1000 == 0)
+            if (motor->tim_tick % 1000 == 0)
                 deg_ctrl_test_WAVE(motor);
             break;
         }
@@ -253,24 +253,17 @@ void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef *hadc)
 void motor_pwm_cb(MotorParameter *motor)
 {
     motor_vec_ctrl_adcs_upd(motor);
-    if (motor->tim_it_cnt % 1000 == 0)
-    {
-        if (motor->fdcan_enable)
-        {
-            // motor_history_write(motor);
-            fdcan_motor_send(motor, &fdcan_pkt_pool, &fdcan_trsm_pkt_buf);
-            motor->fdcan_tick++;
-        }
-    }
-    if (motor->tim_it_cnt % 200 == 0)
+    if (motor->tim_tick % 200 == 0)
     {
         direction_update(motor);
         status_update(motor);
     }
+    if (motor->tim_tick % 1000 == 0)
+    {
+        fdcan_h.motor_rpm_en = 1;
+    }
     control_update(motor);
-
-    motor->tim_it_cnt++;
-    if (motor->tim_it_cnt >= PWM_TIM_IT_CNT_MAX) motor->tim_it_cnt = 0;
+    if (++motor->tim_tick >= PWM_TIM_IT_CNT_MAX) motor->tim_tick = 0;
 }
 
 #endif

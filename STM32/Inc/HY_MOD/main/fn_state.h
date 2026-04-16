@@ -48,6 +48,9 @@ typedef struct Result
 
 #define RESULT_CHECK_RAW(_res_) (!(_res_).is_ok)
 
+#define RESULT_UNWRAP(_res_)\
+    (_res_).result.success.obj
+
 #define RESULT_UNWRAP_SKIP(expr)\
     ({\
         Result _res_ = (expr);\
@@ -58,7 +61,7 @@ typedef struct Result
         } \
         else \
         { \
-            (_res_).result.success.obj;\
+            RESULT_UNWRAP(_res_);\
         } \
     })
 
@@ -79,6 +82,7 @@ typedef struct Result
         }\
     } while (0)
 
+
 #define RESULT_UNWRAP_HANDLE(expr)\
     ({\
         Result _res_ = (expr);\
@@ -87,7 +91,7 @@ typedef struct Result
             last_error = _res_.result.error;\
             Error_Handler();\
         }\
-        (_res_).result.success.obj;\
+        RESULT_UNWRAP(_res_);\
     })
 
 #define RESULT_CHECK_RET_VOID(expr)\
@@ -108,7 +112,7 @@ typedef struct Result
             last_error = _res_.result.error;\
             return;\
         }\
-        (_res_).result.success.obj;\
+        RESULT_UNWRAP(_res_);\
     })
 
 #define RESULT_CHECK_RET_RES(expr)\
@@ -129,7 +133,7 @@ typedef struct Result
             last_error = _res_.result.error;\
             return _res_;\
         }\
-        (_res_).result.success.obj;\
+        RESULT_UNWRAP(_res_);\
     })
 
 #define RESULT_CHECK_GOTO(expr,tag)\
@@ -150,7 +154,7 @@ typedef struct Result
             last_error = _res_.result.error;\
             goto tag;\
         }\
-        (_res_).result.success.obj;\
+        RESULT_UNWRAP(_res_);\
     })
 
 #ifdef STM32_DEVICE
@@ -181,10 +185,13 @@ typedef struct Result
             Error_Handler(); \
         } \
     } while (0)
-#endif
+
+#define INSTANCE_CHK(one, two) ((one)->Instance == (two)->Instance)
 
 #define StopTask() \
 ({ \
     osThreadExit(); \
     return; \
 })
+
+#endif

@@ -6,6 +6,7 @@
 #include "HY_MOD/motor/trigonometric.h"
 #include "HY_MOD/adc_current/main.h"
 #include "tim.h"
+#include "dac.h"
 
 void motor_foc_set(MotorParameter *motor)
 {
@@ -74,6 +75,7 @@ static inline void motor_vec_ctrl_park(MotorParameter *motor)
     PARK_run(&motor->foc_h.park_h);
 }
 
+#define SQUARE(x) (x*x)
 static inline void motor_vec_ctrl_pi_id_iq(MotorParameter *motor)
 {
     motor->foc_h.pi_Id_h.reference = 0.0f;
@@ -82,6 +84,10 @@ static inline void motor_vec_ctrl_pi_id_iq(MotorParameter *motor)
     motor->foc_h.pi_Id_h.feedback  = motor->foc_h.park_h.Ds;
     motor->foc_h.pi_Iq_h.feedback  = motor->foc_h.park_h.Qs;
     PI_run(&motor->foc_h.pi_Id_h);
+    float32_t Iq_lim;
+    arm_sqrt_f32(SQUARE(motor->foc_h.pi_Id_h.max) - SQUARE(motor->foc_h.pi_Id_h.out_fix), &Iq_lim);
+    motor->foc_h.pi_Iq_h.max =  Iq_lim;
+    motor->foc_h.pi_Iq_h.min = -Iq_lim;
     PI_run(&motor->foc_h.pi_Iq_h);
 }
 
@@ -109,7 +115,6 @@ static inline void motor_vec_ctrl_svgen(MotorParameter *motor)
     SVGEN_run(&motor->foc_h.svgendq_h);
 }
 
-#define SQUARE(x) (x*x)
 static inline void motor_vec_ctrl_svpwm(MotorParameter *motor)
 {
     if (
@@ -174,19 +179,43 @@ static inline void motor_vec_ctrl_svpwm(MotorParameter *motor)
     }
 }
 
+#include "main/main.h"
 void motor_foc_run(MotorParameter *motor)
 {
+    if (motor->tim_tick % 10 == 4)
+    {
+        fdcan_h.motor_idq_en1 = 1;
+        fdcan_h.motor_idq_en2 = 0;
+    }
+    else if (motor->tim_tick % 10 == 9)
+    {
+        fdcan_h.motor_idq_en1 = 0;
+        fdcan_h.motor_idq_en2 = 1;
+    }
     RESULT_CHECK_RET_VOID(motor_vec_ctrl_angle_upd(motor));
     if (motor->foc_h.init_cnt > 0)
     {
         motor->foc_h.init_cnt--;
         if (motor->foc_h.init_cnt == 0)
+        // Todo FOC初始角度測試 先用簡單的120度控制等效於60度換相 讓馬達轉起來再說
             motor_switch_ctrl_fix(motor, motor->ctrl_h.ref_ori);
         return;
     }
     motor_vec_ctrl_clarke(motor);
     motor_vec_ctrl_park(motor);
     motor_vec_ctrl_pi_id_iq(motor);
+
+    motor->history.id[motor->tim_tick % 10] = motor->foc_h.pi_Id_h.out_fix;
+    motor->history.iq[motor->tim_tick % 10] = motor->foc_h.pi_Iq_h.out_fix;
+
+    float32_t scale = 4095.0f / (2.0f * ONE_DIV_SQRT3);
+    float32_t dac_id = motor->foc_h.pi_Id_h.out_fix * scale + 2048.0f;
+    float32_t dac_iq = motor->foc_h.pi_Iq_h.out_fix * scale + 2048.0f;
+    VAR_CLAMPF(dac_id, 0.0f, 4095.0f);
+    VAR_CLAMPF(dac_iq, 0.0f, 4095.0f);
+    HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_1, DAC_ALIGN_12B_R, (uint32_t)dac_id); // PA4 輸出 Id
+    HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_2, DAC_ALIGN_12B_R, (uint32_t)dac_iq); // PA5
+
     motor_vec_ctrl_ipark(motor);
     motor_vec_ctrl_svgen(motor);
     motor_vec_ctrl_svpwm(motor);

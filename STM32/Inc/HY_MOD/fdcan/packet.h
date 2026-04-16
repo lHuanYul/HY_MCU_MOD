@@ -6,6 +6,8 @@
 
 typedef struct FdcanPkt
 {
+    uint8_t         state;
+    uint8_t         number;
     uint32_t        id;
     uint8_t         *data;
     uint8_t         len;
@@ -34,7 +36,9 @@ typedef struct FdcanPktBuf
     uint8_t     cap;
 } FdcanPktBuf;
 Result fdcan_pkt_buf_push(FdcanPktBuf* self, FdcanPkt *pkt, FdcanPktPool *pool, uint8_t drop);
-Result fdcan_pkt_buf_get(FdcanPktBuf* self);
-Result fdcan_pkt_buf_pop(FdcanPktBuf* self);
+Result fdcan_pkt_buf_get(FdcanPktBuf* self, uint8_t id);
+Result fdcan_pkt_buf_trsm_get(FdcanPktBuf* self);
+Result fdcan_pkt_buf_pop(FdcanPktBuf* self, uint8_t id);
+Result fdcan_pkt_buf_trsm_pop(FdcanPktBuf* self, FdcanPktPool *pool, uint8_t number);
 
 #endif

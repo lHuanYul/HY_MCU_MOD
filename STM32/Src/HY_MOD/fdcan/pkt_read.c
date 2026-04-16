@@ -8,7 +8,7 @@
 #ifdef MCU_MOTOR_CTRL
 #include "HY_MOD/motor/main.h"
 
-Result fdcan_pkt_ist_read(FdcanPkt *pkt)
+Result fdcan_pkt_ist_read(FdcanParametar *fdcan, FdcanPkt *pkt)
 {
     uint8_t code;
     switch (pkt->id)
@@ -16,7 +16,7 @@ Result fdcan_pkt_ist_read(FdcanPkt *pkt)
         case CAN_ID_WHEEL_SET_RPM:
         {
             MotorParameter *motor = &motor_h;
-            motor->fdcan_alive = HAL_GetTick();
+            fdcan->motor_alive = HAL_GetTick();
             RESULT_CHECK_RET_RES(fdcan_pkt_get_byte(pkt, 0, &code));
             switch (code)
             {
@@ -48,12 +48,7 @@ Result fdcan_pkt_ist_read(FdcanPkt *pkt)
                 case CMD_WHEEL_B0_FDCAN:
                 {
                     RESULT_CHECK_RET_RES(fdcan_pkt_get_byte(pkt, 1, &code));
-                    if (code == 0) motor->fdcan_enable = 0;
-                    else
-                    {
-                        motor->fdcan_enable = 1;
-                        motor->fdcan_tick = 0;
-                    }
+                    fdcan->motor_ret_en = (code) ? 1 : 0;
                     return RESULT_OK(NULL);
                 }
                 default: break;
@@ -102,7 +97,7 @@ static void uss_read(uint8_t code, VehicleUSS *uss)
     uss->state = code;
 }
 
-Result fdcan_pkt_ist_read(FdcanPkt *pkt)
+Result fdcan_pkt_ist_read(FdcanParametar *fdcan, FdcanPkt *pkt)
 {
     uint8_t code;
     switch (pkt->id)
@@ -210,7 +205,7 @@ Result fdcan_pkt_rcv_read(FdcanPkt *pkt)
 #endif
 
 #ifdef MCU_SENSOR
-Result fdcan_pkt_ist_read(FdcanPkt *pkt)
+Result fdcan_pkt_ist_read(FdcanParametar *fdcan, FdcanPkt *pkt)
 {
     uint8_t code;
     switch (pkt->id)

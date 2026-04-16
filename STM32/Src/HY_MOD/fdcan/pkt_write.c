@@ -3,13 +3,14 @@
 
 #include "main/main.h"
 #include "HY_MOD/fdcan/pkt_read.h"
+#include "HY_MOD/fdcan/main.h"
 #include "HY_MOD/main/variable_cal.h"
 
 static float ftest = 0.0;
 Result fdcan_pkt_write_test(FdcanPkt *pkt)
 {
     if (pkt == NULL) return RESULT_ERROR(RES_ERR_MEMORY_ERROR);
-    pkt->id = FDCAN_TEST_ID;
+    fdcan_pkt_set_id(pkt, FDCAN_TEST_ID);
     pkt->data[0] = 0x00;
     pkt->data[1] = 0xFF;
     var_f32_to_u8_be(ftest++, pkt->data + 2);
@@ -19,13 +20,13 @@ Result fdcan_pkt_write_test(FdcanPkt *pkt)
 
 #ifdef MCU_MOTOR_CTRL
 
-Result fdcan_motor_send(MotorParameter *motor, FdcanPktPool *pool, FdcanPktBuf *buf)
+Result fdcan_motor_rpm_send(FdcanParametar *fdcan, MotorParameter *motor)
 {
-    FdcanPkt *pkt = RESULT_UNWRAP_RET_RES(fdcan_pkt_pool_alloc(pool));
-    pkt->id = CAN_ID_WHEEL_RET_RPM;
-    RESULT_CHECK_HANDLE(fdcan_pkt_set_len(pkt, sizeof(uint32_t) + sizeof(float32_t) * 4));
+    FdcanPkt *pkt = RESULT_UNWRAP_RET_RES(fdcan_pkt_pool_alloc(&fdcan->pool));
+    fdcan_pkt_set_id(pkt, CAN_ID_WHEEL_RET_RPM);
+    RESULT_CHECK_HANDLE(fdcan_pkt_set_len(pkt, sizeof(uint32_t) + sizeof(float32_t) * 2));
 
-    var_u32_to_u8_be(motor->fdcan_tick, pkt->data);
+    var_u32_to_u8_be(fdcan->tim_tick, pkt->data);
 
     float32_t f32 = (motor->rpm_h.ref_fix.reverse) ?
         -motor->rpm_h.ref_fix.value : motor->rpm_h.ref_fix.value;
@@ -34,12 +35,28 @@ Result fdcan_motor_send(MotorParameter *motor, FdcanPktPool *pool, FdcanPktBuf *
         -motor->rpm_h.fb.value : motor->rpm_h.fb.value;
     var_f32_to_u8_be(f32, pkt->data + 8);
 
-    var_f32_to_u8_be(motor->foc_h.pi_Id_h.out_fix, pkt->data + 12);
-    var_f32_to_u8_be(motor->foc_h.pi_Iq_h.out_fix, pkt->data + 16);
-    
-    RESULT_CHECK_HANDLE(fdcan_pkt_buf_push(buf, pkt, pool, 1));
+    RESULT_CHECK_HANDLE(fdcan_pkt_buf_push(&fdcan->trsm_buf, pkt, &fdcan->pool, 1));
     return RESULT_OK(NULL);
 }
+
+Result fdcan_motor_idq_send(FdcanParametar *fdcan, MotorParameter *motor, uint8_t idq_sel)
+{
+    FdcanPkt *pkt = RESULT_UNWRAP_RET_RES(fdcan_pkt_pool_alloc(&fdcan->pool));
+    fdcan_pkt_set_id(pkt, CAN_ID_WHEEL_RET_IDQ);
+    RESULT_CHECK_HANDLE(fdcan_pkt_set_len(pkt, sizeof(uint32_t) + sizeof(float32_t) * 10));
+
+    var_u32_to_u8_be(fdcan->tim_tick, pkt->data);
+    uint8_t i;
+    for (i = idq_sel; i < 5 + idq_sel; i++)
+    {
+        var_f32_to_u8_be(motor->history.id[i], pkt->data + 4 + i * 4);
+        var_f32_to_u8_be(motor->history.iq[i], pkt->data + 4 + (i + 5) * 4);
+    }
+
+    RESULT_CHECK_HANDLE(fdcan_pkt_buf_push(&fdcan->trsm_buf, pkt, &fdcan->pool, 0));
+    return RESULT_OK(NULL);
+}
+
 #endif
 
 #ifdef MCU_VEHICLE_MAIN

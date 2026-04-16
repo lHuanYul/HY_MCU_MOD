@@ -2,6 +2,7 @@
 #ifdef HY_MOD_STM32_MOTOR
 
 #include "tim.h"
+#include "dac.h"
 
 // Motor setup
 void motor_setup(MotorParameter *motor)
@@ -65,6 +66,9 @@ void motor_setup(MotorParameter *motor)
     __HAL_TIM_ENABLE_IT(motor->const_h.Hall_htimx, TIM_IT_UPDATE);
     __HAL_TIM_URS_ENABLE(motor->const_h.Hall_htimx);
     HAL_TIMEx_HallSensor_Start_IT(motor->const_h.Hall_htimx);
+    
+    HAL_DAC_Start(&hdac1, DAC_CHANNEL_1); 
+    HAL_DAC_Start(&hdac1, DAC_CHANNEL_2);
 }
 
 void motor_timer_load(MotorParameter *motor)
@@ -172,23 +176,6 @@ void motor_switch_ctrl_fix(MotorParameter *motor, MotorCtrl ctrl)
         default: return;
     }
     motor->ctrl_h.ref_fix = ctrl;
-}
-
-void motor_history_write(MotorParameter *motor)
-{
-    uint16_t idx = motor->history.head;
-    motor->history.data[idx].spd_ref = (!motor->rpm_h.ref_fix.reverse) ?
-        motor->rpm_h.ref_fix.value : -motor->rpm_h.ref_fix.value;
-    motor->history.data[idx].spd_fbk = (!motor->rpm_h.fb.reverse) ?
-        motor->rpm_h.fb.value  : -motor->rpm_h.fb.value;
-    motor->history.cnt++;
-    idx++;
-    if (idx >= MOTOR_HISTORY_LEN)
-    {
-        idx = 0;
-        motor->history.is_full = 1;
-    }
-    motor->history.head = idx;
 }
 
 #endif

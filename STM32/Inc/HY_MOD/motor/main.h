@@ -11,5 +11,4 @@ void motor_set_rpm(MotorParameter *motor, bool reverse, float32_t speed);
 void motor_set_rotate_mode(MotorParameter *motor, MotorRot mode);
 void motor_switch_ctrl(MotorParameter *motor, MotorCtrl ctrl);
 void motor_switch_ctrl_fix(MotorParameter *motor, MotorCtrl ctrl);
-void motor_history_write(MotorParameter *motor);
 #endif
