@@ -182,16 +182,6 @@ static inline void motor_vec_ctrl_svpwm(MotorParameter *motor)
 #include "main/main.h"
 void motor_foc_run(MotorParameter *motor)
 {
-    if (motor->tim_tick % 10 == 4)
-    {
-        fdcan_h.motor_idq_en1 = 1;
-        fdcan_h.motor_idq_en2 = 0;
-    }
-    else if (motor->tim_tick % 10 == 9)
-    {
-        fdcan_h.motor_idq_en1 = 0;
-        fdcan_h.motor_idq_en2 = 1;
-    }
     RESULT_CHECK_RET_VOID(motor_vec_ctrl_angle_upd(motor));
     if (motor->foc_h.init_cnt > 0)
     {
@@ -207,6 +197,16 @@ void motor_foc_run(MotorParameter *motor)
 
     motor->history.id[motor->tim_tick % 10] = motor->foc_h.pi_Id_h.out_fix;
     motor->history.iq[motor->tim_tick % 10] = motor->foc_h.pi_Iq_h.out_fix;
+    if (motor->tim_tick % 10 == 4)
+    {
+        fdcan_h.motor_idq_en1 = 1;
+        fdcan_h.motor_idq_en2 = 0;
+    }
+    else if (motor->tim_tick % 10 == 9)
+    {
+        fdcan_h.motor_idq_en1 = 0;
+        fdcan_h.motor_idq_en2 = 1;
+    }
 
     float32_t scale = 4095.0f / (2.0f * ONE_DIV_SQRT3);
     float32_t dac_id = motor->foc_h.pi_Id_h.out_fix * scale + 2048.0f;
@@ -224,9 +224,6 @@ void motor_foc_run(MotorParameter *motor)
 void motor_foc_load(MotorParameter *motor)
 {
     motor->duty_load = motor->foc_h.duty_h;
-    // motor->duty_load.u = 0.3f;
-    // motor->duty_load.v = 0.3f;
-    // motor->duty_load.w = 0.3f;
     motor_timer_load(motor);
 }
 
