@@ -45,7 +45,7 @@ void fdcan_setup(FdcanParametar *fdcan)
         HAL_FDCAN_ConfigFilter(
             fdcan->const_h.hfdcanx, &fifo1_filter0)
     );
-    HAL_FDCAN_ConfigTxDelayCompensation(fdcan->const_h.hfdcanx, 13, 0);
+    HAL_FDCAN_ConfigTxDelayCompensation(fdcan->const_h.hfdcanx, FDCAN_TDC, 0);
     HAL_FDCAN_EnableTxDelayCompensation(fdcan->const_h.hfdcanx);
     ERROR_CHECK_HAL_HANDLE(HAL_FDCAN_Start(fdcan->const_h.hfdcanx));
     ERROR_CHECK_HAL_HANDLE(
@@ -108,10 +108,11 @@ static uint32_t len_to_dlc(uint8_t len)
 static Result fdcan_pkt_transmit(FdcanParametar *fdcan, FdcanPkt *pkt)
 {
     if (pkt == NULL) return RESULT_ERROR(RES_ERR_NOT_FOUND);
+    if (pkt->state == 1) return RESULT_ERROR(RES_ERR_BUSY);
     FDCAN_TxHeaderTypeDef header = {
         .IdType                 = FDCAN_EXTENDED_ID,
         .FDFormat               = FDCAN_FD_CAN,
-        .ErrorStateIndicator    = FDCAN_ESI_PASSIVE,
+        .ErrorStateIndicator    = FDCAN_ESI_ACTIVE,
         .BitRateSwitch          = FDCAN_BRS_ON,
         .TxEventFifoControl     = FDCAN_STORE_TX_EVENTS,
         .MessageMarker          = pkt->number,
@@ -121,28 +122,37 @@ static Result fdcan_pkt_transmit(FdcanParametar *fdcan, FdcanPkt *pkt)
     ERROR_CHECK_HAL_HANDLE(
         HAL_FDCAN_AddMessageToTxFifoQ(fdcan->const_h.hfdcanx, &header, pkt->data)
     );
+    // Todo
+    pkt->state = 1;
     return RESULT_OK(NULL);
 }
 
-Result fdcan_tx_push(FdcanParametar *fdcan, uint8_t cnt)
+Result fdcan_tx_push(FdcanParametar *fdcan)
 {
-    if (cnt == 0) return RESULT_ERROR(RES_ERR_FULL);
-    uint8_t i;
-    for (i = 0; i < cnt; i++)
+    for (;;)
     {
-        Result result = fdcan_pkt_buf_trsm_get(&fdcan->trsm_buf);
-        if (RESULT_CHECK_RAW(result)) return RESULT_OK(NULL);
+        uint32_t fl = HAL_FDCAN_GetTxFifoFreeLevel(fdcan->const_h.hfdcanx);
+        if (fl == 0) break;
+
+        Result result = fdcan_pkt_buf_trsm_get(&fdcan->tx_buf);
+        if (RESULT_CHECK_RAW(result)) break;
         FdcanPkt *pkt = RESULT_UNWRAP(result);
         RESULT_CHECK_RET_RES(fdcan_pkt_transmit(fdcan, pkt));
+        
+        uint32_t timeout = 10000;
+        while (
+            HAL_FDCAN_GetTxFifoFreeLevel(fdcan->const_h.hfdcanx) == fl &&
+            --timeout
+        ) __NOP();
     }
     return RESULT_OK(NULL);
 }
 
 Result fdcan_trsm_pkts_proc(FdcanParametar *fdcan)
 {
-    uint32_t fl = HAL_FDCAN_GetTxFifoFreeLevel(fdcan->const_h.hfdcanx);
-    if (fl != FDCAN_TX_FIFO_SIZE) return RESULT_ERROR(RES_ERR_BUSY);
-    RESULT_CHECK_RET_RES(fdcan_tx_push(fdcan, fl));
+    if (HAL_FDCAN_GetTxFifoFreeLevel(fdcan->const_h.hfdcanx) != FDCAN_TX_FIFO_SIZE)
+        return RESULT_ERROR(RES_ERR_BUSY);
+    RESULT_CHECK_RET_RES(fdcan_tx_push(fdcan));
     return RESULT_OK(NULL);
 }
 
@@ -151,7 +161,7 @@ Result fdcan_recv_pkts_proc(FdcanParametar *fdcan, uint8_t count)
 {
     for (uint8_t i = 0; i < count; i++)
     {
-        FdcanPkt *pkt = RESULT_UNWRAP_RET_RES(fdcan_pkt_buf_pop(&fdcan->recv_buf, 0));
+        FdcanPkt *pkt = RESULT_UNWRAP_RET_RES(fdcan_pkt_buf_pop(&fdcan->rx_buf, 0));
         fdcan_pkt_rcv_read(pkt);
         fdcan_pkt_pool_free(&fdcan->pool, pkt);
     }

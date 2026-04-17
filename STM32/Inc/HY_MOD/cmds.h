@@ -4,8 +4,6 @@
 
 #define CMD_BX_EMPTY                (uint8_t)0x00
 
-#define FDCAN_TEST_ID               (uint16_t)0x001
-
 //----------------------------------------------------------------------------------------------------
 #define CMD_DATA_B0_CONTROL         (uint8_t)0x10   // 回傳資料
 #define CMD_DATA_B0_STOP            (uint8_t)0x11   // 資料收集停止(can)
@@ -119,3 +117,5 @@
 #define CMD_B0_TEST                 (uint8_t)0xFF
 
 #define CMD_B1_TEST0                (uint8_t)0x00
+
+#define FDCAN_TEST_ID               CAN_ID_WHEEL_LEFT_SET_RPM

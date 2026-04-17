@@ -2,7 +2,7 @@
 #include "HY_MOD/fdcan/basic.h"
 #ifdef HY_MOD_STM32_FDCAN
 
-Result fdcan_pkt_write_test(FdcanPkt *pkt);
+Result fdcan_pkt_write_test(FdcanParametar *fdcan);
 
 #ifdef MCU_MOTOR_CTRL
 #include "HY_MOD/motor/basic.h"

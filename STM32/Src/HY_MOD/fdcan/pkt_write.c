@@ -7,15 +7,16 @@
 #include "HY_MOD/main/variable_cal.h"
 
 static float ftest = 0.0;
-Result fdcan_pkt_write_test(FdcanPkt *pkt)
+Result fdcan_pkt_write_test(FdcanParametar *fdcan)
 {
-    if (pkt == NULL) return RESULT_ERROR(RES_ERR_MEMORY_ERROR);
+    FdcanPkt *pkt = RESULT_UNWRAP_RET_RES(fdcan_pkt_pool_alloc(&fdcan->pool));
     fdcan_pkt_set_id(pkt, FDCAN_TEST_ID);
-    pkt->data[0] = 0x00;
-    pkt->data[1] = 0xFF;
+    RESULT_CHECK_HANDLE(fdcan_pkt_set_len(pkt, 2 + sizeof(float32_t)));
+    pkt->data[0] = 0xFF;
+    pkt->data[1] = 0x00;
     var_f32_to_u8_be(ftest++, pkt->data + 2);
-    pkt->len = 6;
-    return RESULT_OK(pkt);
+    RESULT_CHECK_HANDLE(fdcan_pkt_buf_push(&fdcan->tx_buf, pkt, &fdcan->pool, 1));
+    return RESULT_OK(NULL);
 }
 
 #ifdef MCU_MOTOR_CTRL
@@ -35,7 +36,7 @@ Result fdcan_motor_rpm_send(FdcanParametar *fdcan, MotorParameter *motor)
         -motor->rpm_h.fb.value : motor->rpm_h.fb.value;
     var_f32_to_u8_be(f32, pkt->data + 8);
 
-    RESULT_CHECK_HANDLE(fdcan_pkt_buf_push(&fdcan->trsm_buf, pkt, &fdcan->pool, 1));
+    RESULT_CHECK_HANDLE(fdcan_pkt_buf_push(&fdcan->tx_buf, pkt, &fdcan->pool, 1));
     return RESULT_OK(NULL);
 }
 
@@ -53,7 +54,7 @@ Result fdcan_motor_idq_send(FdcanParametar *fdcan, MotorParameter *motor, uint8_
         var_f32_to_u8_be(motor->history.iq[i], pkt->data + 4 + (i + 5) * 4);
     }
 
-    RESULT_CHECK_HANDLE(fdcan_pkt_buf_push(&fdcan->trsm_buf, pkt, &fdcan->pool, 0));
+    RESULT_CHECK_HANDLE(fdcan_pkt_buf_push(&fdcan->tx_buf, pkt, &fdcan->pool, 0));
     return RESULT_OK(NULL);
 }
 

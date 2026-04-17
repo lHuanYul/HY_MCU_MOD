@@ -142,7 +142,6 @@ Result fdcan_pkt_buf_trsm_get(FdcanPktBuf* self)
         // 必須是非 NULL 且 尚未進入硬體 的封包
         if (pkt != NULL && pkt->state == 0)
         {
-            pkt->state = 1;
             ACT_ENABLE_IRQ(RESULT_OK(pkt));
         }
     }

@@ -31,13 +31,14 @@ typedef struct FdcanParametar
     const FdcanConst const_h;
     FdcanDbg    dbg_h;
     FdcanPktPool pool;
-    FdcanPktBuf trsm_buf;
-    FdcanPktBuf recv_buf;
+    FdcanPktBuf tx_buf;
+    uint8_t     tx_cb;
+    uint32_t    tx_lost;
+    FdcanPktBuf rx_buf;
+    uint8_t     rx_cb;
     uint32_t    tim_tick;
     FdcanState  state;
     uint32_t    alive_tick;
-    uint8_t     trsming;
-    uint8_t     recving;
 #ifdef MCU_MOTOR_CTRL
     uint32_t        motor_alive;
     bool            motor_ret_en;
