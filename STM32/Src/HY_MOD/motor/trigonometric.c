@@ -1900,7 +1900,7 @@ Result trigo_sin_cosf(float32_t theta, float32_t *sin, float32_t *cos)
     in[0] = (int32_t)((var_wrap_pi(theta, PI_MUL_2) / PI) * 2147483648.0f);
     in[1] = 0x7FFFFFFF;
     int32_t out[2];
-    ERROR_CHECK_HAL_RET_RES(HAL_CORDIC_Calculate(&hcordic, in, out, 1, HAL_MAX_DELAY));
+    ERROR_CHECK_HAL_HANDLE(HAL_CORDIC_Calculate(&hcordic, in, out, 1, HAL_MAX_DELAY));
     *sin = (float32_t)out[0] / 2147483648.0f;
     *cos = (float32_t)out[1] / 2147483648.0f;
     return RESULT_OK(NULL);
@@ -1922,7 +1922,7 @@ Result trigo_atan(float32_t x, float32_t y, float32_t *theta)
     int32_t in[2], out;
     in[0] = (int32_t)(x * 2147483648.0f);
     in[1] = (int32_t)(y * 2147483648.0f);
-    ERROR_CHECK_HAL_RET_RES(HAL_CORDIC_Calculate(&hcordic, in, &out, 1, HAL_MAX_DELAY));
+    ERROR_CHECK_HAL_HANDLE(HAL_CORDIC_Calculate(&hcordic, in, &out, 1, HAL_MAX_DELAY));
     float32_t angle = (float32_t)out / 2147483648.0f * PI; // [-π, π)
     if (angle < 0) angle += PI_MUL_2;
     *theta = angle;

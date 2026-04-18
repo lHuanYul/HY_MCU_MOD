@@ -8,8 +8,9 @@
 
 typedef enum FdcanState
 {
-    FDCAN_STATE_FINISH,
+    FDCAN_STATE_RUNNING,
     FDCAN_STATE_BUS_OFF,
+    FDCAN_STATE_RESTART,
 } FdcanState;
 
 typedef struct FdcanConst
@@ -30,15 +31,15 @@ typedef struct FdcanParametar
 {
     const FdcanConst const_h;
     FdcanDbg    dbg_h;
-    FdcanPktPool pool;
-    FdcanPktBuf tx_buf;
+    FdcanState  state;
+    FdcanRing   tx_buf;
     uint8_t     tx_cb;
     uint32_t    tx_lost;
-    FdcanPktBuf rx_buf;
+    FdcanRing   rx_buf;
     uint8_t     rx_cb;
     uint32_t    tim_tick;
-    FdcanState  state;
     uint32_t    alive_tick;
+    volatile bool   test_en;
 #ifdef MCU_MOTOR_CTRL
     uint32_t        motor_alive;
     bool            motor_ret_en;

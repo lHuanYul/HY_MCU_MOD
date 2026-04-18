@@ -27,7 +27,7 @@ inline void motor_vec_ctrl_adcs_upd(MotorParameter *motor)
 {
     uint8_t i;
     for (i = 0; i < 3; i++)
-        RESULT_CHECK_RET_VOID(adc_current_upd(motor->foc_h.adc_h.uvw[i]));
+        RESULT_CHECK_HANDLE(adc_current_upd(motor->foc_h.adc_h.uvw[i]));
 }
 
 static const float32_t hall_elec_angle[8] = {
@@ -42,8 +42,13 @@ static const float32_t hall_elec_angle[8] = {
 };
 static inline Result motor_vec_ctrl_angle_upd(MotorParameter *motor)
 {
-    if (motor->hall_h.current == UINT8_MAX) return RESULT_ERROR(RES_ERR_NOT_FOUND);
-    motor->foc_h.hall_rad = hall_elec_angle[motor->hall_h.current];
+    uint8_t hall = motor->hall_h.current;
+    if (hall == UINT8_MAX)
+    {
+        if (motor->ctrl_h.ref_fix == MOTOR_CTRL_FOC_SIM) hall = 4;
+        else return RESULT_ERROR(RES_ERR_NOT_FOUND);
+    }
+    motor->foc_h.hall_rad = hall_elec_angle[hall];
     return RESULT_OK(motor);
 }
 
@@ -53,7 +58,6 @@ static inline void motor_vec_ctrl_clarke(MotorParameter *motor)
     uint8_t i;
     for (i = 0; i < 3; i++)
         motor->foc_h.clarke_h.ABC[i] = motor->foc_h.adc_h.uvw[i]->current;
-    
     CLARKE_run_ideal(&motor->foc_h.clarke_h);
 }
 
@@ -84,8 +88,9 @@ static inline void motor_vec_ctrl_pi_id_iq(MotorParameter *motor)
     motor->foc_h.pi_Id_h.feedback  = motor->foc_h.park_h.Ds;
     motor->foc_h.pi_Iq_h.feedback  = motor->foc_h.park_h.Qs;
     PI_run(&motor->foc_h.pi_Id_h);
-    float32_t Iq_lim;
-    arm_sqrt_f32(SQUARE(motor->foc_h.pi_Id_h.max) - SQUARE(motor->foc_h.pi_Id_h.out_fix), &Iq_lim);
+    float32_t Iq_lim = 0.0f;
+    float32_t diff = SQUARE(motor->foc_h.pi_Id_h.max) - SQUARE(motor->foc_h.pi_Id_h.out_fix);
+    if (diff > 0.0f) arm_sqrt_f32(diff, &Iq_lim);
     motor->foc_h.pi_Iq_h.max =  Iq_lim;
     motor->foc_h.pi_Iq_h.min = -Iq_lim;
     PI_run(&motor->foc_h.pi_Iq_h);
@@ -104,8 +109,13 @@ static inline void motor_vec_ctrl_ipark(MotorParameter *motor)
     motor->foc_h.ipark_h.Sin = motor->foc_h.park_h.Sin;
     motor->foc_h.ipark_h.Cos = motor->foc_h.park_h.Cos;
     IPARK_run(&motor->foc_h.ipark_h);
-    RESULT_CHECK_HANDLE(trigo_atan(
-        motor->foc_h.ipark_h.Alpha, motor->foc_h.ipark_h.Beta, &motor->foc_h.magn_rad));
+    Result res = trigo_atan(
+        motor->foc_h.ipark_h.Alpha, motor->foc_h.ipark_h.Beta, &motor->foc_h.magn_rad);
+    if (RESULT_CHECK_RAW(res))
+    {
+        if (motor->ctrl_h.ref_fix == MOTOR_CTRL_FOC_SIM) motor->foc_h.magn_rad = 0.0f;
+        else Error_Handler();
+    }
 }
 
 static inline void motor_vec_ctrl_svgen(MotorParameter *motor)
@@ -121,7 +131,10 @@ static inline void motor_vec_ctrl_svpwm(MotorParameter *motor)
         arm_sqrt_f32(
             SQUARE(motor->foc_h.svgendq_h.Ualpha) + SQUARE(motor->foc_h.svgendq_h.Ubeta),
             &motor->foc_h.Vref) != ARM_MATH_SUCCESS
-    ) while (1) {};
+    ) {
+        if (motor->ctrl_h.ref_fix == MOTOR_CTRL_FOC_SIM) motor->foc_h.Vref = 0.0f;
+        else Error_Handler();
+    }
     float32_t theta = var_wrap_pos(motor->foc_h.magn_rad, PI_DIV_3);
     // T1: 第一個有源向量導通時間 在該sector內靠近前一個主向量的時間比例(由sin(π/3−θ)決定)
     // T2: 第二個有源向量導通時間 在該sector內靠近下一個主向量的時間比例(由sin(θ)決定)
@@ -180,6 +193,7 @@ static inline void motor_vec_ctrl_svpwm(MotorParameter *motor)
 }
 
 #include "main/main.h"
+#define RECORD_INTERVAL 20
 void motor_foc_run(MotorParameter *motor)
 {
     RESULT_CHECK_RET_VOID(motor_vec_ctrl_angle_upd(motor));
@@ -195,19 +209,28 @@ void motor_foc_run(MotorParameter *motor)
     motor_vec_ctrl_park(motor);
     motor_vec_ctrl_pi_id_iq(motor);
 
-    motor->history.id[motor->tim_tick % 10] = motor->foc_h.pi_Id_h.out_fix;
-    motor->history.iq[motor->tim_tick % 10] = motor->foc_h.pi_Iq_h.out_fix;
-    if (motor->tim_tick % 10 == 4)
+    if (motor->tim_tick % RECORD_INTERVAL == 0)
     {
-        fdcan_h.motor_idq_en1 = 1;
-        fdcan_h.motor_idq_en2 = 0;
-    }
-    else if (motor->tim_tick % 10 == 9)
-    {
-        fdcan_h.motor_idq_en1 = 0;
-        fdcan_h.motor_idq_en2 = 1;
-    }
+        // 計算降採樣後對應的 0~9 Buffer Index
+        // 利用除法消除掉沒記錄的 tick，再取餘數限制在 0~9
+        uint8_t buf_idx = (motor->tim_tick / RECORD_INTERVAL) % 10;
 
+        motor->history.id[buf_idx] = motor->foc_h.pi_Id_h.out_fix;
+        motor->history.iq[buf_idx] = motor->foc_h.pi_Iq_h.out_fix;
+
+        // 前半段 (0~4) 填滿時觸發 en1
+        if (buf_idx == 4)
+        {
+            fdcan_h.motor_idq_en1 = 1;
+            fdcan_h.motor_idq_en2 = 0;
+        }
+        // 後半段 (5~9) 填滿時觸發 en2
+        else if (buf_idx == 9)
+        {
+            fdcan_h.motor_idq_en1 = 0;
+            fdcan_h.motor_idq_en2 = 1;
+        }
+    }
     float32_t scale = 4095.0f / (2.0f * ONE_DIV_SQRT3);
     float32_t dac_id = motor->foc_h.pi_Id_h.out_fix * scale + 2048.0f;
     float32_t dac_iq = motor->foc_h.pi_Iq_h.out_fix * scale + 2048.0f;

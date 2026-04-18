@@ -202,7 +202,7 @@ static void control_update(MotorParameter *motor)
                     hall_update(motor);
                     motor_set_rpm(motor, 0, 50.0f);
                     motor_set_rotate_mode(motor, MOTOR_ROT_NORMAL);
-                    motor_switch_ctrl(motor, MOTOR_CTRL_FOC);
+                    motor_switch_ctrl(motor, MOTOR_CTRL_FOC_SIM);
                 }
             }
             break;
@@ -221,7 +221,20 @@ static void control_update(MotorParameter *motor)
             break;
         }
         case MOTOR_CTRL_120:
+        case MOTOR_CTRL_120_SIM:
         case MOTOR_CTRL_120_SW:
+        {
+            if (motor->hall_h.delay > 0)
+            {
+                if (motor->hall_h.delay == HALL_DELAY)
+                    deg_ctrl_120_load(motor, HALL_DELAY_LOAD);
+                motor->hall_h.delay--;
+                if (motor->hall_h.delay == 0)
+                    deg_ctrl_120_load(motor, motor->hall_h.current);
+            }
+            break;
+        }
+        case MOTOR_CTRL_FOC_INIT:
         {
             motor_foc_run(motor);
             if (motor->hall_h.delay > 0)
@@ -234,13 +247,13 @@ static void control_update(MotorParameter *motor)
             }
             break;
         }
-        case MOTOR_CTRL_FOC_INIT:
         case MOTOR_CTRL_FOC:
+        case MOTOR_CTRL_FOC_SIM:
+        case MOTOR_CTRL_FOC_POS:
+        case MOTOR_CTRL_FOC_ROT:
         {
-        #ifndef MOTOR_FOC_SPIN_DEBUG
             motor_foc_run(motor);
             motor_foc_load(motor);
-        #endif
             break;
         }
     }

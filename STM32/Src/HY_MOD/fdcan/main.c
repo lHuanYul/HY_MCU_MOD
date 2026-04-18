@@ -8,7 +8,6 @@
 
 void fdcan_setup(FdcanParametar *fdcan)
 {
-    fdcan_pkt_pool_init(&fdcan->pool);
     ERROR_CHECK_HAL_HANDLE(
         HAL_FDCAN_ConfigGlobalFilter(
             fdcan->const_h.hfdcanx,
@@ -45,8 +44,10 @@ void fdcan_setup(FdcanParametar *fdcan)
         HAL_FDCAN_ConfigFilter(
             fdcan->const_h.hfdcanx, &fifo1_filter0)
     );
-    HAL_FDCAN_ConfigTxDelayCompensation(fdcan->const_h.hfdcanx, FDCAN_TDC, 0);
+#ifdef MY_FDCAN_TDCR
+    HAL_FDCAN_ConfigTxDelayCompensation(fdcan->const_h.hfdcanx, MY_FDCAN_TDCR, 0);
     HAL_FDCAN_EnableTxDelayCompensation(fdcan->const_h.hfdcanx);
+#endif
     ERROR_CHECK_HAL_HANDLE(HAL_FDCAN_Start(fdcan->const_h.hfdcanx));
     ERROR_CHECK_HAL_HANDLE(
         HAL_FDCAN_ActivateNotification(
@@ -78,10 +79,10 @@ void fdcan_setup(FdcanParametar *fdcan)
 
 void fdcan_tim_start(FdcanParametar *fdcan)
 {
-    const float32_t PWM_tim_f =
+    const float32_t tim_f =
         (float32_t)*fdcan->const_h.tim_clk /
         (float32_t)(fdcan->const_h.htimx->Init.Prescaler + 1U);
-    fdcan->dbg_h.tim_freq = PWM_tim_f / (fdcan->const_h.htimx->Init.Period + 1U);
+    fdcan->dbg_h.tim_freq = tim_f / (fdcan->const_h.htimx->Init.Period + 1U);
     ERROR_CHECK_HAL_HANDLE(HAL_TIM_Base_Start_IT(fdcan->const_h.htimx));
 }
 
@@ -108,22 +109,19 @@ static uint32_t len_to_dlc(uint8_t len)
 static Result fdcan_pkt_transmit(FdcanParametar *fdcan, FdcanPkt *pkt)
 {
     if (pkt == NULL) return RESULT_ERROR(RES_ERR_NOT_FOUND);
-    if (pkt->state == 1) return RESULT_ERROR(RES_ERR_BUSY);
     FDCAN_TxHeaderTypeDef header = {
         .IdType                 = FDCAN_EXTENDED_ID,
         .FDFormat               = FDCAN_FD_CAN,
         .ErrorStateIndicator    = FDCAN_ESI_ACTIVE,
         .BitRateSwitch          = FDCAN_BRS_ON,
         .TxEventFifoControl     = FDCAN_STORE_TX_EVENTS,
-        .MessageMarker          = pkt->number,
+        .MessageMarker          = pkt->idx,
         .Identifier             = pkt->id,
         .DataLength             = len_to_dlc(pkt->len),
     };
     ERROR_CHECK_HAL_HANDLE(
         HAL_FDCAN_AddMessageToTxFifoQ(fdcan->const_h.hfdcanx, &header, pkt->data)
     );
-    // Todo
-    pkt->state = 1;
     return RESULT_OK(NULL);
 }
 
@@ -134,21 +132,21 @@ Result fdcan_tx_push(FdcanParametar *fdcan)
         uint32_t fl = HAL_FDCAN_GetTxFifoFreeLevel(fdcan->const_h.hfdcanx);
         if (fl == 0) break;
 
-        Result result = fdcan_pkt_buf_trsm_get(&fdcan->tx_buf);
+        FdcanPkt pkt = {0};
+        Result result = fdcan_ring_pop(&fdcan->tx_buf, &pkt);
         if (RESULT_CHECK_RAW(result)) break;
-        FdcanPkt *pkt = RESULT_UNWRAP(result);
-        RESULT_CHECK_RET_RES(fdcan_pkt_transmit(fdcan, pkt));
+        RESULT_CHECK_RET_RES(fdcan_pkt_transmit(fdcan, &pkt));
         
-        uint32_t timeout = 10000;
-        while (
-            HAL_FDCAN_GetTxFifoFreeLevel(fdcan->const_h.hfdcanx) == fl &&
-            --timeout
-        ) __NOP();
+        uint32_t timeout = 50;
+        while (HAL_FDCAN_GetTxFifoFreeLevel(fdcan->const_h.hfdcanx) == fl)
+        {
+            if (--timeout == 0) break;
+        }
     }
     return RESULT_OK(NULL);
 }
 
-Result fdcan_trsm_pkts_proc(FdcanParametar *fdcan)
+static Result trsm_pkts_proc(FdcanParametar *fdcan)
 {
     if (HAL_FDCAN_GetTxFifoFreeLevel(fdcan->const_h.hfdcanx) != FDCAN_TX_FIFO_SIZE)
         return RESULT_ERROR(RES_ERR_BUSY);
@@ -157,15 +155,85 @@ Result fdcan_trsm_pkts_proc(FdcanParametar *fdcan)
 }
 
 ATTR_WEAK Result fdcan_pkt_rcv_read(FdcanPkt *pkt) { return RESULT_ERROR(RES_ERR_NOT_FOUND); }
-Result fdcan_recv_pkts_proc(FdcanParametar *fdcan, uint8_t count)
+static Result recv_pkts_proc(FdcanParametar *fdcan, uint8_t count)
 {
     for (uint8_t i = 0; i < count; i++)
     {
-        FdcanPkt *pkt = RESULT_UNWRAP_RET_RES(fdcan_pkt_buf_pop(&fdcan->rx_buf, 0));
-        fdcan_pkt_rcv_read(pkt);
-        fdcan_pkt_pool_free(&fdcan->pool, pkt);
+        FdcanPkt pkt = {0};
+        RESULT_CHECK_RET_RES(fdcan_ring_pop(&fdcan->rx_buf, &pkt));
+        fdcan_pkt_rcv_read(&pkt);
     }
     return RESULT_OK(NULL);
+}
+
+#include "main/main.h"
+static Result auto_pkts_proc(FdcanParametar *fdcan)
+{
+    Result result = RESULT_OK(NULL);
+#ifdef MCU_MOTOR_CTRL
+    if (fdcan->motor_ret_en)
+    {
+        if (fdcan->motor_rpm_en)
+        {
+            fdcan->motor_rpm_en = 0;
+            fdcan_motor_rpm_send(&fdcan_h, &motor_h);
+        }
+        if (fdcan->motor_idq_en1)
+        {
+            fdcan->motor_idq_en1 = 0;
+            fdcan_motor_idq_send(&fdcan_h, &motor_h, 0);
+        }
+        if (fdcan->motor_idq_en2)
+        {
+            fdcan->motor_idq_en2 = 0;
+            fdcan_motor_idq_send(&fdcan_h, &motor_h, 5);
+        }
+    }
+#endif
+#ifdef MCU_VEHICLE_MAIN
+    if (vehicle_h.fdcan_send)
+    {
+        vehicle_h.fdcan_send = 0;
+        fdcan_vehicle_motor_send(&vehicle_h, &fdcan_pkt_pool, &fdcan_trsm_pkt_buf);
+    }
+#endif
+#define ENABLE_CON_PKT_TEST
+#ifdef ENABLE_CON_PKT_TEST
+    if (fdcan->test_en)
+    {
+        fdcan->test_en = 0;
+        fdcan_pkt_write_test(fdcan);
+    }
+#endif
+    return result;
+}
+
+void fdcan_main(FdcanParametar *fdcan)
+{
+    switch (fdcan->state)
+    {
+        case FDCAN_STATE_RUNNING: break;
+        case FDCAN_STATE_BUS_OFF:
+        {
+            fdcan->state = FDCAN_STATE_RESTART;
+            fdcan->tim_tick = 0;
+            return;
+        }
+        case FDCAN_STATE_RESTART:
+        {
+            if (fdcan->tim_tick >= (10*1000))
+            {
+                fdcan->state = FDCAN_STATE_RUNNING;
+                fdcan_ring_clear(&fdcan->tx_buf);
+                HAL_FDCAN_Stop(fdcan->const_h.hfdcanx);
+                HAL_FDCAN_Start(fdcan->const_h.hfdcanx);
+            }
+            return;
+        }
+    }
+    auto_pkts_proc(fdcan);
+    trsm_pkts_proc(fdcan);
+    recv_pkts_proc(fdcan, 5);
 }
 
 #endif

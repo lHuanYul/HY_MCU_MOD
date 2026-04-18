@@ -6,7 +6,6 @@ void fdcan_error_status_cb(FdcanParametar *fdcan, uint32_t ErrorStatusITs);
 void fdcan_tx_fifo_cb(FdcanParametar *fdcan, uint32_t TxEventFifoITs);
 void fdcan_rx_fifo0_cb(FdcanParametar *fdcan, uint32_t RxFifo0ITs);
 void fdcan_rx_fifo1_cb(FdcanParametar *fdcan, uint32_t RxFifo1ITs);
-
-void fdcan_task_cb(FdcanParametar *fdcan);
+void fdcan_tim_cb(FdcanParametar *fdcan);
 
 #endif

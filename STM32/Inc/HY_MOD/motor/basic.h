@@ -106,11 +106,14 @@ typedef enum MotorCtrl
     MOTOR_CTRL_TEST_HIGH,
     MOTOR_CTRL_TEST_LOW,
     MOTOR_CTRL_TEST_WAVE,
-    MOTOR_CTRL_120,
-    MOTOR_CTRL_120_SW,
-    // MOTOR_CTRL_180,
-    MOTOR_CTRL_FOC,
-    MOTOR_CTRL_FOC_INIT,
+    MOTOR_CTRL_120, // 普通
+    MOTOR_CTRL_120_SIM, // 模擬
+    MOTOR_CTRL_120_SW, // 旋轉方向轉換
+    MOTOR_CTRL_FOC, // 普通
+    MOTOR_CTRL_FOC_SIM, // 模擬
+    MOTOR_CTRL_FOC_INIT, // 初始 Todo
+    MOTOR_CTRL_FOC_POS, // 轉子定位
+    MOTOR_CTRL_FOC_ROT, // 強制旋轉
 } MotorCtrl;
 
 // Control Parameter

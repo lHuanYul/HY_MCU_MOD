@@ -26,11 +26,11 @@
 //      CMD_DATA_B3_VALUE                           // 資料編號(can)    // 目標ID(車輛位置)
 
 //----------------------------------------------------------------------------------------------------
-#define CAN_ID_WHEEL_LEFT_RET_RPM   (uint16_t)0x100
-#define CAN_ID_WHEEL_LEFT_RET_RPM_FIX   (uint16_t)0x100
-#define CAN_ID_WHEEL_RIGHT_RET_RPM  (uint16_t)0x101
-#define CAN_ID_WHEEL_LEFT_SET_RPM       (uint16_t)0x140
-#define CAN_ID_WHEEL_RIGHT_SET_RPM      (uint16_t)0x141
+#define CAN_ID_WHEEL_LEFT_RET_RPM   (uint32_t)0x100
+#define CAN_ID_WHEEL_LEFT_RET_RPM_FIX   (uint32_t)0x100
+#define CAN_ID_WHEEL_RIGHT_RET_RPM  (uint32_t)0x101
+#define CAN_ID_WHEEL_LEFT_SET_RPM       (uint32_t)0x140
+#define CAN_ID_WHEEL_RIGHT_SET_RPM      (uint32_t)0x141
 #define CMD_WHEEL_B0_COAST          (uint8_t)0x00
 #define CMD_WHEEL_B0_BREAK          (uint8_t)0x01
 #define CMD_WHEEL_B0_NORMAL         (uint8_t)0x02
@@ -41,21 +41,21 @@
 
 //----------------------------------------------------------------------------------------------------
 
-#define CAN_ID_HALL_ALL_FBK             (uint16_t)0x104
+#define CAN_ID_HALL_ALL_FBK             (uint32_t)0x104
 #define CMD_HALL_B0_FRONT
 #define CMD_HALL_B1_LEFT
 #define CMD_HALL_B2_RIGHT
 // #define CMD_HALL_B3_BATTRY
 
 //----------------------------------------------------------------------------------------------------
-#define CAN_ID_RFID_FBK                 (uint16_t)0x105
+#define CAN_ID_RFID_FBK                 (uint32_t)0x105
 #define CMD_RFID_B0_NEW
 #define CMD_RFID_B14_ID
 
 #define CAN_ID_SENSOR
 
 //----------------------------------------------------------------------------------------------------
-#define CAN_ID_VEHICLE              (uint16_t)0x107
+#define CAN_ID_VEHICLE              (uint32_t)0x107
 #define CMD_VEHI_B0_SET_MODE        (uint8_t)0x00
 #define CMD_VEHI_B0_SET_FREE_VAR    (uint8_t)0x01
 #define CMD_VEHI_B0_SET_TRACK_VAR   (uint8_t)0x02
@@ -118,4 +118,4 @@
 
 #define CMD_B1_TEST0                (uint8_t)0x00
 
-#define FDCAN_TEST_ID               CAN_ID_WHEEL_LEFT_SET_RPM
+#define FDCAN_TEST_ID               (uint32_t)0x000
