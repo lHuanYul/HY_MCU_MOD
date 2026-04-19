@@ -73,17 +73,9 @@ void fdcan_rx_fifo1_cb(FdcanParametar *fdcan, uint32_t RxFifo1ITs)
 
 void fdcan_tim_cb(FdcanParametar *fdcan)
 {
-    if (
-        fdcan->state == FDCAN_STATE_RESTART
-        && fdcan->tim_tick >= (10*1000)
-    ) {
-        fdcan->state = FDCAN_STATE_RUNNING;
-        fdcan_ring_clear(&fdcan->tx_buf);
-        HAL_FDCAN_Stop(fdcan->const_h.hfdcanx);
-        HAL_FDCAN_Start(fdcan->const_h.hfdcanx);
-    }
-    if (fdcan->tim_tick % (10*1000) == 0) fdcan->test_en = 1;
-    if (++fdcan->tim_tick >= (10*1000*1000)) fdcan->tim_tick = 0;
+    uint32_t freq = (uint32_t)fdcan->dbg_h.tim_freq;
+    if (fdcan->tim_tick % freq == 0) fdcan->test_en = 1;
+    if (++fdcan->tim_tick >= freq * 10) fdcan->tim_tick = 0;
 }
 
 #endif

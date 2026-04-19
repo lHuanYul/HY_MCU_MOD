@@ -212,7 +212,6 @@ void fdcan_main(FdcanParametar *fdcan)
 {
     switch (fdcan->state)
     {
-        case FDCAN_STATE_RUNNING: break;
         case FDCAN_STATE_BUS_OFF:
         {
             fdcan->state = FDCAN_STATE_RESTART;
@@ -221,7 +220,8 @@ void fdcan_main(FdcanParametar *fdcan)
         }
         case FDCAN_STATE_RESTART:
         {
-            if (fdcan->tim_tick >= (10*1000))
+            uint32_t freq = (uint32_t)fdcan->dbg_h.tim_freq;
+            if (fdcan->tim_tick >= freq)
             {
                 fdcan->state = FDCAN_STATE_RUNNING;
                 fdcan_ring_clear(&fdcan->tx_buf);
@@ -230,6 +230,7 @@ void fdcan_main(FdcanParametar *fdcan)
             }
             return;
         }
+        case FDCAN_STATE_RUNNING: break;
     }
     auto_pkts_proc(fdcan);
     trsm_pkts_proc(fdcan);

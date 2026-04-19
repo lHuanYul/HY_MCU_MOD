@@ -19,6 +19,7 @@ void StartFdCanTask(void *argument)
     uint32_t next_wake = osKernelGetTickCount() + osPeriod;
     for(;;)
     {
+        fdcan_tim_cb(fdcan);
         fdcan_main(fdcan);
         osDelayUntil(next_wake);
         next_wake += osPeriod;
