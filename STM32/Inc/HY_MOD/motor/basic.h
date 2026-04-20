@@ -94,6 +94,8 @@ typedef struct MotorDbg
 
     float32_t   current_zero;
 
+    float32_t   hall_rad[6];
+
     uint8_t     his_cnt;
     float32_t   his_test_rad[12];
     float32_t   his_ele_rad[12];
@@ -106,14 +108,16 @@ typedef enum MotorCtrl
     MOTOR_CTRL_TEST_HIGH,
     MOTOR_CTRL_TEST_LOW,
     MOTOR_CTRL_TEST_WAVE,
-    MOTOR_CTRL_120, // 普通
-    MOTOR_CTRL_120_SIM, // 模擬
-    MOTOR_CTRL_120_SW, // 旋轉方向轉換
-    MOTOR_CTRL_FOC, // 普通
-    MOTOR_CTRL_FOC_SIM, // 模擬
-    MOTOR_CTRL_FOC_INIT, // 初始 Todo
-    MOTOR_CTRL_FOC_POS, // 轉子定位
-    MOTOR_CTRL_FOC_ROT, // 強制旋轉
+    MOTOR_CTRL_120,         // 普通
+    MOTOR_CTRL_120_SIM,     // 模擬
+    MOTOR_CTRL_120_SW,      // 旋轉方向轉換
+    MOTOR_CTRL_FOC_INIT,    // 初始 Todo
+    MOTOR_CTRL_FOC,         // 普通
+    MOTOR_CTRL_FOC_SIM,     // 模擬
+    MOTOR_CTRL_FOC_POS,     // 轉子定位
+    MOTOR_CTRL_FOC_POS_ADD, // 轉子定位
+    MOTOR_CTRL_FOC_ROT_ADD, // 強制旋轉
+    MOTOR_CTRL_FOC_ROT_IQ,  // 強制旋轉
 } MotorCtrl;
 
 // Control Parameter
@@ -161,6 +165,8 @@ typedef struct MotorHallParameter
     uint8_t             it_cnt;
     // 目前霍爾相位
     volatile uint8_t    current;
+    // 上次霍爾相位
+    uint8_t             last;
 
     volatile uint8_t    wrong;
 
@@ -169,8 +175,6 @@ typedef struct MotorHallParameter
     uint32_t            time_cnt;
     
     uint8_t             auto_spin;
-    // 上次霍爾相位
-    uint8_t             chk_last;
     // 停轉時間
     uint32_t            stop_tick;
 } MotorHallParameter;
@@ -209,22 +213,23 @@ typedef union MotorADC
 // FOC Parameter
 typedef struct MotorFOCParameter
 {
+    uint32_t            init_cnt;
     // 電流 ADC
     MotorADC            adc_h;
 
-    uint32_t            init_cnt;
+    float32_t           current_zero;
+    // clarke
+    CLARKE              clarke_h;
     // 目前霍爾相位
     float32_t           hall_rad;
     // 轉子位置
     float32_t           rotor_rad;
-    // clarke
-    CLARKE              clarke_h;
     // FOC 應補角度 (Angle Interpolation)
-    float32_t           angle_itpl;
+    volatile float32_t  rad_itpl;
+    // FOC 角度累積插值 rad_acc += rad_itpl; 過一霍爾中斷後重置
+    float32_t           rad_acc;
     // park
     PARK                park_h;
-    // FOC 角度累積插值 angle_acc += angle_itpl; 過一霍爾中斷後重置
-    float32_t           angle_acc;
 
     PI_CTRL             pi_rpm;
 

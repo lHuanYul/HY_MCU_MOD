@@ -10,8 +10,8 @@
 
 void motor_foc_set(MotorParameter *motor)
 {
-    motor->foc_h.angle_itpl = 0.0f;
-    motor->foc_h.angle_acc = 0.0f;
+    motor->foc_h.rad_itpl = 0.0f;
+    motor->foc_h.rad_acc = 0.0f;
     motor->foc_h.pi_Iq_h.out_fix = 0.0f;
     motor->foc_h.pi_Id_h.out_fix = 0.0f;
 }
@@ -56,8 +56,12 @@ static inline void motor_vec_ctrl_clarke(MotorParameter *motor)
 {
     // 電流進motor為 正
     uint8_t i;
+    motor->foc_h.current_zero = 0.0f;
     for (i = 0; i < 3; i++)
+    {
         motor->foc_h.clarke_h.ABC[i] = motor->foc_h.adc_h.uvw[i]->current;
+        motor->foc_h.current_zero += motor->foc_h.adc_h.uvw[i]->current;
+    }
     CLARKE_run_ideal(&motor->foc_h.clarke_h);
 }
 
@@ -65,14 +69,31 @@ static inline void motor_vec_ctrl_park(MotorParameter *motor)
 {
     motor->foc_h.park_h.Alpha = motor->foc_h.clarke_h.Alpha;
     motor->foc_h.park_h.Beta = motor->foc_h.clarke_h.Beta;
-    motor->foc_h.angle_acc += motor->foc_h.angle_itpl;
-    VAR_CLAMPF(motor->foc_h.angle_acc, -PI_DIV_3, PI_DIV_3);
-    // Todo 轉子定位測試
-    // motor->foc_h.rotor_rad = 0.0f;
-    // Todo 強制旋轉測試
-    // motor->foc_h.rotor_rad += 0.002f;
-    // motor->foc_h.rotor_rad = var_wrap_pos(motor->foc_h.rotor_rad, PI_MUL_2);
-    motor->foc_h.rotor_rad = motor->foc_h.hall_rad + motor->foc_h.angle_acc + MOTOR_FOC_ANGLE;
+    motor->foc_h.rad_acc += motor->foc_h.rad_itpl;
+    VAR_CLAMPF(motor->foc_h.rad_acc, -PI_DIV_3, PI_DIV_3);
+    switch (motor->ctrl_h.ref_fix)
+    {
+        case MOTOR_CTRL_FOC_POS:
+        {
+            motor->foc_h.rotor_rad = 0.0f;
+            break;
+        }
+        case MOTOR_CTRL_FOC_POS_ADD:
+            break;
+        case MOTOR_CTRL_FOC_ROT_ADD:
+        case MOTOR_CTRL_FOC_ROT_IQ:
+        {
+            motor->foc_h.rotor_rad += 0.002f;
+            motor->foc_h.rotor_rad = var_wrap_pos(motor->foc_h.rotor_rad, PI_MUL_2);
+            break;
+        }
+        default:
+        {
+            motor->foc_h.rotor_rad =
+                motor->foc_h.hall_rad + motor->foc_h.rad_acc + MOTOR_FOC_ANGLE;
+            break;
+        }
+    }
     RESULT_CHECK_HANDLE(trigo_sin_cosf(
         motor->foc_h.rotor_rad,
         &motor->foc_h.park_h.Sin, &motor->foc_h.park_h.Cos));
@@ -83,8 +104,8 @@ static inline void motor_vec_ctrl_park(MotorParameter *motor)
 static inline void motor_vec_ctrl_pi_id_iq(MotorParameter *motor)
 {
     motor->foc_h.pi_Id_h.reference = 0.0f;
-    // motor->foc_h.pi_Iq_h.reference = 0.4;
-    motor->foc_h.pi_Iq_h.reference = motor->foc_h.pi_rpm.out_fix;
+    motor->foc_h.pi_Iq_h.reference = 0.4f;
+    // motor->foc_h.pi_Iq_h.reference = motor->foc_h.pi_rpm.out_fix;
     motor->foc_h.pi_Id_h.feedback  = motor->foc_h.park_h.Ds;
     motor->foc_h.pi_Iq_h.feedback  = motor->foc_h.park_h.Qs;
     PI_run(&motor->foc_h.pi_Id_h);
@@ -98,14 +119,29 @@ static inline void motor_vec_ctrl_pi_id_iq(MotorParameter *motor)
 
 static inline void motor_vec_ctrl_ipark(MotorParameter *motor)
 {
-    // Todo 轉子定位測試
-    // motor->foc_h.ipark_h.Vdref = 0.1f; // 歸一化電壓，給 10% 即可
-    // motor->foc_h.ipark_h.Vqref = 0.0f;
-    // Todo 強制旋轉測試
-    // motor->foc_h.ipark_h.Vdref = 0.0f;
-    // motor->foc_h.ipark_h.Vqref = 0.15f;
-    motor->foc_h.ipark_h.Vdref = motor->foc_h.pi_Id_h.out_fix;
-    motor->foc_h.ipark_h.Vqref = motor->foc_h.pi_Iq_h.out_fix;
+    switch (motor->ctrl_h.ref_fix)
+    {
+        case MOTOR_CTRL_FOC_POS:
+        case MOTOR_CTRL_FOC_POS_ADD:
+        case MOTOR_CTRL_FOC_ROT_ADD:
+        {
+            motor->foc_h.ipark_h.Vdref = 0.2f;
+            motor->foc_h.ipark_h.Vqref = 0.0f;
+            break;
+        }
+        case MOTOR_CTRL_FOC_ROT_IQ:
+        {
+            motor->foc_h.ipark_h.Vdref = 0.0f;
+            motor->foc_h.ipark_h.Vqref = 0.15f;
+            break;
+        }
+        default:
+        {
+            motor->foc_h.ipark_h.Vdref = motor->foc_h.pi_Id_h.out_fix;
+            motor->foc_h.ipark_h.Vqref = motor->foc_h.pi_Iq_h.out_fix;
+            break;
+        }
+    }
     motor->foc_h.ipark_h.Sin = motor->foc_h.park_h.Sin;
     motor->foc_h.ipark_h.Cos = motor->foc_h.park_h.Cos;
     IPARK_run(&motor->foc_h.ipark_h);
@@ -143,8 +179,17 @@ static inline void motor_vec_ctrl_svpwm(MotorParameter *motor)
     RESULT_CHECK_HANDLE(trigo_sin_cosf(theta, &T2, NULL));
     T1 *= motor->foc_h.Vref;
     T2 *= motor->foc_h.Vref;
+    // 過調變保護 (Overmodulation Protection)
+    float32_t sum_T1_T2 = T1 + T2;
+    if (sum_T1_T2 > 1.0f)
+    {
+        // 等比例縮放 T1 與 T2，維持電壓向量的方向，但限制大小
+        T1 = T1 / sum_T1_T2;
+        T2 = T2 / sum_T1_T2;
+        sum_T1_T2 = 1.0f; 
+    }
     // T0div2: 零向量時間的一半 將整個零向量時間平均分配到PWM週期的前後兩端 讓波形中心對稱
-    float32_t T0div2 = (1.0f - (T1 + T2)) * 0.5f;
+    float32_t T0div2 = (1.0f - sum_T1_T2) * 0.5f;
     switch (motor->foc_h.svgendq_h.Sector)
     {
         case 6:
@@ -215,8 +260,8 @@ void motor_foc_run(MotorParameter *motor)
         // 利用除法消除掉沒記錄的 tick，再取餘數限制在 0~9
         uint8_t buf_idx = (motor->tim_tick / RECORD_INTERVAL) % 10;
 
-        motor->history.id[buf_idx] = motor->foc_h.pi_Id_h.out_fix;
-        motor->history.iq[buf_idx] = motor->foc_h.pi_Iq_h.out_fix;
+        motor->history.id[buf_idx] = motor->foc_h.pi_Id_h.feedback;
+        motor->history.iq[buf_idx] = motor->foc_h.pi_Iq_h.feedback;
 
         // 前半段 (0~4) 填滿時觸發 en1
         if (buf_idx == 4)
@@ -232,8 +277,8 @@ void motor_foc_run(MotorParameter *motor)
         }
     }
     float32_t scale = 4095.0f / (2.0f * ONE_DIV_SQRT3);
-    float32_t dac_id = motor->foc_h.pi_Id_h.out_fix * scale + 2048.0f;
-    float32_t dac_iq = motor->foc_h.pi_Iq_h.out_fix * scale + 2048.0f;
+    float32_t dac_id = motor->foc_h.pi_Id_h.feedback * scale + 2048.0f;
+    float32_t dac_iq = motor->foc_h.pi_Iq_h.feedback * scale + 2048.0f;
     VAR_CLAMPF(dac_id, 0.0f, 4095.0f);
     VAR_CLAMPF(dac_iq, 0.0f, 4095.0f);
     HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_1, DAC_ALIGN_12B_R, (uint32_t)dac_id); // PA4 輸出 Id

@@ -22,17 +22,18 @@ static void hall_update(MotorParameter *motor)
         motor->hall_h.current = UINT8_MAX;
         return;
     }
+    motor->dbg_h.hall_rad[motor->hall_h.current - 1] = motor->foc_h.rotor_rad;
     motor->hall_h.delay = HALL_DELAY;
 }
 
 static void rotate_check(MotorParameter *motor)
 {
-    if      (motor->hall_h.current == hall_seq_ccw[motor->hall_h.chk_last])
+    if      (motor->hall_h.current == hall_seq_ccw[motor->hall_h.last])
     {
         motor->rpm_h.fb.reverse = 0;
         motor->hall_h.wrong = 0;
     }
-    else if (motor->hall_h.current == hall_seq_clw[motor->hall_h.chk_last])
+    else if (motor->hall_h.current == hall_seq_clw[motor->hall_h.last])
     {
         motor->rpm_h.fb.reverse = 1;
         motor->hall_h.wrong = 0;
@@ -45,10 +46,10 @@ static void rotate_check(MotorParameter *motor)
             motor->hall_h.wrong = 3;
             motor->rpm_h.fb.reverse = 0;
             motor->rpm_h.fb.value = 0.0f;
-            motor->foc_h.angle_itpl = 0.0f;
+            motor->foc_h.rad_itpl = 0.0f;
         }
     }
-    motor->hall_h.chk_last = motor->hall_h.current;
+    motor->hall_h.last = motor->hall_h.current;
 }
 
 static void rpm_update(MotorParameter *motor)
@@ -60,7 +61,7 @@ static void rpm_update(MotorParameter *motor)
     motor->hall_h.it_cnt = 0;
     motor->rpm_h.fb.value =
         motor->tfm_h.rpm_fbk / (float32_t)motor->hall_h.time_cnt;
-    motor->foc_h.angle_itpl = (!motor->rpm_h.fb.reverse) ?
+    motor->foc_h.rad_itpl = (!motor->rpm_h.fb.reverse) ?
          motor->tfm_h.foc_it_angle_itpl / (float32_t)motor->hall_h.time_cnt :
         -motor->tfm_h.foc_it_angle_itpl / (float32_t)motor->hall_h.time_cnt;
     motor->hall_h.time_cnt = 0;
@@ -74,6 +75,8 @@ void motor_hall_exti_cb(MotorParameter *motor)
     hall_update(motor);
     rotate_check(motor);
     rpm_update(motor);
+    
+    motor->foc_h.rad_acc  = 0.0f;
 }
 
 /*
@@ -86,8 +89,8 @@ void motor_stop_cb(MotorParameter *motor)
     motor->hall_h.time_cnt  = 0;
     motor->rpm_h.fb.reverse = 0;
     motor->rpm_h.fb.value   = 0.0f;
-    motor->foc_h.angle_itpl = 0.0f;
-    motor->foc_h.angle_acc  = 0.0f;
+    motor->foc_h.rad_itpl = 0.0f;
+    motor->foc_h.rad_acc  = 0.0f;
     PI_reset(&motor->deg_h.pi_rpm);
     PI_reset(&motor->foc_h.pi_rpm);
     PI_reset(&motor->foc_h.pi_Id_h);
@@ -200,9 +203,9 @@ static void control_update(MotorParameter *motor)
                 {
                     motor_vec_ctrl_adcs_reset(motor);
                     hall_update(motor);
-                    motor_set_rpm(motor, 0, 50.0f);
+                    motor_set_rpm(motor, 0, 30.0f);
                     motor_set_rotate_mode(motor, MOTOR_ROT_NORMAL);
-                    motor_switch_ctrl(motor, MOTOR_CTRL_FOC_SIM);
+                    motor_switch_ctrl(motor, MOTOR_CTRL_FOC);
                 }
             }
             break;
@@ -250,7 +253,9 @@ static void control_update(MotorParameter *motor)
         case MOTOR_CTRL_FOC:
         case MOTOR_CTRL_FOC_SIM:
         case MOTOR_CTRL_FOC_POS:
-        case MOTOR_CTRL_FOC_ROT:
+        case MOTOR_CTRL_FOC_POS_ADD:
+        case MOTOR_CTRL_FOC_ROT_ADD:
+        case MOTOR_CTRL_FOC_ROT_IQ:
         {
             motor_foc_run(motor);
             motor_foc_load(motor);

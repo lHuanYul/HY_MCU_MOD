@@ -38,10 +38,10 @@ void motor_setup(MotorParameter *motor)
         PWM_tim_t /
         HALL_tim_t * (float32_t)(motor->const_h.PWM_htimx->Init.Period * 2.0f) * PI_DIV_3;
 
-    motor->foc_h.pi_Iq_h.Kp = MOTOR_LL * 1000.0f;
-    motor->foc_h.pi_Iq_h.Ki = 1.0f / MOTOR_TAU * PWM_tim_t;
-    motor->foc_h.pi_Id_h.Kp = MOTOR_LL * 1000.0f;
+    motor->foc_h.pi_Id_h.Kp = MOTOR_LL * 1000.0f / 2.0f;
     motor->foc_h.pi_Id_h.Ki = 1.0f / MOTOR_TAU * PWM_tim_t;
+    motor->foc_h.pi_Iq_h.Kp = MOTOR_LL * 1000.0f / 2.0f;
+    motor->foc_h.pi_Iq_h.Ki = 1.0f / MOTOR_TAU * PWM_tim_t;
 
     ERROR_CHECK_HAL_HANDLE(HAL_ADCEx_Calibration_Start(
         motor->foc_h.adc_h.v->basic.hadcx, ADC_SINGLE_ENDED));
@@ -129,7 +129,9 @@ void motor_switch_ctrl(MotorParameter *motor, MotorCtrl ctrl)
         case MOTOR_CTRL_FOC:
         case MOTOR_CTRL_FOC_SIM:
         case MOTOR_CTRL_FOC_POS:
-        case MOTOR_CTRL_FOC_ROT:
+        case MOTOR_CTRL_FOC_POS_ADD:
+        case MOTOR_CTRL_FOC_ROT_ADD:
+        case MOTOR_CTRL_FOC_ROT_IQ:
         {
             motor_switch_ctrl_fix(motor, MOTOR_CTRL_FOC);
             motor->foc_h.init_cnt = 2000;
@@ -179,7 +181,9 @@ void motor_switch_ctrl_fix(MotorParameter *motor, MotorCtrl ctrl)
         case MOTOR_CTRL_FOC:
         case MOTOR_CTRL_FOC_SIM:
         case MOTOR_CTRL_FOC_POS:
-        case MOTOR_CTRL_FOC_ROT:
+        case MOTOR_CTRL_FOC_POS_ADD:
+        case MOTOR_CTRL_FOC_ROT_ADD:
+        case MOTOR_CTRL_FOC_ROT_IQ:
         {
             for (i = 0; i < 3; i++)
                 SET_PWM_ON(const_h->PWMN_GPIO.uvw[i], const_h->PWMN_GPIO_set.uvw[i]);

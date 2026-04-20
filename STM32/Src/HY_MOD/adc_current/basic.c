@@ -11,7 +11,6 @@ AdcCurrentParameter adc_current_h[ADC_COUNT] = {
             .rankx = ADC_INJECTED_RANK_1,
         },
         .sensitive = 0.1f,
-        .current_trs = 1.0f,
     },
     {
         // ADC2 CH12 PB2
@@ -20,7 +19,6 @@ AdcCurrentParameter adc_current_h[ADC_COUNT] = {
             .rankx = ADC_INJECTED_RANK_1,
         },
         .sensitive = 0.1f,
-        .current_trs = 1.0f,
     },
     {
         // ADC1 CH14 PB11
@@ -29,7 +27,6 @@ AdcCurrentParameter adc_current_h[ADC_COUNT] = {
             .rankx = ADC_INJECTED_RANK_2,
         },
         .sensitive = 0.1f,
-        .current_trs = 1.0f,
     },
 };
 

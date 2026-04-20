@@ -1911,7 +1911,7 @@ Result trigo_atan(float32_t x, float32_t y, float32_t *theta)
     if (cordic_currunt != &cordic_cfg_atan)
     {
         cordic_currunt = &cordic_cfg_atan;
-        ERROR_CHECK_HAL_RET_RES(HAL_CORDIC_Configure(&hcordic, cordic_currunt));
+        ERROR_CHECK_HAL_HANDLE(HAL_CORDIC_Configure(&hcordic, cordic_currunt));
     }
     float32_t ax = var_fabsf(x);
     float32_t ay = var_fabsf(y);

@@ -45,6 +45,12 @@ Result fdcan_pkt_ist_read(FdcanParametar *fdcan, FdcanPkt *pkt)
                     motor_set_rotate_mode(motor, MOTOR_ROT_LOCK);
                     return RESULT_OK(NULL);
                 }
+                case (uint8_t)0xF0:
+                {
+                    motor->foc_h.rotor_rad =
+                        var_wrap_pos(motor->foc_h.rotor_rad + PI_DIV_6, PI_MUL_2);
+                    return RESULT_OK(NULL);
+                }
                 case CMD_WHEEL_B0_FDCAN:
                 {
                     RESULT_CHECK_RET_RES(fdcan_pkt_get_byte(pkt, 1, &code));
