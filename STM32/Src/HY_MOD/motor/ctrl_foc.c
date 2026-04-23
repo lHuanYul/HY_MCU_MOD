@@ -161,6 +161,7 @@ static inline void motor_vec_ctrl_svgen(MotorParameter *motor)
     SVGEN_run(&motor->foc_h.svgendq_h);
 }
 
+#define MAX_MODULATION_INDEX  0.95f
 static inline void motor_vec_ctrl_svpwm(MotorParameter *motor)
 {
     if (
@@ -181,12 +182,12 @@ static inline void motor_vec_ctrl_svpwm(MotorParameter *motor)
     T2 *= motor->foc_h.Vref;
     // 過調變保護 (Overmodulation Protection)
     float32_t sum_T1_T2 = T1 + T2;
-    if (sum_T1_T2 > 1.0f)
+    if (sum_T1_T2 > MAX_MODULATION_INDEX)
     {
         // 等比例縮放 T1 與 T2，維持電壓向量的方向，但限制大小
         T1 = T1 / sum_T1_T2;
         T2 = T2 / sum_T1_T2;
-        sum_T1_T2 = 1.0f; 
+        sum_T1_T2 = MAX_MODULATION_INDEX; 
     }
     // T0div2: 零向量時間的一半 將整個零向量時間平均分配到PWM週期的前後兩端 讓波形中心對稱
     float32_t T0div2 = (1.0f - sum_T1_T2) * 0.5f;
@@ -292,6 +293,7 @@ void motor_foc_run(MotorParameter *motor)
 void motor_foc_load(MotorParameter *motor)
 {
     motor->duty_load = motor->foc_h.duty_h;
+
     motor_timer_load(motor);
 }
 

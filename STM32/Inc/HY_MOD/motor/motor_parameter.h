@@ -14,7 +14,7 @@
 
 #define MOTOR_VEHICLE_POLE          20
 #define MOTOR_VEHICLE_GEAR          4.4f
-#define MOTOR_VEHICLE_RL            0.32f
+#define MOTOR_VEHICLE_RL            (0.32f / 2.0f)
 #define MOTOR_VEHICLE_TAU           0.0025f
 #define MOTOR_VEHICLE_LL            (MOTOR_VEHICLE_RL * MOTOR_VEHICLE_TAU)
 #define MOTOR_VEHICLE_ANGLE         (PI_DIV_3 * 5.0f)
