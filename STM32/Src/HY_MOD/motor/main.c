@@ -78,7 +78,7 @@ void motor_timer_load(MotorParameter *motor)
     {
         VAR_CLAMPF(motor->duty_load.uvw[i], 0.0f, 1.0f);
         __HAL_TIM_SET_COMPARE(motor->const_h.PWM_htimx, motor->const_h.PWM_TIM_CH_x.uvw[i],
-            (uint32_t)(motor->const_h.PWM_htimx->Init.Period * motor->duty_load.uvw[i]));
+            (uint32_t)(motor->const_h.PWM_htimx->Init.Period * (1.0f - motor->duty_load.uvw[i])));
     }
 }
 

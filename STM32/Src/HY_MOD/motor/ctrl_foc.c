@@ -109,8 +109,8 @@ static inline void motor_vec_ctrl_park(MotorParameter *motor)
 static inline void motor_vec_ctrl_pi_id_iq(MotorParameter *motor)
 {
     motor->foc_h.pi_Id_h.reference = 0.0f;
-    motor->foc_h.pi_Iq_h.reference = 0.4f;
-    // motor->foc_h.pi_Iq_h.reference = motor->foc_h.pi_rpm.out_fix;
+    // motor->foc_h.pi_Iq_h.reference = 0.4f;
+    motor->foc_h.pi_Iq_h.reference = motor->foc_h.pi_rpm.out_fix;
     motor->foc_h.pi_Id_h.feedback  = motor->foc_h.park_h.Ds;
     motor->foc_h.pi_Iq_h.feedback  = motor->foc_h.park_h.Qs;
     PI_run(&motor->foc_h.pi_Id_h);
