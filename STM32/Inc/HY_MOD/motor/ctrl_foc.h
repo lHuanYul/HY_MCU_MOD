@@ -5,8 +5,9 @@
 #include "HY_MOD/main/fn_state.h"
 
 void motor_foc_set(MotorParameter *motor);
-void motor_vec_ctrl_adcs_upd(MotorParameter *motor);
-void motor_vec_ctrl_adcs_reset(MotorParameter *motor);
+void motor_foc_angle_reset(MotorParameter *motor);
+void motor_foc_adcs_upd(MotorParameter *motor);
+void motor_foc_adcs_reset(MotorParameter *motor);
 void motor_foc_run(MotorParameter *motor);
 void motor_foc_load(MotorParameter *motor);
 

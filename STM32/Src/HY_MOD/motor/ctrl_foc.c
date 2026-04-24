@@ -8,7 +8,7 @@
 #include "tim.h"
 #include "dac.h"
 
-void motor_foc_set(MotorParameter *motor)
+inline void motor_foc_set(MotorParameter *motor)
 {
     motor->foc_h.rad_itpl = 0.0f;
     motor->foc_h.rad_acc = 0.0f;
@@ -16,14 +16,19 @@ void motor_foc_set(MotorParameter *motor)
     motor->foc_h.pi_Id_h.out_fix = 0.0f;
 }
 
-inline void motor_vec_ctrl_adcs_reset(MotorParameter *motor)
+inline void motor_foc_angle_reset(MotorParameter *motor)
+{
+    motor->foc_h.rad_acc = 0.0f;
+}
+
+inline void motor_foc_adcs_reset(MotorParameter *motor)
 {
     uint8_t i;
     for (i = 0; i < 3; i++)
         adc_current_reset(motor->foc_h.adc_h.uvw[i]);
 }
 
-inline void motor_vec_ctrl_adcs_upd(MotorParameter *motor)
+inline void motor_foc_adcs_upd(MotorParameter *motor)
 {
     uint8_t i;
     for (i = 0; i < 3; i++)

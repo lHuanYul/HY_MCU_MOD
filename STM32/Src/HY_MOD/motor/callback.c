@@ -11,7 +11,7 @@
 #define HALL_DELAY 10
 #define HALL_DELAY_LOAD motor->hall_h.current // motor->hall_h.current
 
-static void hall_update(MotorParameter *motor)
+static inline void hall_update(MotorParameter *motor)
 {
     motor->hall_h.current =
           (GPIO_READ_R(motor->const_h.Hall_GPIO.u) ? 4U : 0U)
@@ -26,7 +26,7 @@ static void hall_update(MotorParameter *motor)
     motor->hall_h.delay = HALL_DELAY;
 }
 
-static void rotate_check(MotorParameter *motor)
+static inline void rotate_check(MotorParameter *motor)
 {
     if      (motor->hall_h.current == hall_seq_ccw[motor->hall_h.last])
     {
@@ -52,7 +52,7 @@ static void rotate_check(MotorParameter *motor)
     motor->hall_h.last = motor->hall_h.current;
 }
 
-static void rpm_update(MotorParameter *motor)
+static inline void rpm_update(MotorParameter *motor)
 {
     motor->hall_h.time_cnt +=
         __HAL_TIM_GET_COMPARE(motor->const_h.Hall_htimx, TIM_CHANNEL_1);
@@ -73,16 +73,15 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 void motor_hall_exti_cb(MotorParameter *motor)
 {
     hall_update(motor);
+    motor_foc_angle_reset(motor);
     rotate_check(motor);
     rpm_update(motor);
-    
-    motor->foc_h.rad_acc  = 0.0f;
 }
 
 /*
 void HAL_TIM_PeriodElapsedCallback_OWN(TIM_HandleTypeDef *htim)
 */
-void motor_stop_cb(MotorParameter *motor)
+void inline motor_stop_cb(MotorParameter *motor)
 {
     motor->hall_h.stop_tick = HAL_GetTick();
     motor->hall_h.it_cnt    = 0;
@@ -97,7 +96,7 @@ void motor_stop_cb(MotorParameter *motor)
     PI_reset(&motor->foc_h.pi_Iq_h);
 }
 
-static void direction_update(MotorParameter *motor)
+static inline void direction_update(MotorParameter *motor)
 {
     motor->rotate_h.ref_fix = motor->rotate_h.ref_ori;
     motor->rpm_h.ref_fix.reverse = motor->rpm_h.ref_ori.reverse;
@@ -129,7 +128,7 @@ static void direction_update(MotorParameter *motor)
     }
 }
 
-static void status_update(MotorParameter *motor)
+static inline void status_update(MotorParameter *motor)
 {
     // if (HAL_GetTick() - motor->fdcan_alive >= 1000)
     // {
@@ -190,7 +189,7 @@ static void status_update(MotorParameter *motor)
     }
 }
 
-static void control_update(MotorParameter *motor)
+static inline void control_update(MotorParameter *motor)
 {
     switch (motor->ctrl_h.ref_fix)
     {
@@ -201,7 +200,7 @@ static void control_update(MotorParameter *motor)
                 motor->init_cnt--;
                 if (motor->init_cnt == 0)
                 {
-                    motor_vec_ctrl_adcs_reset(motor);
+                    motor_foc_adcs_reset(motor);
                     hall_update(motor);
                     motor_set_rpm(motor, 0, 30.0f);
                     motor_set_rotate_mode(motor, MOTOR_ROT_NORMAL);
@@ -270,7 +269,7 @@ void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef *hadc)
 #define PWM_TIM_IT_CNT_MAX 20000
 void motor_pwm_cb(MotorParameter *motor)
 {
-    motor_vec_ctrl_adcs_upd(motor);
+    motor_foc_adcs_upd(motor);
     if (motor->tim_tick % 200 == 0)
     {
         direction_update(motor);
