@@ -73,7 +73,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 void motor_hall_exti_cb(MotorParameter *motor)
 {
     hall_update(motor);
-    motor_foc_angle_reset(motor);
+    motor_foc_hall_exti_cb(motor);
     rotate_check(motor);
     rpm_update(motor);
 }

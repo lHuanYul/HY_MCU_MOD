@@ -16,7 +16,7 @@ inline void motor_foc_set(MotorParameter *motor)
     motor->foc_h.pi_Id_h.out_fix = 0.0f;
 }
 
-inline void motor_foc_angle_reset(MotorParameter *motor)
+inline void motor_foc_hall_exti_cb(MotorParameter *motor)
 {
     motor->foc_h.rad_acc = 0.0f;
 }
