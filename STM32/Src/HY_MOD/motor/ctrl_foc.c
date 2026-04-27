@@ -64,8 +64,12 @@ static inline void motor_vec_ctrl_clarke(MotorParameter *motor)
     motor->foc_h.current_zero = 0.0f;
     for (i = 0; i < 3; i++)
     {
-        motor->foc_h.clarke_h.ABC[i] = motor->foc_h.adc_h.uvw[i]->current;
         motor->foc_h.current_zero += motor->foc_h.adc_h.uvw[i]->current;
+    }
+    float32_t avg = motor->foc_h.current_zero / 3.0f;
+    for (i = 0; i < 3; i++)
+    {
+        motor->foc_h.clarke_h.ABC[i] = motor->foc_h.adc_h.uvw[i]->current - avg;
     }
     CLARKE_run_ideal(&motor->foc_h.clarke_h);
 }
@@ -94,8 +98,10 @@ static inline void motor_vec_ctrl_park(MotorParameter *motor)
         }
         default:
         {
-            motor->foc_h.rotor_rad =
-                motor->foc_h.hall_rad + motor->foc_h.rad_acc + MOTOR_FOC_ANGLE;
+            motor->foc_h.rotor_rad = var_wrap_pos(
+                motor->foc_h.hall_rad + motor->foc_h.rad_acc + MOTOR_FOC_ANGLE,
+                PI_MUL_2
+            );
             break;
         }
     }
