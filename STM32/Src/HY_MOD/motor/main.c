@@ -38,9 +38,9 @@ void motor_setup(MotorParameter *motor)
         PWM_tim_t /
         HALL_tim_t * (float32_t)(motor->const_h.PWM_htimx->Init.Period * 2.0f) * PI_DIV_3;
 
-    motor->foc_h.pi_Id_h.Kp = MOTOR_LL * 1000.0f;
+    motor->foc_h.pi_Id_h.Kp = MOTOR_LL * MOTOR_CURRENT_BW;
     motor->foc_h.pi_Id_h.Ki = 1.0f / MOTOR_TAU * PWM_tim_t;
-    motor->foc_h.pi_Iq_h.Kp = MOTOR_LL * 1000.0f;
+    motor->foc_h.pi_Iq_h.Kp = MOTOR_LL * MOTOR_CURRENT_BW;
     motor->foc_h.pi_Iq_h.Ki = 1.0f / MOTOR_TAU * PWM_tim_t;
 
     ERROR_CHECK_HAL_HANDLE(HAL_ADCEx_Calibration_Start(

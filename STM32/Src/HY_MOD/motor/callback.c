@@ -202,7 +202,7 @@ static inline void control_update(MotorParameter *motor)
                 {
                     motor_foc_adcs_reset(motor);
                     hall_update(motor);
-                    motor_set_rpm(motor, 0, 30.0f);
+                    motor_set_rpm(motor, 0, 60.0f);
                     motor_set_rotate_mode(motor, MOTOR_ROT_NORMAL);
                     motor_switch_ctrl(motor, MOTOR_CTRL_FOC);
                 }
