@@ -45,6 +45,7 @@ static void ctrl_load(MotorParameter *motor, int8_t seq[3], float32_t duty)
             GPIO_WRITE_R(motor->const_h.PWMN_GPIO.uvw[i], 0);
         }
     }
+    motor->duty_load = motor->deg_h.duty_h;
     motor_timer_load(motor);
 }
 
@@ -106,7 +107,6 @@ void deg_ctrl_120_load(MotorParameter *motor, uint8_t id)
             break;
         }
     }
-    motor->duty_load = motor->deg_h.duty_h;
     ctrl_load(motor, seq, motor->deg_h.duty_val);
 }
 
