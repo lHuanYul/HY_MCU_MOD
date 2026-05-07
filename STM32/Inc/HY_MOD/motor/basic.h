@@ -170,8 +170,6 @@ typedef struct MotorHallParameter
 
     volatile uint8_t    wrong;
 
-    volatile uint16_t   delay;
-
     uint32_t            time_cnt;
     
     uint8_t             auto_spin;
@@ -198,6 +196,8 @@ typedef struct MotorDEGParameter
     MotorPhaseDuty      duty_h;
 
     PI_CTRL             pi_rpm;
+
+    PI_CTRL             pi_current;
 } MotorDEGParameter;
 
 typedef union MotorADC

@@ -23,7 +23,6 @@ static inline void hall_update(MotorParameter *motor)
         return;
     }
     motor->dbg_h.hall_rad[motor->hall_h.current - 1] = motor->foc_h.rotor_rad;
-    motor->hall_h.delay = HALL_DELAY;
 }
 
 static inline void rotate_check(MotorParameter *motor)
@@ -226,27 +225,13 @@ static inline void control_update(MotorParameter *motor)
         case MOTOR_CTRL_120_SIM:
         case MOTOR_CTRL_120_SW:
         {
-            if (motor->hall_h.delay > 0)
-            {
-                if (motor->hall_h.delay == HALL_DELAY)
-                    deg_ctrl_120_load(motor, HALL_DELAY_LOAD);
-                motor->hall_h.delay--;
-                if (motor->hall_h.delay == 0)
-                    deg_ctrl_120_load(motor, motor->hall_h.current);
-            }
+            deg_ctrl_120_load(motor, motor->hall_h.current);
             break;
         }
         case MOTOR_CTRL_FOC_INIT:
         {
             motor_foc_run(motor);
-            if (motor->hall_h.delay > 0)
-            {
-                if (motor->hall_h.delay == HALL_DELAY)
-                    deg_ctrl_120_load(motor, HALL_DELAY_LOAD);
-                motor->hall_h.delay--;
-                if (motor->hall_h.delay == 0)
-                    deg_ctrl_120_load(motor, motor->hall_h.current);
-            }
+            deg_ctrl_120_load(motor, motor->hall_h.current);
             break;
         }
         case MOTOR_CTRL_FOC:
