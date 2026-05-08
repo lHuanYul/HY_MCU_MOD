@@ -109,6 +109,7 @@ typedef enum MotorCtrl
     MOTOR_CTRL_TEST_LOW,
     MOTOR_CTRL_TEST_WAVE,
     MOTOR_CTRL_120,         // 普通
+    MOTOR_CTRL_120_DUTY,    // 旋轉 
     MOTOR_CTRL_120_SIM,     // 模擬
     MOTOR_CTRL_120_SW,      // 旋轉方向轉換
     MOTOR_CTRL_FOC_INIT,    // 初始 Todo
@@ -116,9 +117,9 @@ typedef enum MotorCtrl
     MOTOR_CTRL_FOC_SIM,     // 模擬
     MOTOR_CTRL_FOC_POS,     // 轉子定位
     MOTOR_CTRL_FOC_ROT_CMD, // 轉子定位(外部指令增加角度)
-    MOTOR_CTRL_FOC_ROT_AUTO,// 強制旋轉(內部自動加角度)
-    MOTOR_CTRL_FOC_OL_VDQ,  // 強制旋轉
-    MOTOR_CTRL_FOC_OL_IQ,   // 強制旋轉
+    MOTOR_CTRL_FOC_ROT_AUTO,// 旋轉(內部自動加角度)
+    MOTOR_CTRL_FOC_OL_VDQ,  // 旋轉
+    MOTOR_CTRL_FOC_OL_IQ,   // 旋轉
 } MotorCtrl;
 
 // Control Parameter

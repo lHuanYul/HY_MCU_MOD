@@ -160,18 +160,17 @@ static inline void status_update(MotorParameter *motor)
             motor->foc_h.pi_rpm.feedback = motor->rpm_h.fb.value;
             PI_run(&motor->deg_h.pi_rpm);
             PI_run(&motor->foc_h.pi_rpm);
-    #ifdef MOTOR_PI_RPM
-            motor->deg_h.duty_val = motor->deg_h.pi_rpm.out_fix;
-    #else
-            motor->deg_h.duty_val = 0.5f;
-    #endif
+            if (motor->ctrl_h.ref_fix == MOTOR_CTRL_120_DUTY)
+                motor->deg_h.duty_val = 0.5f;
+            else
+                motor->deg_h.duty_val = motor->deg_h.pi_rpm.out_fix;
             // Auto start spin
             if (
                 motor->rpm_h.fb.value == 0.0f &&
                 motor->rpm_h.ref_fix.value != 0.0f
             ) {
                 hall_update(motor);
-            #ifdef MOTOR_AUTO_SPIN
+            #ifdef MOTOR_AUTO_SPIN // Todo
                 motor_switch_ctrl_fix(motor, MOTOR_CTRL_120);
                 motor->hall_h.delay = 1;
                 motor->deg_h.duty_val = 1.0f;
@@ -217,6 +216,7 @@ static inline void control_update(MotorParameter *motor)
             break;
         }
         case MOTOR_CTRL_120:
+        case MOTOR_CTRL_120_DUTY:
         case MOTOR_CTRL_120_SIM:
         case MOTOR_CTRL_120_SW:
         {

@@ -119,6 +119,7 @@ void motor_switch_ctrl(MotorParameter *motor, MotorCtrl ctrl)
         case MOTOR_CTRL_TEST_LOW:
         case MOTOR_CTRL_TEST_WAVE:
         case MOTOR_CTRL_120:
+        case MOTOR_CTRL_120_DUTY:
         case MOTOR_CTRL_120_SIM:
         case MOTOR_CTRL_120_SW:
         case MOTOR_CTRL_FOC_INIT:
@@ -170,6 +171,7 @@ void motor_switch_ctrl_fix(MotorParameter *motor, MotorCtrl ctrl)
         case MOTOR_CTRL_TEST_HIGH:
         case MOTOR_CTRL_TEST_LOW:
         case MOTOR_CTRL_120:
+        case MOTOR_CTRL_120_DUTY:
         case MOTOR_CTRL_120_SIM:
         case MOTOR_CTRL_120_SW:
         case MOTOR_CTRL_FOC_INIT:
