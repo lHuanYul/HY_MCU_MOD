@@ -129,9 +129,10 @@ void motor_switch_ctrl(MotorParameter *motor, MotorCtrl ctrl)
         case MOTOR_CTRL_FOC:
         case MOTOR_CTRL_FOC_SIM:
         case MOTOR_CTRL_FOC_POS:
-        case MOTOR_CTRL_FOC_POS_ADD:
-        case MOTOR_CTRL_FOC_ROT_ADD:
-        case MOTOR_CTRL_FOC_ROT_IQ:
+        case MOTOR_CTRL_FOC_ROT_CMD:
+        case MOTOR_CTRL_FOC_ROT_AUTO:
+        case MOTOR_CTRL_FOC_OL_VDQ:
+        case MOTOR_CTRL_FOC_OL_IQ:
         {
             motor_switch_ctrl_fix(motor, MOTOR_CTRL_FOC);
             motor->foc_h.init_cnt = 2000;
@@ -181,9 +182,10 @@ void motor_switch_ctrl_fix(MotorParameter *motor, MotorCtrl ctrl)
         case MOTOR_CTRL_FOC:
         case MOTOR_CTRL_FOC_SIM:
         case MOTOR_CTRL_FOC_POS:
-        case MOTOR_CTRL_FOC_POS_ADD:
-        case MOTOR_CTRL_FOC_ROT_ADD:
-        case MOTOR_CTRL_FOC_ROT_IQ:
+        case MOTOR_CTRL_FOC_ROT_CMD:
+        case MOTOR_CTRL_FOC_ROT_AUTO:
+        case MOTOR_CTRL_FOC_OL_VDQ:
+        case MOTOR_CTRL_FOC_OL_IQ:
         {
             for (i = 0; i < 3; i++)
                 SET_PWM_ON(const_h->PWMN_GPIO.uvw[i], const_h->PWMN_GPIO_set.uvw[i]);

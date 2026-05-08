@@ -87,10 +87,10 @@ static inline void motor_vec_ctrl_park(MotorParameter *motor)
             motor->foc_h.rotor_rad = 0.0f;
             break;
         }
-        case MOTOR_CTRL_FOC_POS_ADD:
+        case MOTOR_CTRL_FOC_ROT_CMD:
             break;
-        case MOTOR_CTRL_FOC_ROT_ADD:
-        case MOTOR_CTRL_FOC_ROT_IQ:
+        case MOTOR_CTRL_FOC_ROT_AUTO:
+        case MOTOR_CTRL_FOC_OL_VDQ:
         {
             motor->foc_h.rotor_rad += 0.002f;
             motor->foc_h.rotor_rad = var_wrap_pos(motor->foc_h.rotor_rad, PI_MUL_2);
@@ -115,8 +115,19 @@ static inline void motor_vec_ctrl_park(MotorParameter *motor)
 static inline void motor_vec_ctrl_pi_id_iq(MotorParameter *motor)
 {
     motor->foc_h.pi_Id_h.reference = 0.0f;
-    // motor->foc_h.pi_Iq_h.reference = 0.4f;
-    motor->foc_h.pi_Iq_h.reference = motor->foc_h.pi_rpm.out_fix;
+    switch (motor->ctrl_h.ref_fix)
+    {
+        case MOTOR_CTRL_FOC_OL_IQ:
+        {
+            motor->foc_h.pi_Iq_h.reference = 0.4f;
+            break;
+        }
+        default:
+        {
+            motor->foc_h.pi_Iq_h.reference = motor->foc_h.pi_rpm.out_fix;
+            break;
+        }
+    }
     motor->foc_h.pi_Id_h.feedback  = motor->foc_h.park_h.Ds;
     motor->foc_h.pi_Iq_h.feedback  = motor->foc_h.park_h.Qs;
     PI_run(&motor->foc_h.pi_Id_h);
@@ -133,14 +144,14 @@ static inline void motor_vec_ctrl_ipark(MotorParameter *motor)
     switch (motor->ctrl_h.ref_fix)
     {
         case MOTOR_CTRL_FOC_POS:
-        case MOTOR_CTRL_FOC_POS_ADD:
-        case MOTOR_CTRL_FOC_ROT_ADD:
+        case MOTOR_CTRL_FOC_ROT_CMD:
+        case MOTOR_CTRL_FOC_ROT_AUTO:
         {
             motor->foc_h.ipark_h.Vdref = 0.2f;
             motor->foc_h.ipark_h.Vqref = 0.0f;
             break;
         }
-        case MOTOR_CTRL_FOC_ROT_IQ:
+        case MOTOR_CTRL_FOC_OL_VDQ:
         {
             motor->foc_h.ipark_h.Vdref = 0.0f;
             motor->foc_h.ipark_h.Vqref = 0.15f;

@@ -115,9 +115,10 @@ typedef enum MotorCtrl
     MOTOR_CTRL_FOC,         // 普通
     MOTOR_CTRL_FOC_SIM,     // 模擬
     MOTOR_CTRL_FOC_POS,     // 轉子定位
-    MOTOR_CTRL_FOC_POS_ADD, // 轉子定位
-    MOTOR_CTRL_FOC_ROT_ADD, // 強制旋轉
-    MOTOR_CTRL_FOC_ROT_IQ,  // 強制旋轉
+    MOTOR_CTRL_FOC_ROT_CMD, // 轉子定位(外部指令增加角度)
+    MOTOR_CTRL_FOC_ROT_AUTO,// 強制旋轉(內部自動加角度)
+    MOTOR_CTRL_FOC_OL_VDQ,  // 強制旋轉
+    MOTOR_CTRL_FOC_OL_IQ,   // 強制旋轉
 } MotorCtrl;
 
 // Control Parameter

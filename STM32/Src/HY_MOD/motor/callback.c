@@ -162,11 +162,6 @@ static inline void status_update(MotorParameter *motor)
             PI_run(&motor->foc_h.pi_rpm);
     #ifdef MOTOR_PI_RPM
             motor->deg_h.duty_val = motor->deg_h.pi_rpm.out_fix;
-            // motor->foc_h.pi_Iq_h.reference += motor->foc_h.pi_rpm.out_fix * motor->tfm_h.duty_Iq;
-            // VAR_CLAMPF(motor->foc_h.pi_Iq_h.reference, motor->foc_h.pi_Iq_h.min, motor->foc_h.pi_Iq_h.max);
-            // motor->foc_h.pi_Iq_h.reference = (!motor->rpm_h.ref_ori.reverse) ?
-            //     motor->const_h.rated_current : -motor->const_h.rated_current;
-            // motor->tfm_h.duty_Iq = var_clampf((motor->tfm_h.duty_Iq + motor->foc_h.pi_rpm.out_fix), 0.15f, 0.2f);
     #else
             motor->deg_h.duty_val = 0.5f;
     #endif
@@ -237,9 +232,10 @@ static inline void control_update(MotorParameter *motor)
         case MOTOR_CTRL_FOC:
         case MOTOR_CTRL_FOC_SIM:
         case MOTOR_CTRL_FOC_POS:
-        case MOTOR_CTRL_FOC_POS_ADD:
-        case MOTOR_CTRL_FOC_ROT_ADD:
-        case MOTOR_CTRL_FOC_ROT_IQ:
+        case MOTOR_CTRL_FOC_ROT_CMD:
+        case MOTOR_CTRL_FOC_ROT_AUTO:
+        case MOTOR_CTRL_FOC_OL_VDQ:
+        case MOTOR_CTRL_FOC_OL_IQ:
         {
             motor_foc_run(motor);
             motor_foc_load(motor);
