@@ -42,11 +42,7 @@ MotorParameter
 ├── dbg_h (MotorDbg)
 │   ├── pwm_freq (float32_t) // 計時器頻率
 │   ├── current_zero (float32_t)
-│   ├── hall_rad[6] (float32_t)
-│   ├── his_cnt (uint8_t)
-│   ├── his_test_rad[12] (float32_t)
-│   ├── his_ele_rad[12] (float32_t)
-│   └── his_sector[12] (uint8_t)
+│   └── hall_rad[6] (float32_t)
 ├── init_cnt (uint32_t)
 ├── ctrl_h (MotorCtrlParameter) // 馬達控制模式
 │   ├── ref_ori (MotorCtrl)
@@ -65,7 +61,7 @@ MotorParameter
 │   ├── u (AdcCurrentParameter*)
 │   ├── v (AdcCurrentParameter*)
 │   ├── w (AdcCurrentParameter*)
-│   └── current_zero (float32_t)
+│   └── total (float32_t)
 ├── hall_h (MotorHallParameter)
 │   ├── it_cnt (uint8_t) // 霍爾計數
 │   ├── current (volatile uint8_t) // 目前霍爾相位

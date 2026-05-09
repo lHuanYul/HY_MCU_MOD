@@ -61,12 +61,12 @@ static inline void motor_vec_ctrl_clarke(MotorParameter *motor)
 {
     // 電流進motor為 正
     uint8_t i;
-    motor->adc_h.current_zero = 0.0f;
+    motor->adc_h.total = 0.0f;
     for (i = 0; i < 3; i++)
     {
-        motor->adc_h.current_zero += motor->adc_h.uvw[i]->current;
+        motor->adc_h.total += motor->adc_h.uvw[i]->current;
     }
-    float32_t avg = motor->adc_h.current_zero / 3.0f;
+    float32_t avg = motor->adc_h.total / 3.0f;
     for (i = 0; i < 3; i++)
     {
         motor->foc_h.clarke_h.ABC[i] = motor->adc_h.uvw[i]->current - avg;

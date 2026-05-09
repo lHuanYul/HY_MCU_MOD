@@ -92,14 +92,7 @@ typedef struct MotorDbg
     // 計時器頻率
     float32_t   pwm_freq;
 
-    float32_t   current_zero;
-
     float32_t   hall_rad[6];
-
-    uint8_t     his_cnt;
-    float32_t   his_test_rad[12];
-    float32_t   his_ele_rad[12];
-    uint8_t     his_sector[12];
 } MotorDbg;
 
 typedef enum MotorCtrl
@@ -210,7 +203,7 @@ typedef struct MotorADC
         };
         AdcCurrentParameter *uvw[3];
     };
-    float32_t   current_zero;
+    float32_t   total;
 } MotorADC;
 
 // FOC Parameter
