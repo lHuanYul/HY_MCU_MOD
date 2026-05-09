@@ -27,13 +27,9 @@ Result fdcan_motor_rpm_send(FdcanParametar *fdcan, MotorParameter *motor)
     RESULT_CHECK_HANDLE(fdcan_pkt_set_len(&pkt, sizeof(uint32_t) + sizeof(float32_t) * 2));
 
     var_u32_to_u8_be(fdcan->tim_tick, pkt.data);
-
-    float32_t f32 = (motor->rpm_h.ref_fix.reverse) ?
-        -motor->rpm_h.ref_fix.value : motor->rpm_h.ref_fix.value;
-    var_f32_to_u8_be(f32, pkt.data + 4);
-    f32 = (motor->rpm_h.fb.reverse) ?
-        -motor->rpm_h.fb.value : motor->rpm_h.fb.value;
-    var_f32_to_u8_be(f32, pkt.data + 8);
+    
+    var_f32_to_u8_be(motor->speed_h.ref_omega, pkt.data + 4);
+    var_f32_to_u8_be(motor->speed_h.fbk_omega, pkt.data + 8);
 
     RESULT_CHECK_HANDLE(fdcan_ring_push(&fdcan->tx_buf, &pkt, 0));
     return RESULT_OK(NULL);

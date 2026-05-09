@@ -211,3 +211,10 @@ uint16_t var_u16_min(uint16_t *data, uint32_t len)
     }
     return r;
 }
+
+inline bool var_same_sign(float a, float b)
+{
+    if (a == 0.0f || b == 0.0f) return 1;
+    union { float f; uint32_t u; } ua = {a}, ub = {b};
+    return ((ua.u ^ ub.u) & 0x80000000) == 0;
+}

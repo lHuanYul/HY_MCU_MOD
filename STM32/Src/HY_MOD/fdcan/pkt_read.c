@@ -34,10 +34,9 @@ Result fdcan_pkt_ist_read(FdcanParametar *fdcan, FdcanPkt *pkt)
                 {
                     if (pkt->len < 6) break;
                     motor_set_rotate_mode(motor, MOTOR_ROT_NORMAL);
-                    code = (pkt->data[1]) ? 1 : 0;
                     uint8_t u8s[sizeof(float32_t)];
                     memcpy(u8s, pkt->data + 2, sizeof(float32_t));
-                    motor_set_rpm(motor, code, var_u8_to_f32_be(u8s));
+                    motor_set_spd(motor, var_u8_to_f32_be(u8s));
                     return RESULT_OK(NULL);
                 }
                 case CMD_WHEEL_B0_LOCK:

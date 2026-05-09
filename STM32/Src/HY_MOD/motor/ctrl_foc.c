@@ -25,14 +25,14 @@ inline void motor_foc_adcs_reset(MotorParameter *motor)
 {
     uint8_t i;
     for (i = 0; i < 3; i++)
-        adc_current_reset(motor->foc_h.adc_h.uvw[i]);
+        adc_current_reset(motor->adc_h.uvw[i]);
 }
 
 inline void motor_foc_adcs_upd(MotorParameter *motor)
 {
     uint8_t i;
     for (i = 0; i < 3; i++)
-        RESULT_CHECK_HANDLE(adc_current_upd(motor->foc_h.adc_h.uvw[i]));
+        RESULT_CHECK_HANDLE(adc_current_upd(motor->adc_h.uvw[i]));
 }
 
 static const float32_t hall_elec_angle[8] = {
@@ -61,15 +61,15 @@ static inline void motor_vec_ctrl_clarke(MotorParameter *motor)
 {
     // 電流進motor為 正
     uint8_t i;
-    motor->foc_h.current_zero = 0.0f;
+    motor->adc_h.current_zero = 0.0f;
     for (i = 0; i < 3; i++)
     {
-        motor->foc_h.current_zero += motor->foc_h.adc_h.uvw[i]->current;
+        motor->adc_h.current_zero += motor->adc_h.uvw[i]->current;
     }
-    float32_t avg = motor->foc_h.current_zero / 3.0f;
+    float32_t avg = motor->adc_h.current_zero / 3.0f;
     for (i = 0; i < 3; i++)
     {
-        motor->foc_h.clarke_h.ABC[i] = motor->foc_h.adc_h.uvw[i]->current - avg;
+        motor->foc_h.clarke_h.ABC[i] = motor->adc_h.uvw[i]->current - avg;
     }
     CLARKE_run_ideal(&motor->foc_h.clarke_h);
 }
@@ -124,7 +124,7 @@ static inline void motor_vec_ctrl_pi_id_iq(MotorParameter *motor)
         }
         default:
         {
-            motor->foc_h.pi_Iq_h.reference = motor->foc_h.pi_rpm.out_fix;
+            motor->foc_h.pi_Iq_h.reference = motor->foc_h.pi_omega.out_fix;
             break;
         }
     }

@@ -76,9 +76,9 @@ typedef struct MotorConst
 // TFM: transformation
 typedef struct MotorTfm
 {
-    // 霍爾間隔 → 輸出軸轉速(RPM) 轉換常數
-    // RPM = [SPD_tim_f * 60] / [6 × (POLE/2) × GEAR × htim_cnt]
-    float32_t           rpm_fbk;
+    // 霍爾間隔 → 輸出軸轉速(omega) 轉換常數
+    // OMEGA = [SPD_tim_f * 2 * pi / 60] / [6 × (POLE/2) × GEAR × htim_cnt]
+    float32_t           omega_fbk;
     // PWM 週期 → 電角度內插轉換常數
     // Δθ_elec(rad) = [ (TIM_tim_t * ARR) / ELE_tim_t ] × (π/3) / htim_cnt
     float32_t           foc_it_angle_itpl;
@@ -145,26 +145,25 @@ typedef struct MotorRotParameter
     MotorRot    ref_fix;
 } MotorRotParameter;
 
-typedef struct MotorRpm
+// SPD Parameter
+typedef struct MotorSpdParameter
 {
-    volatile bool       reverse;
-    volatile float32_t  value;
-} MotorRpm;
-
-// RPM Parameter
-typedef struct MotorRpmParameter
-{
-    MotorRpm    ref_ori;
-    MotorRpm    ref_fix;
-    MotorRpm    fb;
-    float32_t   save_stop_val;
-} MotorRpmParameter;
+    float32_t   ref_rpm;
+    float32_t   ref_omega;
+    float32_t   fbk_rpm;
+    float32_t   fbk_omega;
+    float32_t   save_stop_omega;
+} MotorSpdParameter;
 
 // Hall Parameter
 typedef struct MotorHallParameter
 {
-    // 霍爾計數
-    uint8_t             it_cnt;
+    // 霍爾跳變間隔 頭id
+    volatile uint8_t    time_hist_head;
+    // 霍爾跳變間隔 長度
+    volatile uint8_t    time_hist_len;
+    // 霍爾跳變間隔
+    uint32_t            time_hist[MOTOR_SPD_CNT];
     // 目前霍爾相位
     volatile uint8_t    current;
     // 上次霍爾相位
@@ -172,8 +171,6 @@ typedef struct MotorHallParameter
 
     volatile uint8_t    wrong;
 
-    uint32_t            time_cnt;
-    
     uint8_t             auto_spin;
     // 停轉時間
     uint32_t            stop_tick;
@@ -192,34 +189,34 @@ typedef union MotorPhaseDuty
 // DEG Parameter
 typedef struct MotorDEGParameter
 {
+    bool                reverse;
     // DEG duty
     float32_t           duty_val;
     // DEG duty
     MotorPhaseDuty      duty_h;
 
-    PI_CTRL             pi_rpm;
+    PI_CTRL             pi_omega;
 
     PI_CTRL             pi_current;
 } MotorDEGParameter;
 
-typedef union MotorADC
+typedef struct MotorADC
 {
-    struct {
-        AdcCurrentParameter *u;
-        AdcCurrentParameter *v;
-        AdcCurrentParameter *w;
+    union {
+        struct {
+            AdcCurrentParameter *u;
+            AdcCurrentParameter *v;
+            AdcCurrentParameter *w;
+        };
+        AdcCurrentParameter *uvw[3];
     };
-    AdcCurrentParameter *uvw[3];
+    float32_t   current_zero;
 } MotorADC;
 
 // FOC Parameter
 typedef struct MotorFOCParameter
 {
     uint32_t            init_cnt;
-    // 電流 ADC
-    MotorADC            adc_h;
-
-    float32_t           current_zero;
     // clarke
     CLARKE              clarke_h;
     // 目前霍爾相位
@@ -233,7 +230,7 @@ typedef struct MotorFOCParameter
     // park
     PARK                park_h;
 
-    PI_CTRL             pi_rpm;
+    PI_CTRL             pi_omega;
 
     PI_CTRL             pi_Id_h;
 
@@ -272,9 +269,11 @@ typedef struct MotorParameter
     // 馬達旋轉模式
     MotorRotParameter   rotate_h;
     // 從尾往轉子 順時針value為負
-    MotorRpmParameter   rpm_h;
+    MotorSpdParameter   speed_h;
     // 計時中斷計數
     uint32_t            tim_tick;
+    // 電流 ADC
+    MotorADC            adc_h;
 
     MotorHallParameter  hall_h;
 

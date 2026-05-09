@@ -44,7 +44,8 @@
 #define SQRT3           1.73205080756888f   // 根號3
 #define ONE_DIV_SQRT3   0.577350269189626f  // 1/(根號3)
 #define SQRT3_DIV_2     0.866025403784439f  // (根號3)/2
-#define RPM_TO_RAD      (PI_MUL_2 / 60.0f)  //
+#define RPM_TO_OMEGA    (PI / 30.0f)
+#define OMEGA_TO_RPM    (30.0f / PI)
 
 uint32_t var_swap_u32(uint32_t value);
 void var_u32_to_u8_be(uint32_t value, uint8_t* u8);
@@ -66,3 +67,5 @@ void var_i16_to_u8_be(int16_t value, uint8_t* u8);
 int16_t var_u8_to_i16_be(const uint8_t *u8);
 uint16_t var_u16_max(uint16_t *data, uint32_t size);
 uint16_t var_u16_min(uint16_t *data, uint32_t size);
+
+bool var_same_sign(float a, float b);

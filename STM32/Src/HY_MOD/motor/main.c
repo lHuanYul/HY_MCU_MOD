@@ -31,12 +31,12 @@ void motor_setup(MotorParameter *motor)
 
     motor->dbg_h.pwm_freq = PWM_tim_f / (motor->const_h.PWM_htimx->Init.Period * 2);
 
-    motor->tfm_h.rpm_fbk =
-        ((float32_t)MOTOR_RPM_CNT * HALL_tim_f * 60.0f) /
-        ((float32_t)MOTOR_POLE / 2.0f * 6.0f * (float32_t)MOTOR_GEAR);
-    motor->tfm_h.foc_it_angle_itpl =
-        PWM_tim_t /
-        HALL_tim_t * (float32_t)(motor->const_h.PWM_htimx->Init.Period * 2.0f) * PI_DIV_3;
+    motor->tfm_h.omega_fbk = // 單次霍爾
+        (HALL_tim_f * PI_MUL_2) /
+        (6.0f * ((float32_t)MOTOR_POLE / 2.0f) * (float32_t)MOTOR_GEAR); // 運算時再/total時間
+    motor->tfm_h.foc_it_angle_itpl = // 單次霍爾
+        PWM_tim_t * (float32_t)(motor->const_h.PWM_htimx->Init.Period * 2.0f)
+        * PI_DIV_3 / HALL_tim_t;
 
     motor->foc_h.pi_Id_h.Kp = MOTOR_LL * MOTOR_CURRENT_BW;
     motor->foc_h.pi_Id_h.Ki = 1.0f / MOTOR_TAU * PWM_tim_t;
@@ -44,13 +44,13 @@ void motor_setup(MotorParameter *motor)
     motor->foc_h.pi_Iq_h.Ki = 1.0f / MOTOR_TAU * PWM_tim_t;
 
     ERROR_CHECK_HAL_HANDLE(HAL_ADCEx_Calibration_Start(
-        motor->foc_h.adc_h.v->basic.hadcx, ADC_SINGLE_ENDED));
+        motor->adc_h.v->basic.hadcx, ADC_SINGLE_ENDED));
     ERROR_CHECK_HAL_HANDLE(HAL_ADCEx_Calibration_Start(
-        motor->foc_h.adc_h.u->basic.hadcx, ADC_SINGLE_ENDED));
+        motor->adc_h.u->basic.hadcx, ADC_SINGLE_ENDED));
     ERROR_CHECK_HAL_HANDLE(
-        HAL_ADCEx_InjectedStart(motor->foc_h.adc_h.v->basic.hadcx));
+        HAL_ADCEx_InjectedStart(motor->adc_h.v->basic.hadcx));
     ERROR_CHECK_HAL_HANDLE(
-        HAL_ADCEx_InjectedStart_IT(motor->foc_h.adc_h.u->basic.hadcx));
+        HAL_ADCEx_InjectedStart_IT(motor->adc_h.u->basic.hadcx));
 
     __HAL_TIM_SET_COMPARE(motor->const_h.PWM_htimx, motor->const_h.PWM_TIM_CH_x.mid,
         motor->const_h.PWM_htimx->Init.Period - TIM1_ADC_TRI_DL);
@@ -82,10 +82,10 @@ void motor_timer_load(MotorParameter *motor)
     }
 }
 
-void motor_set_rpm(MotorParameter *motor, bool reverse, float32_t speed)
+void motor_set_spd(MotorParameter *motor, float32_t rpm)
 {
-    if (speed != 0) motor->rpm_h.ref_ori.reverse = reverse;
-    motor->rpm_h.ref_ori.value = speed;
+    motor->speed_h.ref_rpm = rpm;
+    motor->speed_h.ref_omega = rpm * RPM_TO_OMEGA;
 }
 
 void motor_set_rotate_mode(MotorParameter *motor, MotorRot mode)

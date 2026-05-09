@@ -91,7 +91,7 @@ void deg_ctrl_120_load(MotorParameter *motor, uint8_t id)
         {
             for (i = 0; i < 3; i++)
             {
-                if (!motor->rpm_h.ref_fix.reverse)
+                if (!motor->deg_h.reverse)
                     seq[i] = seq_map_120[index_120_ccw[id]][i];
                 else
                     seq[i] = seq_map_120[ index_120_cw[id]][i];
@@ -146,7 +146,7 @@ void deg_ctrl_120_load(MotorParameter *motor, uint8_t id)
 //         {
 //             for (i = 0; i < 3; i++)
 //             {
-//                 if (!motor->rpm_h.reference.reverse)
+//                 if (!motor->deg_h.reverse)
 //                     seq[i] = seq_map_180[index_180_ccw[motor->hall_h.current]][i];
 //                 else
 //                     seq[i] = seq_map_180[ index_180_cw[motor->hall_h.current]][i];
