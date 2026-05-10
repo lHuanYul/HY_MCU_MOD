@@ -102,6 +102,7 @@ static inline void direction_update(MotorParameter *motor)
     switch (motor->ctrl_h.ref_fix)
     {
         case MOTOR_CTRL_120:
+        case MOTOR_CTRL_120_T:
         {
             if (
                 motor->speed_h.ref_omega == 0.0f ||
@@ -217,6 +218,7 @@ static inline void control_update(MotorParameter *motor)
             break;
         }
         case MOTOR_CTRL_120:
+        case MOTOR_CTRL_120_T:
         case MOTOR_CTRL_120_DUTY:
         case MOTOR_CTRL_120_SIM:
         case MOTOR_CTRL_120_SW:

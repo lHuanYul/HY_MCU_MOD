@@ -119,6 +119,7 @@ void motor_switch_ctrl(MotorParameter *motor, MotorCtrl ctrl)
         case MOTOR_CTRL_TEST_LOW:
         case MOTOR_CTRL_TEST_WAVE:
         case MOTOR_CTRL_120:
+        case MOTOR_CTRL_120_T:
         case MOTOR_CTRL_120_DUTY:
         case MOTOR_CTRL_120_SIM:
         case MOTOR_CTRL_120_SW:
@@ -171,6 +172,7 @@ void motor_switch_ctrl_fix(MotorParameter *motor, MotorCtrl ctrl)
         case MOTOR_CTRL_TEST_HIGH:
         case MOTOR_CTRL_TEST_LOW:
         case MOTOR_CTRL_120:
+        case MOTOR_CTRL_120_T:
         case MOTOR_CTRL_120_DUTY:
         case MOTOR_CTRL_120_SIM:
         case MOTOR_CTRL_120_SW:
@@ -195,6 +197,11 @@ void motor_switch_ctrl_fix(MotorParameter *motor, MotorCtrl ctrl)
         }
     }
     motor->ctrl_h.ref_fix = ctrl;
+}
+
+// 主要程式皆在callback中
+void motor_main(MotorParameter *motor)
+{
 }
 
 #endif

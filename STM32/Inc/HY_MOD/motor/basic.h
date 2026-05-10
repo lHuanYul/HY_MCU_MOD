@@ -82,8 +82,6 @@ typedef struct MotorTfm
     // PWM 週期 → 電角度內插轉換常數
     // Δθ_elec(rad) = [ (TIM_tim_t * ARR) / ELE_tim_t ] × (π/3) / htim_cnt
     float32_t           foc_it_angle_itpl;
-
-    float32_t           duty_Iq;
 } MotorTfm;
 
 // DBG: debug
@@ -102,6 +100,7 @@ typedef enum MotorCtrl
     MOTOR_CTRL_TEST_LOW,
     MOTOR_CTRL_TEST_WAVE,
     MOTOR_CTRL_120,         // 普通
+    MOTOR_CTRL_120_T,       // 普通
     MOTOR_CTRL_120_DUTY,    // 旋轉 
     MOTOR_CTRL_120_SIM,     // 模擬
     MOTOR_CTRL_120_SW,      // 旋轉方向轉換
@@ -155,7 +154,7 @@ typedef struct MotorHallParameter
     volatile uint8_t    time_hist_head;
     // 霍爾跳變間隔 長度
     volatile uint8_t    time_hist_len;
-    // 霍爾跳變間隔
+    // 霍爾跳變間隔時間
     uint32_t            time_hist[MOTOR_SPD_CNT];
     // 目前霍爾相位
     volatile uint8_t    current;
@@ -163,11 +162,25 @@ typedef struct MotorHallParameter
     uint8_t             last;
 
     volatile uint8_t    wrong;
-
+    // Todo
     uint8_t             auto_spin;
     // 停轉時間
     uint32_t            stop_tick;
 } MotorHallParameter;
+
+typedef struct MotorADC
+{
+    union {
+        struct {
+            AdcCurrentParameter *u;
+            AdcCurrentParameter *v;
+            AdcCurrentParameter *w;
+        };
+        AdcCurrentParameter *uvw[3];
+    };
+    // 應接近0
+    float32_t   total;
+} MotorADC;
 
 typedef union MotorPhaseDuty
 {
@@ -182,29 +195,17 @@ typedef union MotorPhaseDuty
 // DEG Parameter
 typedef struct MotorDEGParameter
 {
+    // 反轉
     bool                reverse;
-    // DEG duty
+    // DEG duty值
     float32_t           duty_val;
-    // DEG duty
+    // DEG uvw duty
     MotorPhaseDuty      duty_h;
 
     PI_CTRL             pi_omega;
 
     PI_CTRL             pi_current;
 } MotorDEGParameter;
-
-typedef struct MotorADC
-{
-    union {
-        struct {
-            AdcCurrentParameter *u;
-            AdcCurrentParameter *v;
-            AdcCurrentParameter *w;
-        };
-        AdcCurrentParameter *uvw[3];
-    };
-    float32_t   total;
-} MotorADC;
 
 // FOC Parameter
 typedef struct MotorFOCParameter
@@ -257,11 +258,11 @@ typedef struct MotorParameter
     MotorDbg            dbg_h;
 
     uint32_t            init_cnt;
-    // 馬達控制模式
+    // 馬達控制模式(120度與foc以及細部)
     MotorCtrlParameter  ctrl_h;
-    // 馬達旋轉模式
+    // 馬達旋轉模式(滑行與剎車等)
     MotorRotParameter   rotate_h;
-    // 從尾往轉子 順時針value為負
+    // 從座往轉子 順時針為負
     MotorSpdParameter   speed_h;
     // 計時中斷計數
     uint32_t            tim_tick;
