@@ -73,6 +73,23 @@ typedef struct MotorConst
     float32_t           peak_current;
 } MotorConst;
 
+typedef struct MotorCalculate
+{
+    //
+    float32_t pwm_f;
+    // PWM 控制定時器每個計數週期的時間 (秒/計數)
+    // = (PSC + 1) / PWM_timer_clock
+    float32_t pwm_T;
+    // 霍爾計時器的實際計數頻率
+    // = HALL_timer_clock / (PSC + 1)
+    float32_t hall_f;
+    // 霍爾計時器每個計數週期的時間 (秒/計數)
+    // = (PSC + 1) / HALL_timer_clock
+    float32_t hall_T;
+    //
+    float32_t pwm_it_f;
+} MotorCalculate;
+
 // TFM: transformation
 typedef struct MotorTfm
 {
@@ -87,9 +104,6 @@ typedef struct MotorTfm
 // DBG: debug
 typedef struct MotorDbg
 {
-    // 計時器頻率
-    float32_t   pwm_freq;
-
     float32_t   hall_rad[6];
 } MotorDbg;
 
@@ -172,11 +186,23 @@ typedef struct MotorADC
 {
     union {
         struct {
-            AdcCurrentParameter *u;
-            AdcCurrentParameter *v;
-            AdcCurrentParameter *w;
+            AdcCurrentParameter *adc_u;
+            AdcCurrentParameter *adc_v;
+            AdcCurrentParameter *adc_w;
         };
-        AdcCurrentParameter *uvw[3];
+        AdcCurrentParameter *adc_uvw[3];
+    };
+    union {
+        struct {
+            // Per-Unit
+            float32_t u;
+            // Per-Unit
+            float32_t v;
+            // Per-Unit
+            float32_t w;
+        };
+        // Per-Unit
+        float32_t uvw[3];
     };
     // 應接近0
     float32_t   total;
@@ -225,9 +251,9 @@ typedef struct MotorFOCParameter
     PARK                park_h;
 
     PI_CTRL             pi_omega;
-
+    // 
     PI_CTRL             pi_Id_h;
-
+    // 
     PI_CTRL             pi_Iq_h;
     // 磁場位置
     float32_t           magn_rad;
@@ -235,8 +261,8 @@ typedef struct MotorFOCParameter
     IPARK               ipark_h;
     // svgendq
     SVGENDQ             svgendq_h;
-    
-    float32_t           Vref;
+    // Vref_s = SQRT3 * Vref / Vbus
+    float32_t           Vref_s;
     // FOC duty
     MotorPhaseDuty      duty_h;
 } MotorFOCParameter;
@@ -252,6 +278,8 @@ typedef struct MotorParameter
 {
     // 常數
     const MotorConst    const_h;
+
+    MotorCalculate      calculate_h;
 
     MotorTfm            tfm_h;
 

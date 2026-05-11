@@ -4,11 +4,23 @@
 #include "HY_MOD/main/variable_cal.h"
 #include "HY_MOD/motor/main.h"
 #include "HY_MOD/motor/trigonometric.h"
-#include "HY_MOD/adc_current/main.h"
 #include "tim.h"
 #include "dac.h"
 
-inline void motor_foc_set(MotorParameter *motor)
+inline void motor_foc_pi_setup(MotorParameter *motor)
+{
+    const float32_t bw =
+        motor->calculate_h.pwm_it_f / MOTOR_I_BW_INDEX * PI_MUL_2;
+    const float32_t Vbase = MOTOR_VBUS / SQRT3;
+    motor->foc_h.pi_Id_h.Kp = MOTOR_LL * bw / Vbase;
+    motor->foc_h.pi_Id_h.Ki = 1.0f / MOTOR_TAU * motor->calculate_h.pwm_T;
+    motor->foc_h.pi_Id_h.max =  MOTOR_MAX_MODULATION_INDEX;
+    motor->foc_h.pi_Id_h.min = -MOTOR_MAX_MODULATION_INDEX;
+    motor->foc_h.pi_Iq_h.Kp = MOTOR_LL * bw / Vbase;
+    motor->foc_h.pi_Iq_h.Ki = 1.0f / MOTOR_TAU * motor->calculate_h.pwm_T;
+}
+
+inline void motor_foc_reset(MotorParameter *motor)
 {
     motor->foc_h.rad_itpl = 0.0f;
     motor->foc_h.rad_acc = 0.0f;
@@ -19,20 +31,6 @@ inline void motor_foc_set(MotorParameter *motor)
 inline void motor_foc_hall_exti_cb(MotorParameter *motor)
 {
     motor->foc_h.rad_acc = 0.0f;
-}
-
-inline void motor_foc_adcs_reset(MotorParameter *motor)
-{
-    uint8_t i;
-    for (i = 0; i < 3; i++)
-        adc_current_reset(motor->adc_h.uvw[i]);
-}
-
-inline void motor_foc_adcs_upd(MotorParameter *motor)
-{
-    uint8_t i;
-    for (i = 0; i < 3; i++)
-        RESULT_CHECK_HANDLE(adc_current_upd(motor->adc_h.uvw[i]));
 }
 
 static const float32_t hall_elec_angle[8] = {
@@ -59,17 +57,18 @@ static inline Result motor_vec_ctrl_angle_upd(MotorParameter *motor)
 
 static inline void motor_vec_ctrl_clarke(MotorParameter *motor)
 {
-    // 電流進motor為 正
     uint8_t i;
     motor->adc_h.total = 0.0f;
     for (i = 0; i < 3; i++)
     {
-        motor->adc_h.total += motor->adc_h.uvw[i]->current;
+        motor->adc_h.total += motor->adc_h.adc_uvw[i]->current;
     }
     float32_t avg = motor->adc_h.total / 3.0f;
     for (i = 0; i < 3; i++)
     {
-        motor->foc_h.clarke_h.ABC[i] = motor->adc_h.uvw[i]->current - avg;
+        // To Per-Unit
+        motor->adc_h.uvw[i] = (motor->adc_h.adc_uvw[i]->current - avg) / MOTOR_RATED_I;
+        motor->foc_h.clarke_h.ABC[i] = motor->adc_h.uvw[i];
     }
     CLARKE_run_ideal(&motor->foc_h.clarke_h);
 }
@@ -92,7 +91,7 @@ static inline void motor_vec_ctrl_park(MotorParameter *motor)
         case MOTOR_CTRL_FOC_ROT_AUTO:
         case MOTOR_CTRL_FOC_OL_VDQ:
         {
-            motor->foc_h.rotor_rad += 0.002f;
+            motor->foc_h.rotor_rad += 0.001f * PI;
             motor->foc_h.rotor_rad = var_wrap_pos(motor->foc_h.rotor_rad, PI_MUL_2);
             break;
         }
@@ -189,9 +188,9 @@ static inline void motor_vec_ctrl_svpwm(MotorParameter *motor)
     if (
         arm_sqrt_f32(
             SQUARE(motor->foc_h.svgendq_h.Ualpha) + SQUARE(motor->foc_h.svgendq_h.Ubeta),
-            &motor->foc_h.Vref) != ARM_MATH_SUCCESS
+            &motor->foc_h.Vref_s) != ARM_MATH_SUCCESS
     ) {
-        if (motor->ctrl_h.ref_fix == MOTOR_CTRL_FOC_SIM) motor->foc_h.Vref = 0.0f;
+        if (motor->ctrl_h.ref_fix == MOTOR_CTRL_FOC_SIM) motor->foc_h.Vref_s = 0.0f;
         else Error_Handler();
     }
     float32_t theta = var_wrap_pos(motor->foc_h.magn_rad, PI_DIV_3);
@@ -200,8 +199,8 @@ static inline void motor_vec_ctrl_svpwm(MotorParameter *motor)
     float32_t T1, T2;
     RESULT_CHECK_HANDLE(trigo_sin_cosf(PI_DIV_3 - theta, &T1, NULL));
     RESULT_CHECK_HANDLE(trigo_sin_cosf(theta, &T2, NULL));
-    T1 *= motor->foc_h.Vref;
-    T2 *= motor->foc_h.Vref;
+    T1 *= motor->foc_h.Vref_s;
+    T2 *= motor->foc_h.Vref_s;
     // 過調變保護 (Overmodulation Protection)
     float32_t sum_T1_T2 = T1 + T2;
     if (sum_T1_T2 > MAX_MODULATION_INDEX)

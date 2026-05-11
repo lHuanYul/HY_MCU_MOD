@@ -99,6 +99,7 @@ void inline motor_stop_cb(MotorParameter *motor)
 
 static inline void direction_update(MotorParameter *motor)
 {
+    motor->rotate_h.ref_fix = motor->rotate_h.ref_ori;
     switch (motor->ctrl_h.ref_fix)
     {
         case MOTOR_CTRL_120:
@@ -112,7 +113,6 @@ static inline void direction_update(MotorParameter *motor)
         }
         case MOTOR_CTRL_120_SW:
         {
-            if (motor->rotate_h.ref_fix == MOTOR_ROT_COAST) break;
             if (motor->speed_h.fbk_omega < motor->speed_h.save_stop_omega)
             {
                 if (motor->speed_h.ref_omega >= 0.0f)
@@ -195,11 +195,11 @@ static inline void control_update(MotorParameter *motor)
                 motor->init_cnt--;
                 if (motor->init_cnt == 0)
                 {
-                    motor_foc_adcs_reset(motor);
+                    motor_adcs_reset(motor);
                     hall_update(motor);
                     motor_set_spd(motor, 60.0f);
                     motor_set_rotate_mode(motor, MOTOR_ROT_NORMAL);
-                    motor_switch_ctrl(motor, MOTOR_CTRL_FOC);
+                    motor_switch_ctrl(motor, MOTOR_CTRL_FOC_OL_IQ);
                 }
             }
             break;
@@ -253,7 +253,7 @@ void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef *hadc)
 #define PWM_TIM_IT_CNT_MAX 20000
 void motor_pwm_cb(MotorParameter *motor)
 {
-    motor_foc_adcs_upd(motor);
+    motor_adcs_upd(motor);
     if (motor->tim_tick % 200 == 0)
     {
         direction_update(motor);

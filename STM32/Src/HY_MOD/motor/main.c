@@ -3,54 +3,44 @@
 
 #include "tim.h"
 #include "dac.h"
+#include "HY_MOD/motor/ctrl_foc.h"
+#include "HY_MOD/adc_current/main.h"
 
 // Motor setup
 void motor_setup(MotorParameter *motor)
 {
-    const float32_t PWM_tim_f =
+    motor->calculate_h.pwm_f =
         (float32_t)*motor->const_h.PWM_tim_clk /
         (float32_t)(motor->const_h.PWM_htimx->Init.Prescaler + 1U);
-
-    // HALL_tim_f：霍爾計時器的實際計數頻率 (Hz)
-    // = HALL_timer_clock / (PSC + 1)
-    const float32_t HALL_tim_f =
+    motor->calculate_h.hall_f =
         (float32_t)*motor->const_h.Hall_tim_clk /
         (float32_t)(motor->const_h.Hall_htimx->Init.Prescaler + 1U);
-
-    // PWM_tim_t：PWM 控制定時器每個計數週期的時間 (秒/計數)
-    // = (PSC + 1) / PWM_timer_clock
-    const float32_t PWM_tim_t =
+    motor->calculate_h.pwm_T =
         (float32_t)(motor->const_h.PWM_htimx->Init.Prescaler + 1U) /
         (float32_t)*motor->const_h.PWM_tim_clk;
-
-    // HALL_tim_t：霍爾計時器每個計數週期的時間 (秒/計數)
-    // = (PSC + 1) / HALL_timer_clock
-    const float32_t HALL_tim_t =
+    motor->calculate_h.hall_T =
         (float32_t)(motor->const_h.Hall_htimx->Init.Prescaler + 1U) /
         (float32_t)*motor->const_h.Hall_tim_clk;
-
-    motor->dbg_h.pwm_freq = PWM_tim_f / (motor->const_h.PWM_htimx->Init.Period * 2);
+    motor->calculate_h.pwm_it_f =
+        motor->calculate_h.pwm_f / (motor->const_h.PWM_htimx->Init.Period * 2);
 
     motor->tfm_h.omega_fbk = // 單次霍爾
-        (HALL_tim_f * PI_MUL_2) /
+        (motor->calculate_h.hall_f * PI_MUL_2) /
         (6.0f * ((float32_t)MOTOR_POLE / 2.0f) * (float32_t)MOTOR_GEAR); // 運算時再/total時間
     motor->tfm_h.foc_it_angle_itpl = // 單次霍爾
-        PWM_tim_t * (float32_t)(motor->const_h.PWM_htimx->Init.Period * 2.0f)
-        * PI_DIV_3 / HALL_tim_t;
+        motor->calculate_h.pwm_T * (float32_t)(motor->const_h.PWM_htimx->Init.Period * 2.0f)
+        * PI_DIV_3 / motor->calculate_h.hall_T;
 
-    motor->foc_h.pi_Id_h.Kp = MOTOR_LL * MOTOR_CURRENT_BW;
-    motor->foc_h.pi_Id_h.Ki = 1.0f / MOTOR_TAU * PWM_tim_t;
-    motor->foc_h.pi_Iq_h.Kp = MOTOR_LL * MOTOR_CURRENT_BW;
-    motor->foc_h.pi_Iq_h.Ki = 1.0f / MOTOR_TAU * PWM_tim_t;
+    motor_foc_pi_setup(motor);
 
     ERROR_CHECK_HAL_HANDLE(HAL_ADCEx_Calibration_Start(
-        motor->adc_h.v->basic.hadcx, ADC_SINGLE_ENDED));
+        motor->adc_h.adc_v->basic.hadcx, ADC_SINGLE_ENDED));
     ERROR_CHECK_HAL_HANDLE(HAL_ADCEx_Calibration_Start(
-        motor->adc_h.u->basic.hadcx, ADC_SINGLE_ENDED));
+        motor->adc_h.adc_u->basic.hadcx, ADC_SINGLE_ENDED));
     ERROR_CHECK_HAL_HANDLE(
-        HAL_ADCEx_InjectedStart(motor->adc_h.v->basic.hadcx));
+        HAL_ADCEx_InjectedStart(motor->adc_h.adc_v->basic.hadcx));
     ERROR_CHECK_HAL_HANDLE(
-        HAL_ADCEx_InjectedStart_IT(motor->adc_h.u->basic.hadcx));
+        HAL_ADCEx_InjectedStart_IT(motor->adc_h.adc_u->basic.hadcx));
 
     __HAL_TIM_SET_COMPARE(motor->const_h.PWM_htimx, motor->const_h.PWM_TIM_CH_x.mid,
         motor->const_h.PWM_htimx->Init.Period - TIM1_ADC_TRI_DL);
@@ -80,6 +70,20 @@ void motor_timer_load(MotorParameter *motor)
         __HAL_TIM_SET_COMPARE(motor->const_h.PWM_htimx, motor->const_h.PWM_TIM_CH_x.uvw[i],
             (uint32_t)(motor->const_h.PWM_htimx->Init.Period * (1.0f - motor->duty_load.uvw[i])));
     }
+}
+
+inline void motor_adcs_reset(MotorParameter *motor)
+{
+    uint8_t i;
+    for (i = 0; i < 3; i++)
+        adc_current_reset(motor->adc_h.adc_uvw[i]);
+}
+
+inline void motor_adcs_upd(MotorParameter *motor)
+{
+    uint8_t i;
+    for (i = 0; i < 3; i++)
+        RESULT_CHECK_HANDLE(adc_current_upd(motor->adc_h.adc_uvw[i]));
 }
 
 void motor_set_spd(MotorParameter *motor, float32_t rpm)
