@@ -8,6 +8,7 @@
 #define MOTOR_42BLF01_GEAR          1.0f // 3.0f
 #define MOTOR_42BLF01_RATED_CURRENT 1.9f
 #define MOTOR_42BLF01_PEAK_CURRENT  5.7f
+#define MOTOR_VEHICLE_RL            (2.2f / 2.0f)
 #define MOTOR_42BLF01_DEG_SPD_KP    0.00006f
 #define MOTOR_42BLF01_DEG_SPD_KI    0.0006f
 #define MOTOR_42BLF01_ANGLE         (PI_DIV_6 * 7.0f) // 6 // -3/3 -4/2 -5/2 -6/6

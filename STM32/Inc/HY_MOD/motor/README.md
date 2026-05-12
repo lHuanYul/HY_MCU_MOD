@@ -1,4 +1,3 @@
-```text
 MotorParameter
 ├── const_h (const MotorConst) // 常數
 │   ├── Hall_GPIO (MotorPhaseGPIOData) // HALL PIN
@@ -35,12 +34,16 @@ MotorParameter
 │   ├── rated_current (float32_t)
 │   ├── peak_trorque (float32_t)
 │   └── peak_current (float32_t)
+├── calculate_h (MotorCalculate)
+│   ├── pwm_f (float32_t)
+│   ├── pwm_T (float32_t) // PWM 控制定時器每個計數週期的時間 (秒/計數)
+│   ├── hall_f (float32_t) // 霍爾計時器的實際計數頻率
+│   ├── hall_T (float32_t) // 霍爾計時器每個計數週期的時間 (秒/計數)
+│   └── pwm_it_f (float32_t)
 ├── tfm_h (MotorTfm)
 │   ├── omega_fbk (float32_t) // 霍爾間隔 → 輸出軸轉速(omega) 轉換常數
 │   └── foc_it_angle_itpl (float32_t) // PWM 週期 → 電角度內插轉換常數
 ├── dbg_h (MotorDbg)
-│   ├── pwm_freq (float32_t) // 計時器頻率
-│   ├── current_zero (float32_t)
 │   └── hall_rad[6] (float32_t)
 ├── init_cnt (uint32_t)
 ├── ctrl_h (MotorCtrlParameter) // 馬達控制模式(120度與foc以及細部)
@@ -57,9 +60,12 @@ MotorParameter
 │   └── save_stop_omega (float32_t)
 ├── tim_tick (uint32_t) // 計時中斷計數
 ├── adc_h (MotorADC) // 電流 ADC
-│   ├── u (AdcCurrentParameter*)
-│   ├── v (AdcCurrentParameter*)
-│   ├── w (AdcCurrentParameter*)
+│   ├── adc_u (AdcCurrentParameter*)
+│   ├── adc_v (AdcCurrentParameter*)
+│   ├── adc_w (AdcCurrentParameter*)
+│   ├── u (float32_t) // Per-Unit
+│   ├── v (float32_t) // Per-Unit
+│   ├── w (float32_t) // Per-Unit
 │   └── total (float32_t) // 應接近0
 ├── hall_h (MotorHallParameter)
 │   ├── time_hist_head (volatile uint8_t) // 霍爾跳變間隔 頭id
@@ -80,7 +86,7 @@ MotorParameter
 │   ├── pi_omega (PI_CTRL)
 │   └── pi_current (PI_CTRL)
 ├── foc_h (MotorFOCParameter)
-│   ├── init_cnt (uint32_t) // 無感測啟動計數(尚未)
+│   ├── init_cnt (uint32_t)
 │   ├── clarke_h (CLARKE) // clarke
 │   ├── hall_rad (float32_t) // 目前霍爾相位
 │   ├── rotor_rad (float32_t) // 轉子位置
@@ -93,7 +99,7 @@ MotorParameter
 │   ├── magn_rad (float32_t) // 磁場位置
 │   ├── ipark_h (IPARK) // ipark
 │   ├── svgendq_h (SVGENDQ) // svgendq
-│   ├── Vref (float32_t)
+│   ├── Vref_s (float32_t) // Vref_s = SQRT3 * Vref / Vbus
 │   └── duty_h (MotorPhaseDuty) // FOC duty
 │       ├── u (float32_t)
 │       ├── v (float32_t)
@@ -106,4 +112,3 @@ MotorParameter
     ├── tick (uint8_t)
     ├── id[10] (volatile float32_t)
     └── iq[10] (volatile float32_t)
-```
