@@ -156,7 +156,6 @@ static inline void motor_vec_ctrl_ipark(MotorParameter *motor)
         case MOTOR_CTRL_FOC_OL_VDQ:
         {
             motor->foc_h.ipark_h.Vdref = 0.0f;
-            motor->foc_h.ipark_h.Vqref = 0.15f;
             // 0.15f
             motor->foc_h.ipark_h.Vqref = motor->speed_h.ref_rpm;
             VAR_CLAMPF(motor->foc_h.ipark_h.Vqref, 0.0f, 1.0f);

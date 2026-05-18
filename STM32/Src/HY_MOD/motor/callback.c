@@ -84,6 +84,7 @@ void HAL_TIM_PeriodElapsedCallback_OWN(TIM_HandleTypeDef *htim)
 */
 void inline motor_stop_cb(MotorParameter *motor)
 {
+    hall_update(motor);
     motor->hall_h.stop_tick = HAL_GetTick();
     motor->hall_h.time_hist_len = 0;
     motor->hall_h.time_hist_head = 0;
@@ -172,16 +173,6 @@ static inline void status_update(MotorParameter *motor)
             }
             else
                 motor->deg_h.duty_val = motor->deg_h.pi_omega.out_fix;
-            // Auto start spin
-            if (motor->speed_h.fbk_omega == 0.0f)
-            {
-                hall_update(motor);
-            #ifdef MOTOR_AUTO_SPIN // Todo
-                motor_switch_ctrl_fix(motor, MOTOR_CTRL_120);
-                motor->hall_h.delay = 1;
-                motor->deg_h.duty_val = 1.0f;
-            #endif
-            }
             motor_switch_ctrl_fix(motor, motor->ctrl_h.ref_ori);
             break;
         }
