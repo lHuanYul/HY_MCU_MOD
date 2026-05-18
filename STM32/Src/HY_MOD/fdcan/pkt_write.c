@@ -42,11 +42,12 @@ Result fdcan_motor_idq_send(FdcanParametar *fdcan, MotorParameter *motor, uint8_
     RESULT_CHECK_HANDLE(fdcan_pkt_set_len(&pkt, sizeof(uint32_t) + sizeof(float32_t) * 10));
 
     var_u32_to_u8_be(fdcan->tim_tick, pkt.data);
-    uint8_t i;
+    uint8_t i, j = 0;
     for (i = idq_sel; i < 5 + idq_sel; i++)
     {
-        var_f32_to_u8_be(motor->history.id[i], pkt.data + 4 + i * 4);
-        var_f32_to_u8_be(motor->history.iq[i], pkt.data + 4 + (i + 5) * 4);
+        var_f32_to_u8_be(motor->history.id[i], pkt.data + 4 + j * 4);
+        var_f32_to_u8_be(motor->history.iq[i], pkt.data + 4 + (j + 5) * 4);
+        j++;
     }
 
     RESULT_CHECK_HANDLE(fdcan_ring_push(&fdcan->tx_buf, &pkt, 0));

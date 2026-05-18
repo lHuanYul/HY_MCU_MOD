@@ -94,6 +94,9 @@ static inline void motor_vec_ctrl_park(MotorParameter *motor)
         {
             motor->foc_h.rotor_rad += 0.001f * PI;
             motor->foc_h.rotor_rad = var_wrap_pos(motor->foc_h.rotor_rad, PI_MUL_2);
+            motor->dbg_h.foc_rad[motor->dbg_h.foc_rad_id][0] = motor->foc_h.rotor_rad;
+            motor->dbg_h.foc_rad[motor->dbg_h.foc_rad_id][1] = (float32_t)motor->hall_h.current;
+            if (++motor->dbg_h.foc_rad_id > 100) motor->dbg_h.foc_rad_id = 0;
             break;
         }
         default:
