@@ -140,7 +140,7 @@ void motor_switch_ctrl(MotorParameter *motor, MotorCtrl ctrl)
         case MOTOR_CTRL_FOC_OL_VDQ:
         case MOTOR_CTRL_FOC_OL_IQ:
         {
-            motor_switch_ctrl_fix(motor, MOTOR_CTRL_FOC);
+            motor_switch_ctrl_fix(motor, ctrl);
             motor->foc_h.init_cnt = 2000;
             break;
         }

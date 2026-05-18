@@ -194,7 +194,7 @@ static inline void control_update(MotorParameter *motor)
                     hall_update(motor);
                     motor_set_spd(motor, 120.0f);
                     motor_set_rotate_mode(motor, MOTOR_ROT_NORMAL);
-                    motor_switch_ctrl(motor, MOTOR_CTRL_FOC);
+                    motor_switch_ctrl(motor, MOTOR_CTRL_FOC_ROT_AUTO);
                 }
             }
             break;
