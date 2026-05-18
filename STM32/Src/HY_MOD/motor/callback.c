@@ -165,7 +165,11 @@ static inline void status_update(MotorParameter *motor)
             PI_run(&motor->deg_h.pi_omega);
             PI_run(&motor->foc_h.pi_omega);
             if (motor->ctrl_h.ref_fix == MOTOR_CTRL_120_DUTY)
-                motor->deg_h.duty_val = 0.5f;
+            {
+                // 0.5f
+                motor->deg_h.duty_val = motor->speed_h.ref_rpm;
+                VAR_CLAMPF(motor->deg_h.duty_val, 0.0f, 1.0f);
+            }
             else
                 motor->deg_h.duty_val = motor->deg_h.pi_omega.out_fix;
             // Auto start spin
@@ -197,9 +201,9 @@ static inline void control_update(MotorParameter *motor)
                 {
                     motor_adcs_reset(motor);
                     hall_update(motor);
-                    motor_set_spd(motor, 60.0f);
+                    motor_set_spd(motor, 1000.0f);
                     motor_set_rotate_mode(motor, MOTOR_ROT_NORMAL);
-                    motor_switch_ctrl(motor, MOTOR_CTRL_FOC);
+                    motor_switch_ctrl(motor, MOTOR_CTRL_120);
                 }
             }
             break;

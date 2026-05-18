@@ -67,7 +67,8 @@ static inline void motor_vec_ctrl_clarke(MotorParameter *motor)
     for (i = 0; i < 3; i++)
     {
         // To Per-Unit
-        motor->adc_h.uvw[i] = (motor->adc_h.adc_uvw[i]->current - avg) / MOTOR_RATED_I;
+        motor->adc_h.uvw[i] =
+            (motor->adc_h.adc_uvw[i]->current - avg) / motor->const_h.rated_current;
         motor->foc_h.clarke_h.ABC[i] = motor->adc_h.uvw[i];
     }
     CLARKE_run_ideal(&motor->foc_h.clarke_h);
@@ -118,7 +119,9 @@ static inline void motor_vec_ctrl_pi_id_iq(MotorParameter *motor)
     {
         case MOTOR_CTRL_FOC_OL_IQ:
         {
-            motor->foc_h.pi_Iq_h.reference = 0.4f;
+            // 0.4f
+            motor->foc_h.pi_Iq_h.reference = motor->speed_h.ref_rpm;
+            VAR_CLAMPF(motor->foc_h.pi_Iq_h.reference, 0.0f, 1.0f);
             break;
         }
         default:
@@ -154,6 +157,9 @@ static inline void motor_vec_ctrl_ipark(MotorParameter *motor)
         {
             motor->foc_h.ipark_h.Vdref = 0.0f;
             motor->foc_h.ipark_h.Vqref = 0.15f;
+            // 0.15f
+            motor->foc_h.ipark_h.Vqref = motor->speed_h.ref_rpm;
+            VAR_CLAMPF(motor->foc_h.ipark_h.Vqref, 0.0f, 1.0f);
             break;
         }
         default:
