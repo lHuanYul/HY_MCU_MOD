@@ -11,7 +11,7 @@
 #define MOTOR_42BLF01_RL            (2.2f / 2.0f)
 #define MOTOR_42BLF01_TAU           0.0011f
 #define MOTOR_42BLF01_LL            (MOTOR_42BLF01_RL * MOTOR_42BLF01_TAU)
-#define MOTOR_42BLF01_ANGLE         (PI_DIV_6 * 7.0f) // 6 // -3/3 -4/2 -5/2 -6/6
+#define MOTOR_42BLF01_ANGLE         (PI_DIV_3 * 5.0f)
 #define MOTOR_42BLF01_DEG_SPD_KP    0.00006f
 #define MOTOR_42BLF01_DEG_SPD_KI    0.0006f
 

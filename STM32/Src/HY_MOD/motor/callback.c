@@ -22,7 +22,6 @@ static inline void hall_update(MotorParameter *motor)
         motor->hall_h.current = UINT8_MAX;
         return;
     }
-    motor->dbg_h.hall_rad[motor->hall_h.current - 1] = motor->foc_h.rotor_rad;
 }
 
 static inline void spd_update(MotorParameter *motor)
@@ -249,6 +248,13 @@ void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef *hadc)
 void motor_pwm_cb(MotorParameter *motor)
 {
     motor_adcs_upd(motor);
+    
+    if (motor->dbg_h.hall_last != motor->hall_h.current)
+    {
+        motor->dbg_h.hall_rad[motor->hall_h.current] = motor->foc_h.rotor_rad;
+    }
+    motor->dbg_h.hall_last = motor->hall_h.current;
+
     if (motor->tim_tick % 200 == 0)
     {
         direction_update(motor);

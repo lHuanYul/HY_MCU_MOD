@@ -104,9 +104,8 @@ typedef struct MotorTfm
 // DBG: debug
 typedef struct MotorDbg
 {
-    float32_t   hall_rad[6];
-    uint8_t     foc_rad_id;
-    float32_t   foc_rad[100][2];
+    float32_t   hall_rad[8];
+    uint8_t     hall_last;
 } MotorDbg;
 
 typedef enum MotorCtrl
