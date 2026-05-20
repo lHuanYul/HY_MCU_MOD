@@ -76,30 +76,25 @@ typedef struct MotorConst
 typedef struct MotorCalculate
 {
     //
-    float32_t pwm_f;
+    float32_t   pwm_f;
     // PWM 控制定時器每個計數週期的時間 (秒/計數)
     // = (PSC + 1) / PWM_timer_clock
-    float32_t pwm_T;
+    float32_t   pwm_T;
     // 霍爾計時器的實際計數頻率
     // = HALL_timer_clock / (PSC + 1)
-    float32_t hall_f;
+    float32_t   hall_f;
     // 霍爾計時器每個計數週期的時間 (秒/計數)
     // = (PSC + 1) / HALL_timer_clock
-    float32_t hall_T;
+    float32_t   hall_T;
     //
-    float32_t pwm_it_f;
-} MotorCalculate;
-
-// TFM: transformation
-typedef struct MotorTfm
-{
+    float32_t   pwm_it_f;
     // 霍爾間隔 → 輸出軸轉速(omega) 轉換常數
     // OMEGA = [SPD_tim_f * 2 * pi / 60] / [6 × (POLE/2) × GEAR × htim_cnt]
-    float32_t           omega_fbk;
+    float32_t   omega_fbk;
     // PWM 週期 → 電角度內插轉換常數
     // Δθ_elec(rad) = [ (TIM_tim_t * ARR) / ELE_tim_t ] × (π/3) / htim_cnt
-    float32_t           foc_it_angle_itpl;
-} MotorTfm;
+    float32_t   foc_it_angle_itpl;
+} MotorCalculate;
 
 // DBG: debug
 typedef struct MotorDbg
@@ -130,11 +125,11 @@ typedef enum MotorCtrl
 } MotorCtrl;
 
 // Control Parameter
-typedef struct MotorCtrlParameter
+typedef struct MotorCtrlParam
 {
     MotorCtrl    ref_ori;
     MotorCtrl    ref_fix;
-} MotorCtrlParameter;
+} MotorCtrlParam;
 
 typedef enum MotorRot
 {
@@ -146,11 +141,11 @@ typedef enum MotorRot
 } MotorRot;
 
 // Rotate Parameter
-typedef struct MotorRotParameter
+typedef struct MotorRotParam
 {
     MotorRot    ref_ori;
     MotorRot    ref_fix;
-} MotorRotParameter;
+} MotorRotParam;
 
 // SPD Parameter
 typedef struct MotorSpdParameter
@@ -161,27 +156,6 @@ typedef struct MotorSpdParameter
     float32_t   fbk_omega;
     float32_t   save_stop_omega;
 } MotorSpdParameter;
-
-// Hall Parameter
-typedef struct MotorHallParameter
-{
-    // 霍爾跳變間隔 頭id
-    volatile uint8_t    time_hist_head;
-    // 霍爾跳變間隔 長度
-    volatile uint8_t    time_hist_len;
-    // 霍爾跳變間隔時間
-    uint32_t            time_hist[MOTOR_SPD_CNT];
-    // 目前霍爾相位
-    volatile uint8_t    current;
-    // 上次霍爾相位
-    uint8_t             last;
-
-    volatile uint8_t    wrong;
-    // Todo
-    uint8_t             auto_spin;
-    // 停轉時間
-    uint32_t            stop_tick;
-} MotorHallParameter;
 
 typedef struct MotorADC
 {
@@ -209,6 +183,31 @@ typedef struct MotorADC
     float32_t   total;
 } MotorADC;
 
+// Hall Parameter
+typedef struct MotorHallParam
+{
+    // 霍爾跳變間隔 頭id
+    volatile uint8_t    time_hist_head;
+    // 霍爾跳變間隔 長度
+    volatile uint8_t    time_hist_len;
+    // 霍爾跳變間隔時間
+    uint32_t            time_hist[MOTOR_SPD_CNT];
+    // 目前霍爾相位
+    volatile uint8_t    current;
+    // 上次霍爾相位
+    uint8_t             last;
+
+    volatile uint8_t    wrong;
+    // Todo
+    uint8_t             auto_spin;
+    // 停轉時間
+    uint32_t            stop_tick;
+} MotorHallParam;
+
+typedef struct MotorSLessParam
+{
+} MotorSLessParam;
+
 typedef union MotorPhaseDuty
 {
     struct {
@@ -220,7 +219,7 @@ typedef union MotorPhaseDuty
 } MotorPhaseDuty;
 
 // DEG Parameter
-typedef struct MotorDEGParameter
+typedef struct MotorDEGParam
 {
     // 反轉
     bool                reverse;
@@ -232,10 +231,10 @@ typedef struct MotorDEGParameter
     PI_CTRL             pi_omega;
 
     PI_CTRL             pi_current;
-} MotorDEGParameter;
+} MotorDEGParam;
 
 // FOC Parameter
-typedef struct MotorFOCParameter
+typedef struct MotorFOCParam
 {
     uint32_t            init_cnt;
     // clarke
@@ -266,7 +265,7 @@ typedef struct MotorFOCParameter
     float32_t           Vref_s;
     // FOC duty
     MotorPhaseDuty      duty_h;
-} MotorFOCParameter;
+} MotorFOCParam;
 
 typedef struct MotorHistoryArray
 {
@@ -279,30 +278,30 @@ typedef struct MotorParameter
 {
     // 常數
     const MotorConst    const_h;
-
-    MotorCalculate      calculate_h;
-
-    MotorTfm            tfm_h;
+    // 計算常數
+    MotorCalculate      calcu_h;
 
     MotorDbg            dbg_h;
 
     uint32_t            init_cnt;
     // 馬達控制模式(120度與foc以及細部)
-    MotorCtrlParameter  ctrl_h;
+    MotorCtrlParam      ctrl_h;
     // 馬達旋轉模式(滑行與剎車等)
-    MotorRotParameter   rotate_h;
+    MotorRotParam       rotate_h;
     // 從座往轉子 順時針為負
     MotorSpdParameter   speed_h;
     // 計時中斷計數
     uint32_t            tim_tick;
     // 電流 ADC
     MotorADC            adc_h;
-
-    MotorHallParameter  hall_h;
-
-    MotorDEGParameter   deg_h;
-
-    MotorFOCParameter   foc_h;
+    // 霍爾
+    MotorHallParam      hall_h;
+    // 無感測
+    MotorSLessParam     sless_h;
+    // 120度控制
+    MotorDEGParam       deg_h;
+    // FOC控制
+    MotorFOCParam       foc_h;
     // PWM load duty
     MotorPhaseDuty      duty_load;
 

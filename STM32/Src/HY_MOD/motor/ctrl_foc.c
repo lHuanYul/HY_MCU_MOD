@@ -10,14 +10,14 @@
 inline void motor_foc_pi_setup(MotorParameter *motor)
 {
     const float32_t bw =
-        motor->calculate_h.pwm_it_f / MOTOR_I_BW_INDEX * PI_MUL_2;
+        motor->calcu_h.pwm_it_f / MOTOR_I_BW_INDEX * PI_MUL_2;
     const float32_t Vbase = MOTOR_VBUS / SQRT3;
     motor->foc_h.pi_Id_h.Kp = MOTOR_LL * bw / Vbase;
-    motor->foc_h.pi_Id_h.Ki = 1.0f / MOTOR_TAU * motor->calculate_h.pwm_T;
+    motor->foc_h.pi_Id_h.Ki = 1.0f / MOTOR_TAU * motor->calcu_h.pwm_T;
     motor->foc_h.pi_Id_h.max =  MOTOR_MAX_MODULATION_INDEX;
     motor->foc_h.pi_Id_h.min = -MOTOR_MAX_MODULATION_INDEX;
     motor->foc_h.pi_Iq_h.Kp = MOTOR_LL * bw / Vbase;
-    motor->foc_h.pi_Iq_h.Ki = 1.0f / MOTOR_TAU * motor->calculate_h.pwm_T;
+    motor->foc_h.pi_Iq_h.Ki = 1.0f / MOTOR_TAU * motor->calcu_h.pwm_T;
 }
 
 inline void motor_foc_reset(MotorParameter *motor)

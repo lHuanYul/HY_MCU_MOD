@@ -9,27 +9,27 @@
 // Motor setup
 void motor_setup(MotorParameter *motor)
 {
-    motor->calculate_h.pwm_f =
+    motor->calcu_h.pwm_f =
         (float32_t)*motor->const_h.PWM_tim_clk /
         (float32_t)(motor->const_h.PWM_htimx->Init.Prescaler + 1U);
-    motor->calculate_h.hall_f =
+    motor->calcu_h.hall_f =
         (float32_t)*motor->const_h.Hall_tim_clk /
         (float32_t)(motor->const_h.Hall_htimx->Init.Prescaler + 1U);
-    motor->calculate_h.pwm_T =
+    motor->calcu_h.pwm_T =
         (float32_t)(motor->const_h.PWM_htimx->Init.Prescaler + 1U) /
         (float32_t)*motor->const_h.PWM_tim_clk;
-    motor->calculate_h.hall_T =
+    motor->calcu_h.hall_T =
         (float32_t)(motor->const_h.Hall_htimx->Init.Prescaler + 1U) /
         (float32_t)*motor->const_h.Hall_tim_clk;
-    motor->calculate_h.pwm_it_f =
-        motor->calculate_h.pwm_f / (motor->const_h.PWM_htimx->Init.Period * 2);
+    motor->calcu_h.pwm_it_f =
+        motor->calcu_h.pwm_f / (motor->const_h.PWM_htimx->Init.Period * 2);
 
-    motor->tfm_h.omega_fbk = // 單次霍爾
-        (motor->calculate_h.hall_f * PI_MUL_2) /
+    motor->calcu_h.omega_fbk = // 單次霍爾
+        (motor->calcu_h.hall_f * PI_MUL_2) /
         (6.0f * ((float32_t)MOTOR_POLE / 2.0f) * (float32_t)MOTOR_GEAR); // 運算時再/total時間
-    motor->tfm_h.foc_it_angle_itpl = // 單次霍爾
-        motor->calculate_h.pwm_T * (float32_t)(motor->const_h.PWM_htimx->Init.Period * 2.0f)
-        * PI_DIV_3 / motor->calculate_h.hall_T;
+    motor->calcu_h.foc_it_angle_itpl = // 單次霍爾
+        motor->calcu_h.pwm_T * (float32_t)(motor->const_h.PWM_htimx->Init.Period * 2.0f)
+        * PI_DIV_3 / motor->calcu_h.hall_T;
 
     motor_foc_pi_setup(motor);
 

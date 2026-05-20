@@ -39,7 +39,7 @@ static inline void spd_update(MotorParameter *motor)
         total += motor->hall_h.time_hist[i];
     }
     float32_t omega =
-        motor->hall_h.time_hist_len * motor->tfm_h.omega_fbk / (float32_t)total;
+        motor->hall_h.time_hist_len * motor->calcu_h.omega_fbk / (float32_t)total;
     if      (motor->hall_h.current == hall_seq_ccw[motor->hall_h.last])
     {
         motor->hall_h.wrong = 0;
@@ -64,8 +64,8 @@ static inline void spd_update(MotorParameter *motor)
 
     motor->hall_h.last = motor->hall_h.current;
     motor->foc_h.rad_itpl = (motor->speed_h.fbk_omega >= 0.0f) ?
-         motor->hall_h.time_hist_len * motor->tfm_h.foc_it_angle_itpl / (float32_t)total :
-        -motor->hall_h.time_hist_len * motor->tfm_h.foc_it_angle_itpl / (float32_t)total;
+         motor->hall_h.time_hist_len * motor->calcu_h.foc_it_angle_itpl / (float32_t)total :
+        -motor->hall_h.time_hist_len * motor->calcu_h.foc_it_angle_itpl / (float32_t)total;
 }
 
 /*
@@ -248,7 +248,7 @@ void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef *hadc)
 void motor_pwm_cb(MotorParameter *motor)
 {
     motor_adcs_upd(motor);
-    
+
     if (motor->dbg_h.hall_last != motor->hall_h.current)
     {
         motor->dbg_h.hall_rad[motor->hall_h.current] = motor->foc_h.rotor_rad;
