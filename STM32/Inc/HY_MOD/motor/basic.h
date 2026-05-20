@@ -42,6 +42,7 @@ typedef struct MotorPwmNGpio
     uint32_t MODEx_0;
     uint32_t MODEx_1;
 } MotorPwmNGpio;
+
 typedef union MotorPhaseNPwmGPIO
 {
     struct {
@@ -73,7 +74,7 @@ typedef struct MotorConst
     float32_t           peak_current;
 } MotorConst;
 
-typedef struct MotorCalculate
+typedef struct MotorCalcuConst
 {
     //
     float32_t   pwm_f;
@@ -94,14 +95,7 @@ typedef struct MotorCalculate
     // PWM 週期 → 電角度內插轉換常數
     // Δθ_elec(rad) = [ (TIM_tim_t * ARR) / ELE_tim_t ] × (π/3) / htim_cnt
     float32_t   foc_it_angle_itpl;
-} MotorCalculate;
-
-// DBG: debug
-typedef struct MotorDbg
-{
-    float32_t   hall_rad[8];
-    uint8_t     hall_last;
-} MotorDbg;
+} MotorCalcuConst;
 
 typedef enum MotorCtrl
 {
@@ -148,14 +142,14 @@ typedef struct MotorRotParam
 } MotorRotParam;
 
 // SPD Parameter
-typedef struct MotorSpdParameter
+typedef struct MotorSpdParame
 {
     float32_t   ref_rpm;
     float32_t   ref_omega;
     float32_t   fbk_rpm;
     float32_t   fbk_omega;
     float32_t   save_stop_omega;
-} MotorSpdParameter;
+} MotorSpdParame;
 
 typedef struct MotorADC
 {
@@ -267,9 +261,16 @@ typedef struct MotorFOCParam
     MotorPhaseDuty      duty_h;
 } MotorFOCParam;
 
+// DBG: debug
+typedef struct MotorDbg
+{
+    float32_t   hall_rad[8];
+    uint8_t     hall_last;
+} MotorDbg;
+
 typedef struct MotorHistoryArray
 {
-    uint8_t     tick;
+    uint8_t             tick;
     volatile float32_t  id[10];
     volatile float32_t  iq[10];
 } MotorHistoryArray;
@@ -279,17 +280,15 @@ typedef struct MotorParameter
     // 常數
     const MotorConst    const_h;
     // 計算常數
-    MotorCalculate      calcu_h;
-
-    MotorDbg            dbg_h;
-
+    MotorCalcuConst     calcu_h;
+    
     uint32_t            init_cnt;
-    // 馬達控制模式(120度與foc以及細部)
+    // 馬達控制模式 (120度與foc以及細部)
     MotorCtrlParam      ctrl_h;
-    // 馬達旋轉模式(滑行與剎車等)
+    // 馬達旋轉模式 (滑行與剎車等)
     MotorRotParam       rotate_h;
     // 從座往轉子 順時針為負
-    MotorSpdParameter   speed_h;
+    MotorSpdParame      speed_h;
     // 計時中斷計數
     uint32_t            tim_tick;
     // 電流 ADC
@@ -304,6 +303,8 @@ typedef struct MotorParameter
     MotorFOCParam       foc_h;
     // PWM load duty
     MotorPhaseDuty      duty_load;
+
+    MotorDbg            dbg_h;
 
     MotorHistoryArray   history;
 } MotorParameter;
