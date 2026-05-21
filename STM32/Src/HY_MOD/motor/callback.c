@@ -8,9 +8,6 @@
 #include "HY_MOD/motor/trigonometric.h"
 #include "HY_MOD/fdcan/pkt_write.h"
 
-#define HALL_DELAY 10
-#define HALL_DELAY_LOAD motor->hall_h.current // motor->hall_h.current
-
 static inline void hall_update(MotorParameter *motor)
 {
     motor->hall_h.current =
@@ -40,11 +37,11 @@ static inline void spd_update(MotorParameter *motor)
     }
     float32_t omega =
         motor->hall_h.time_hist_len * motor->calcu_h.omega_fbk / (float32_t)total;
-    if      (motor->hall_h.current == hall_seq_ccw[motor->hall_h.last])
+    if      (motor->hall_h.current == motor_hall_seq_ccw[motor->hall_h.last])
     {
         motor->hall_h.wrong = 0;
     }
-    else if (motor->hall_h.current == hall_seq_clw[motor->hall_h.last])
+    else if (motor->hall_h.current == motor_hall_seq_clw[motor->hall_h.last])
     {
         omega = -omega;
         motor->hall_h.wrong = 0;
@@ -89,9 +86,9 @@ void inline motor_stop_cb(MotorParameter *motor)
     motor->hall_h.time_hist_head = 0;
     motor->speed_h.fbk_omega = 0.0f;
     motor->speed_h.fbk_rpm = 0.0f;
+    PI_reset(&motor->deg_h.pi_omega);
     motor->foc_h.rad_itpl = 0.0f;
     motor->foc_h.rad_acc  = 0.0f;
-    PI_reset(&motor->deg_h.pi_omega);
     PI_reset(&motor->foc_h.pi_omega);
     PI_reset(&motor->foc_h.pi_Id_h);
     PI_reset(&motor->foc_h.pi_Iq_h);
@@ -178,6 +175,13 @@ static inline void status_update(MotorParameter *motor)
     }
 }
 
+__weak void motor_start_spin(MotorParameter *motor)
+{
+    motor_set_spd(motor, 0.0f);
+    motor_set_rotate_mode(motor, MOTOR_ROT_NORMAL);
+    motor_switch_ctrl(motor, MOTOR_CTRL_FOC);
+}
+
 static inline void control_update(MotorParameter *motor)
 {
     switch (motor->ctrl_h.ref_fix)
@@ -191,9 +195,7 @@ static inline void control_update(MotorParameter *motor)
                 {
                     motor_adcs_reset(motor);
                     hall_update(motor);
-                    motor_set_spd(motor, 120.0f);
-                    motor_set_rotate_mode(motor, MOTOR_ROT_NORMAL);
-                    motor_switch_ctrl(motor, MOTOR_CTRL_FOC_ROT_AUTO);
+                    motor_start_spin(motor);
                 }
             }
             break;
@@ -202,13 +204,13 @@ static inline void control_update(MotorParameter *motor)
         case MOTOR_CTRL_TEST_LOW:
         {
             if (motor->tim_tick % 1000 == 0)
-                deg_ctrl_test_HL(motor);
+                motor_deg_test_HL(motor);
             break;
         }
         case MOTOR_CTRL_TEST_WAVE:
         {
             if (motor->tim_tick % 1000 == 0)
-                deg_ctrl_test_WAVE(motor);
+                motor_deg_test_WAVE(motor);
             break;
         }
         case MOTOR_CTRL_120:
@@ -217,13 +219,13 @@ static inline void control_update(MotorParameter *motor)
         case MOTOR_CTRL_120_SIM:
         case MOTOR_CTRL_120_SW:
         {
-            deg_ctrl_120_load(motor, motor->hall_h.current);
+            motor_deg_120_load(motor, motor->hall_h.current);
             break;
         }
         case MOTOR_CTRL_FOC_INIT:
         {
             motor_foc_run(motor);
-            deg_ctrl_120_load(motor, motor->hall_h.current);
+            motor_deg_120_load(motor, motor->hall_h.current);
             break;
         }
         case MOTOR_CTRL_FOC:
@@ -248,13 +250,6 @@ void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef *hadc)
 void motor_pwm_cb(MotorParameter *motor)
 {
     motor_adcs_upd(motor);
-
-    if (motor->dbg_h.hall_last != motor->hall_h.current)
-    {
-        motor->dbg_h.hall_rad[motor->hall_h.current] = motor->foc_h.rotor_rad;
-    }
-    motor->dbg_h.hall_last = motor->hall_h.current;
-
     if (motor->tim_tick % 200 == 0)
     {
         direction_update(motor);
@@ -266,6 +261,12 @@ void motor_pwm_cb(MotorParameter *motor)
     }
     control_update(motor);
     if (++motor->tim_tick >= PWM_TIM_IT_CNT_MAX) motor->tim_tick = 0;
+
+    if (motor->dbg_h.hall_last != motor->hall_h.current)
+    {
+        motor->dbg_h.hall_rad[motor->hall_h.current] = motor->foc_h.rotor_rad;
+    }
+    motor->dbg_h.hall_last = motor->hall_h.current;
 }
 
 #endif

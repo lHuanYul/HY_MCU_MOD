@@ -6,8 +6,8 @@
 #include "HY_MOD/motor/ctrl_foc.h"
 #include "HY_MOD/adc_current/main.h"
 
-// Motor setup
-void motor_setup(MotorParameter *motor)
+// Motor init
+void motor_init(MotorParameter *motor)
 {
     motor->calcu_h.pwm_f =
         (float32_t)*motor->const_h.PWM_tim_clk /
@@ -26,11 +26,15 @@ void motor_setup(MotorParameter *motor)
 
     motor->calcu_h.omega_fbk = // 單次霍爾
         (motor->calcu_h.hall_f * PI_MUL_2) /
-        (6.0f * ((float32_t)MOTOR_POLE / 2.0f) * (float32_t)MOTOR_GEAR); // 運算時再/total時間
+        (6.0f * ((float32_t)motor->const_h.model->pole / 2.0f) * motor->const_h.model->gear); // 運算時再/total時間
     motor->calcu_h.foc_it_angle_itpl = // 單次霍爾
         motor->calcu_h.pwm_T * (float32_t)(motor->const_h.PWM_htimx->Init.Period * 2.0f)
         * PI_DIV_3 / motor->calcu_h.hall_T;
 
+    motor->deg_h.pi_omega.Kp = motor->const_h.model->deg_spd_Kp;
+    motor->deg_h.pi_omega.Ki = motor->const_h.model->deg_spd_Ki;
+    motor->deg_h.pi_omega.max = 1.0f;
+    motor->deg_h.pi_omega.min = 0.0f;
     motor_foc_pi_setup(motor);
 
     ERROR_CHECK_HAL_HANDLE(HAL_ADCEx_Calibration_Start(
@@ -204,7 +208,7 @@ void motor_switch_ctrl_fix(MotorParameter *motor, MotorCtrl ctrl)
 }
 
 // 主要程式皆在callback中
-void motor_main(MotorParameter *motor)
+__weak void motor_main(MotorParameter *motor)
 {
 }
 

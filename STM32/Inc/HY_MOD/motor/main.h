@@ -4,7 +4,7 @@
 
 #include "HY_MOD/main/fn_state.h"
 
-void motor_setup(MotorParameter *motor);
+void motor_init(MotorParameter *motor);
 void motor_timer_load(MotorParameter *motor);
 void motor_adcs_reset(MotorParameter *motor);
 // 電流進motor為 正

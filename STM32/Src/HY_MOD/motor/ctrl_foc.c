@@ -9,15 +9,20 @@
 
 inline void motor_foc_pi_setup(MotorParameter *motor)
 {
+    motor->foc_h.pi_omega.Kp = motor->const_h.model->foc_spd_Kp;
+    motor->foc_h.pi_omega.Ki = motor->const_h.model->foc_spd_Ki;
+    motor->foc_h.pi_omega.max =  1.0f;
+    motor->foc_h.pi_omega.min = -1.0f;
+
     const float32_t bw =
         motor->calcu_h.pwm_it_f / MOTOR_I_BW_INDEX * PI_MUL_2;
     const float32_t Vbase = MOTOR_VBUS / SQRT3;
-    motor->foc_h.pi_Id_h.Kp = MOTOR_LL * bw / Vbase;
-    motor->foc_h.pi_Id_h.Ki = 1.0f / MOTOR_TAU * motor->calcu_h.pwm_T;
+    motor->foc_h.pi_Id_h.Kp = motor->const_h.model->ll * bw / Vbase;
+    motor->foc_h.pi_Id_h.Ki = 1.0f / motor->const_h.model->tau * motor->calcu_h.pwm_T;
     motor->foc_h.pi_Id_h.max =  MOTOR_MAX_MODULATION_INDEX;
     motor->foc_h.pi_Id_h.min = -MOTOR_MAX_MODULATION_INDEX;
-    motor->foc_h.pi_Iq_h.Kp = MOTOR_LL * bw / Vbase;
-    motor->foc_h.pi_Iq_h.Ki = 1.0f / MOTOR_TAU * motor->calcu_h.pwm_T;
+    motor->foc_h.pi_Iq_h.Kp = motor->const_h.model->ll * bw / Vbase;
+    motor->foc_h.pi_Iq_h.Ki = 1.0f / motor->const_h.model->tau * motor->calcu_h.pwm_T;
 }
 
 inline void motor_foc_reset(MotorParameter *motor)
@@ -68,7 +73,7 @@ static inline void motor_vec_ctrl_clarke(MotorParameter *motor)
     {
         // To Per-Unit
         motor->adc_h.uvw[i] =
-            (motor->adc_h.adc_uvw[i]->current - avg) / motor->const_h.rated_current;
+            (motor->adc_h.adc_uvw[i]->current - avg) / motor->const_h.model->rated_current;
         motor->foc_h.clarke_h.ABC[i] = motor->adc_h.uvw[i];
     }
     CLARKE_run_ideal(&motor->foc_h.clarke_h);
@@ -99,7 +104,9 @@ static inline void motor_vec_ctrl_park(MotorParameter *motor)
         default:
         {
             motor->foc_h.rotor_rad = var_wrap_pos(
-                motor->foc_h.hall_rad + motor->foc_h.rad_acc + MOTOR_FOC_ANGLE,
+                motor->foc_h.hall_rad +
+                motor->foc_h.rad_acc +
+                motor->const_h.model->hall_angle_comp,
                 PI_MUL_2
             );
             break;
@@ -134,7 +141,8 @@ static inline void motor_vec_ctrl_pi_id_iq(MotorParameter *motor)
     motor->foc_h.pi_Iq_h.feedback  = motor->foc_h.park_h.Qs;
     PI_run(&motor->foc_h.pi_Id_h);
     float32_t Iq_lim = 0.0f;
-    float32_t diff = SQUARE(motor->foc_h.pi_Id_h.max) - SQUARE(motor->foc_h.pi_Id_h.out_fix);
+    float32_t diff =
+        SQUARE(motor->foc_h.pi_Id_h.max) - SQUARE(motor->foc_h.pi_Id_h.out_fix);
     if (diff > 0.0f) arm_sqrt_f32(diff, &Iq_lim);
     motor->foc_h.pi_Iq_h.max =  Iq_lim;
     motor->foc_h.pi_Iq_h.min = -Iq_lim;
@@ -281,6 +289,9 @@ void motor_foc_run(MotorParameter *motor)
     motor_vec_ctrl_clarke(motor);
     motor_vec_ctrl_park(motor);
     motor_vec_ctrl_pi_id_iq(motor);
+    motor_vec_ctrl_ipark(motor);
+    motor_vec_ctrl_svgen(motor);
+    motor_vec_ctrl_svpwm(motor);
 
     if (motor->tim_tick % RECORD_INTERVAL == 0)
     {
@@ -304,23 +315,18 @@ void motor_foc_run(MotorParameter *motor)
             fdcan_h.motor_idq_en2 = 1;
         }
     }
-    float32_t scale = 4095.0f / (2.0f * ONE_DIV_SQRT3);
-    float32_t dac_id = motor->foc_h.pi_Id_h.feedback * scale + 2048.0f;
-    float32_t dac_iq = motor->foc_h.pi_Iq_h.feedback * scale + 2048.0f;
-    VAR_CLAMPF(dac_id, 0.0f, 4095.0f);
-    VAR_CLAMPF(dac_iq, 0.0f, 4095.0f);
-    HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_1, DAC_ALIGN_12B_R, (uint32_t)dac_id); // PA4 輸出 Id
-    HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_2, DAC_ALIGN_12B_R, (uint32_t)dac_iq); // PA5
-
-    motor_vec_ctrl_ipark(motor);
-    motor_vec_ctrl_svgen(motor);
-    motor_vec_ctrl_svpwm(motor);
+    // float32_t scale = 4095.0f / (2.0f * ONE_DIV_SQRT3);
+    // float32_t dac_id = motor->foc_h.pi_Id_h.feedback * scale + 2048.0f;
+    // float32_t dac_iq = motor->foc_h.pi_Iq_h.feedback * scale + 2048.0f;
+    // VAR_CLAMPF(dac_id, 0.0f, 4095.0f);
+    // VAR_CLAMPF(dac_iq, 0.0f, 4095.0f);
+    // HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_1, DAC_ALIGN_12B_R, (uint32_t)dac_id); // PA4 輸出 Id
+    // HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_2, DAC_ALIGN_12B_R, (uint32_t)dac_iq); // PA5
 }
 
 void motor_foc_load(MotorParameter *motor)
 {
     motor->duty_load = motor->foc_h.duty_h;
-
     motor_timer_load(motor);
 }
 

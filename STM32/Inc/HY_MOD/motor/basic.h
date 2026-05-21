@@ -10,8 +10,29 @@
 #include "HY_MOD/adc_current/basic.h"
 #include "cordic.h"
 
-extern const uint8_t hall_seq_clw[8];
-extern const uint8_t hall_seq_ccw[8];
+typedef struct MotorModelData
+{
+    uint8_t     pole;
+    float32_t   gear;
+    float32_t   rated_current;
+    // 定子相電阻
+    float32_t   rl;
+    // 電氣時間常數
+    float32_t   tau;
+    // 定子相電感 = rl * tau
+    float32_t   ll;
+    // 霍爾訊號與實際電角補償 霍爾超前實際為負
+    float32_t   hall_angle_comp;
+    float32_t   deg_spd_Kp;
+    float32_t   deg_spd_Ki;
+    float32_t   foc_spd_Kp;
+    float32_t   foc_spd_Ki;
+} MotorModelData;
+extern const MotorModelData motor_vehicle;
+extern const MotorModelData motor_42BLF01;
+
+extern const uint8_t motor_hall_seq_clw[8];
+extern const uint8_t motor_hall_seq_ccw[8];
 
 typedef union MotorPhaseGPIOData
 {
@@ -56,22 +77,19 @@ typedef union MotorPhaseNPwmGPIO
 // CONST: constant
 typedef struct MotorConst
 {
-    // HALL PIN
-    MotorPhaseGPIOData  Hall_GPIO;
-    // PWM timer
-    TIM_HandleTypeDef   *PWM_htimx;
-    uint32_t            *PWM_tim_clk;
-    MotorPhasePwmCH     PWM_TIM_CH_x;
-    MotorPhaseGPIOData  PWMN_GPIO;
-    MotorPhaseNPwmGPIO  PWMN_GPIO_set;
-    // 霍爾計時器
-    TIM_HandleTypeDef   *Hall_htimx;
-    uint32_t            *Hall_tim_clk;
     // 馬達data sheet
-    float32_t           rated_trorque;
-    float32_t           rated_current;
-    float32_t           peak_trorque;
-    float32_t           peak_current;
+    const MotorModelData    *model;
+    // HALL PIN
+    MotorPhaseGPIOData      Hall_GPIO;
+    // PWM timer
+    TIM_HandleTypeDef       *PWM_htimx;
+    uint32_t                *PWM_tim_clk;
+    MotorPhasePwmCH         PWM_TIM_CH_x;
+    MotorPhaseGPIOData      PWMN_GPIO;
+    MotorPhaseNPwmGPIO      PWMN_GPIO_set;
+    // 霍爾計時器
+    TIM_HandleTypeDef       *Hall_htimx;
+    uint32_t                *Hall_tim_clk;
 } MotorConst;
 
 typedef struct MotorCalcuConst
@@ -281,7 +299,7 @@ typedef struct MotorParameter
     const MotorConst    const_h;
     // 計算常數
     MotorCalcuConst     calcu_h;
-    
+
     uint32_t            init_cnt;
     // 馬達控制模式 (120度與foc以及細部)
     MotorCtrlParam      ctrl_h;

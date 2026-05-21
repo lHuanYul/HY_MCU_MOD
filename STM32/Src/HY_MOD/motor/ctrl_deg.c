@@ -6,19 +6,6 @@
 #define HIGH_PASS   1
 #define NONE_PASS   0
 #define LOW__PASS  -1
-static const int8_t seq_map_120[][3] = {
-    { HIGH_PASS, NONE_PASS, LOW__PASS }, // 0-4
-    { NONE_PASS, HIGH_PASS, LOW__PASS }, // 1-6
-    { LOW__PASS, HIGH_PASS, NONE_PASS }, // 2-2
-    { LOW__PASS, NONE_PASS, HIGH_PASS }, // 3-3
-    { NONE_PASS, LOW__PASS, HIGH_PASS }, // 4-1
-    { HIGH_PASS, LOW__PASS, NONE_PASS }, // 5-5
-    { HIGH_PASS, HIGH_PASS, HIGH_PASS }, // 6
-    { LOW__PASS, LOW__PASS, LOW__PASS }, // 7
-    { NONE_PASS, NONE_PASS, NONE_PASS }, // 8
-};
-static const uint8_t index_120_ccw[] = {7, 4, 2, 3, 0, 5, 1, 7};
-static const uint8_t index_120_cw[]  = {7, 1, 5, 0, 3, 2, 4, 7};
 
 static void ctrl_load(MotorParameter *motor, int8_t seq[3], float32_t duty)
 {
@@ -49,7 +36,21 @@ static void ctrl_load(MotorParameter *motor, int8_t seq[3], float32_t duty)
     motor_timer_load(motor);
 }
 
-void deg_ctrl_test_HL(MotorParameter *motor)
+static const int8_t seq_map_120[][3] = {
+    { HIGH_PASS, NONE_PASS, LOW__PASS }, // 0-4
+    { NONE_PASS, HIGH_PASS, LOW__PASS }, // 1-6
+    { LOW__PASS, HIGH_PASS, NONE_PASS }, // 2-2
+    { LOW__PASS, NONE_PASS, HIGH_PASS }, // 3-3
+    { NONE_PASS, LOW__PASS, HIGH_PASS }, // 4-1
+    { HIGH_PASS, LOW__PASS, NONE_PASS }, // 5-5
+    { HIGH_PASS, HIGH_PASS, HIGH_PASS }, // 6
+    { LOW__PASS, LOW__PASS, LOW__PASS }, // 7
+    { NONE_PASS, NONE_PASS, NONE_PASS }, // 8
+};
+static const uint8_t index_120_ccw[] = {7, 4, 2, 3, 0, 5, 1, 7};
+static const uint8_t index_120_cw[]  = {7, 1, 5, 0, 3, 2, 4, 7};
+
+void motor_deg_test_HL(MotorParameter *motor)
 {
     uint8_t i;
     int8_t seq[3] = {0};
@@ -61,7 +62,7 @@ void deg_ctrl_test_HL(MotorParameter *motor)
     ctrl_load(motor, seq, 1.0f);
 }
 
-void deg_ctrl_test_WAVE(MotorParameter *motor)
+void motor_deg_test_WAVE(MotorParameter *motor)
 {
     uint8_t i;
     int8_t seq[3] = {0};
@@ -69,7 +70,7 @@ void deg_ctrl_test_WAVE(MotorParameter *motor)
     ctrl_load(motor, seq, 0.3f);
 }
 
-void deg_ctrl_120_load(MotorParameter *motor, uint8_t id)
+void motor_deg_120_load(MotorParameter *motor, uint8_t id)
 {
     uint8_t i;
     int8_t seq[3] = {0};
