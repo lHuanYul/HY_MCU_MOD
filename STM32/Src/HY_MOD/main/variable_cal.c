@@ -75,21 +75,19 @@ float32_t var_u8_to_f32_be(const uint8_t *u8)
     return f32;
 }
 
-float32_t var_wrap_pos(float32_t x, float32_t value)
+// Todo 倒數
+float32_t var_wrap_P(float32_t x, float32_t value)
 {
     int32_t n = (int32_t)(x / value);
+    if (x < 0.0f && (x != (float32_t)n * value)) n--;
     x -= (float32_t)n * value;
-    if (x < 0) x += value;
     return x;
 }
 
-// -pi ~ +pi
-float32_t var_wrap_pi(float32_t x, float32_t value)
+float32_t var_wrap_PN(float32_t x, float32_t value)
 {
-    int32_t n = (int32_t)(x / value);
-    x -= (float32_t)n * value;
-    if      (x < -PI) x += value;
-    else if (x >= PI) x -= value;
+    x = var_wrap_P(x, value);
+    if (x >= value * 0.5f) x -= value;
     return x;
 }
 

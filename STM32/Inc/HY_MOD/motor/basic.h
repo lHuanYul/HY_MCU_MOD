@@ -210,8 +210,8 @@ typedef struct MotorHallParam
     uint8_t             last;
 
     volatile uint8_t    wrong;
-    // Todo
-    uint8_t             auto_spin;
+    // 虛擬霍爾相位 用於自動旋轉
+    volatile uint8_t    virtual;
     // 停轉時間
     uint32_t            stop_tick;
 } MotorHallParam;

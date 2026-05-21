@@ -98,12 +98,12 @@ static inline void motor_vec_ctrl_park(MotorParameter *motor)
         case MOTOR_CTRL_FOC_OL_VDQ:
         {
             motor->foc_h.rotor_rad += 0.001f * PI;
-            motor->foc_h.rotor_rad = var_wrap_pos(motor->foc_h.rotor_rad, PI_MUL_2);
+            motor->foc_h.rotor_rad = var_wrap_P(motor->foc_h.rotor_rad, PI_MUL_2);
             break;
         }
         default:
         {
-            motor->foc_h.rotor_rad = var_wrap_pos(
+            motor->foc_h.rotor_rad = var_wrap_P(
                 motor->foc_h.hall_rad +
                 motor->foc_h.rad_acc +
                 motor->const_h.model->hall_angle_comp,
@@ -207,7 +207,7 @@ static inline void motor_vec_ctrl_svpwm(MotorParameter *motor)
         if (motor->ctrl_h.ref_fix == MOTOR_CTRL_FOC_SIM) motor->foc_h.Vref_s = 0.0f;
         else Error_Handler();
     }
-    float32_t theta = var_wrap_pos(motor->foc_h.magn_rad, PI_DIV_3);
+    float32_t theta = var_wrap_P(motor->foc_h.magn_rad, PI_DIV_3);
     // T1: 第一個有源向量導通時間 在該sector內靠近前一個主向量的時間比例(由sin(π/3−θ)決定)
     // T2: 第二個有源向量導通時間 在該sector內靠近下一個主向量的時間比例(由sin(θ)決定)
     float32_t T1, T2;
