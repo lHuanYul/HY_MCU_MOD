@@ -104,8 +104,8 @@ static inline void motor_vec_ctrl_park(MotorParameter *motor)
         default:
         {
             motor->foc_h.rotor_rad = var_wrap_P(
-                motor->foc_h.hall_rad +
                 motor->foc_h.rad_acc +
+                motor->foc_h.hall_rad +
                 motor->const_h.model->hall_angle_comp,
                 PI_MUL_2
             );
