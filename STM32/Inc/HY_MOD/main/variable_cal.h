@@ -22,7 +22,7 @@
     else if (val < min) val = min;  \
 })
 
-#define VAR_EQU_CLAMPF(val, equ, min, max)  \
+#define VAR_CLAMPF_STATIC(val, equ, min, max)  \
 ({                                          \
     val = (equ);                            \
     if (val > max) val = max;               \

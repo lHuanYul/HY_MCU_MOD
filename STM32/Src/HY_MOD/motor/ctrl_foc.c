@@ -127,8 +127,7 @@ static inline void motor_vec_ctrl_pi_id_iq(MotorParameter *motor)
         case MOTOR_CTRL_FOC_OL_IQ:
         {
             // 0.4f
-            motor->foc_h.pi_Iq_h.reference = motor->speed_h.ref_rpm;
-            VAR_CLAMPF(motor->foc_h.pi_Iq_h.reference, 0.0f, 1.0f);
+            VAR_CLAMPF_STATIC(motor->foc_h.pi_Iq_h.reference, motor->speed_h.ref_rpm, 0.0f, 1.0f);
             break;
         }
         default:
@@ -166,8 +165,7 @@ static inline void motor_vec_ctrl_ipark(MotorParameter *motor)
         {
             motor->foc_h.ipark_h.Vdref = 0.0f;
             // 0.15f
-            motor->foc_h.ipark_h.Vqref = motor->speed_h.ref_rpm;
-            VAR_CLAMPF(motor->foc_h.ipark_h.Vqref, 0.0f, 1.0f);
+            VAR_CLAMPF_STATIC(motor->foc_h.ipark_h.Vqref, motor->speed_h.ref_rpm, 0.0f, 1.0f);
             break;
         }
         default:

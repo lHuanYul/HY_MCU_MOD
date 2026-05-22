@@ -25,21 +25,6 @@ void PI_run(PI_CTRL *pi)
         pi->out_fix = pi->out_ori;
         pi->Term_i_fix = pi->Term_i_ori;
     }
-
-    // if (pi->out_fix == pi->out_ori)
-    // {
-    //     pi->Term_i_fix = pi->Term_i_last + pi->Ki * pi->Term_p;
-    //     // pi->Term_i_fix = pi->Term_i_last + pi->Ki * pi->Error;
-    // }
-    // else
-    // {
-    //     pi->Term_i_fix = pi->Term_i_last;
-    // }
-    // pi->Term_i_last = pi->Term_i_fix;
-    // pi->out_ori = pi->Term_p + pi->Term_i_fix;
-    // pi->out_fix = pi->out_ori;
-    // VAR_CLAMPF(pi->out_fix, pi->min, pi->max);
-    // pi->saturation = (pi->out_fix != pi->out_ori) ? 1 : 0;
 }
 
 void PI_reset(PI_CTRL *pi)

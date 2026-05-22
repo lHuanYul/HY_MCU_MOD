@@ -164,8 +164,7 @@ static inline void status_update(MotorParameter *motor)
             if (motor->ctrl_h.ref_fix == MOTOR_CTRL_120_DUTY)
             {
                 // 0.5f
-                motor->deg_h.duty_val = motor->speed_h.ref_rpm;
-                VAR_CLAMPF(motor->deg_h.duty_val, 0.0f, 1.0f);
+                VAR_CLAMPF_STATIC(motor->deg_h.duty_val, motor->speed_h.ref_rpm, 0.0f, 1.0f);
             }
             else
                 motor->deg_h.duty_val = motor->deg_h.pi_omega.out_fix;
