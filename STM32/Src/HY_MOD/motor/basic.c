@@ -1,6 +1,7 @@
 #include "HY_MOD/motor/basic.h"
 #ifdef HY_MOD_STM32_MOTOR
 
+// Max 36V 150Hz
 const MotorModelData motor_vehicle = {
     .pole = 20,
     .gear = 4.4f,
