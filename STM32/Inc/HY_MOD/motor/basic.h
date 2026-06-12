@@ -212,6 +212,8 @@ typedef struct MotorHallParam
     volatile uint8_t    wrong;
     // 虛擬霍爾相位 用於自動旋轉
     volatile uint8_t    virtual;
+
+    volatile uint8_t    vir_tri;
     // 停轉時間
     uint32_t            stop_tick;
 } MotorHallParam;
@@ -283,7 +285,8 @@ typedef struct MotorFOCParam
 typedef struct MotorDbg
 {
     float32_t   hall_rad[8];
-    uint8_t     hall_last;
+    uint8_t     hall_wrong_c;
+    uint8_t     hall_wrong[20];
 } MotorDbg;
 
 typedef struct MotorHistoryArray

@@ -49,17 +49,19 @@ static inline void spd_update(MotorParameter *motor)
     else
     {
         motor->hall_h.wrong++;
+        motor->dbg_h.hall_wrong[motor->dbg_h.hall_wrong_c++] =
+            motor->hall_h.last * 10 + motor->hall_h.current;
+        if (motor->dbg_h.hall_wrong_c >= 20) motor->dbg_h.hall_wrong_c = 0;
         if (motor->hall_h.wrong >= 3)
         {
             motor->hall_h.wrong = 3;
-            omega = 0.0f;
-            motor->foc_h.rad_itpl = 0.0f;
+            // omega = 0.0f;
+            // motor->foc_h.rad_itpl = 0.0f;
         }
     }
     motor->speed_h.fbk_omega = omega;
     motor->speed_h.fbk_rpm = omega * OMEGA_TO_RPM;
 
-    motor->hall_h.last = motor->hall_h.current;
     motor->foc_h.rad_itpl = (motor->speed_h.fbk_omega >= 0.0f) ?
          motor->hall_h.time_hist_len * motor->calcu_h.foc_it_angle_itpl / (float32_t)total :
         -motor->hall_h.time_hist_len * motor->calcu_h.foc_it_angle_itpl / (float32_t)total;
@@ -70,7 +72,8 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 */
 void motor_hall_exti_cb(MotorParameter *motor)
 {
-    hall_update(motor);
+    motor->hall_h.last = motor->hall_h.current;
+    // hall_update(motor);
     motor_foc_hall_exti_cb(motor);
     spd_update(motor);
 }
@@ -80,7 +83,7 @@ void HAL_TIM_PeriodElapsedCallback_OWN(TIM_HandleTypeDef *htim)
 */
 void inline motor_stop_cb(MotorParameter *motor)
 {
-    hall_update(motor);
+    // hall_update(motor);
     motor->hall_h.stop_tick = HAL_GetTick();
     motor->hall_h.time_hist_len = 0;
     motor->hall_h.time_hist_head = 0;
@@ -161,13 +164,20 @@ static inline void status_update(MotorParameter *motor)
             motor->foc_h.pi_omega.feedback = motor->speed_h.fbk_omega;
             PI_run(&motor->deg_h.pi_omega);
             PI_run(&motor->foc_h.pi_omega);
-            if (motor->ctrl_h.ref_fix == MOTOR_CTRL_120_DUTY)
+            switch (motor->ctrl_h.ref_fix)
             {
-                // 0.5f
-                VAR_CLAMPF_STATIC(motor->deg_h.duty_val, motor->speed_h.ref_rpm, 0.0f, 1.0f);
+                case MOTOR_CTRL_120_DUTY:
+                case MOTOR_CTRL_120_SIM:
+                {
+                    VAR_CLAMPF_STATIC(motor->deg_h.duty_val, motor->speed_h.ref_rpm, 0.0f, 1.0f);
+                    break;
+                }
+                default:
+                {
+                    motor->deg_h.duty_val = motor->deg_h.pi_omega.out_fix;
+                    break;
+                }
             }
-            else
-                motor->deg_h.duty_val = motor->deg_h.pi_omega.out_fix;
             motor_switch_ctrl_fix(motor, motor->ctrl_h.ref_ori);
             break;
         }
@@ -193,7 +203,6 @@ static inline void control_update(MotorParameter *motor)
                 if (motor->init_cnt == 0)
                 {
                     motor_adcs_reset(motor);
-                    hall_update(motor);
                     motor_start_spin(motor);
                 }
             }
@@ -215,10 +224,20 @@ static inline void control_update(MotorParameter *motor)
         case MOTOR_CTRL_120:
         case MOTOR_CTRL_120_T:
         case MOTOR_CTRL_120_DUTY:
-        case MOTOR_CTRL_120_SIM:
         case MOTOR_CTRL_120_SW:
         {
             motor_deg_120_load(motor, motor->hall_h.current);
+            break;
+        }
+        case MOTOR_CTRL_120_SIM:
+        {
+            if (motor->tim_tick % 20000 == 0)
+            // if (motor_h.hall_h.vir_tri)
+            {
+                motor_h.hall_h.vir_tri = 0;
+                motor->hall_h.virtual = motor_hall_seq_ccw[motor->hall_h.virtual];
+                motor_deg_120_load(motor, motor->hall_h.virtual);
+            }
             break;
         }
         case MOTOR_CTRL_FOC_INIT:
@@ -245,10 +264,11 @@ static inline void control_update(MotorParameter *motor)
 /* 20kHz
 void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef *hadc)
 */
-#define PWM_TIM_IT_CNT_MAX 20000
+#define PWM_TIM_IT_CNT_MAX 200000
 void motor_pwm_cb(MotorParameter *motor)
 {
     motor_adcs_upd(motor);
+    hall_update(motor);
     if (motor->tim_tick % 200 == 0)
     {
         direction_update(motor);
@@ -259,13 +279,11 @@ void motor_pwm_cb(MotorParameter *motor)
         fdcan_h.motor_rpm_en = 1;
     }
     control_update(motor);
+    // if (motor->hall_h.updated)
+    // {
+    //     motor->dbg_h.hall_rad[motor->hall_h.current] = motor->foc_h.rotor_rad;
+    // }
     if (++motor->tim_tick >= PWM_TIM_IT_CNT_MAX) motor->tim_tick = 0;
-
-    if (motor->dbg_h.hall_last != motor->hall_h.current)
-    {
-        motor->dbg_h.hall_rad[motor->hall_h.current] = motor->foc_h.rotor_rad;
-    }
-    motor->dbg_h.hall_last = motor->hall_h.current;
 }
 
 #endif
