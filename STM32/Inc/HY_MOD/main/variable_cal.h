@@ -68,4 +68,4 @@ int16_t var_u8_to_i16_be(const uint8_t *u8);
 uint16_t var_u16_max(uint16_t *data, uint32_t size);
 uint16_t var_u16_min(uint16_t *data, uint32_t size);
 
-bool var_same_sign(float a, float b);
+bool var_f32_same_sign(float a, float b);

@@ -10,15 +10,11 @@
 
 static inline void hall_update(MotorParameter *motor)
 {
-    motor->hall_h.current =
+    uint8_t hall =
           (GPIO_READ_R(motor->const_h.Hall_GPIO.u) ? 4U : 0U)
         | (GPIO_READ_R(motor->const_h.Hall_GPIO.v) ? 2U : 0U)
         | (GPIO_READ_R(motor->const_h.Hall_GPIO.w) ? 1U : 0U);
-    if (motor->hall_h.current == 0 || motor->hall_h.current == 7)
-    {
-        motor->hall_h.current = UINT8_MAX;
-        return;
-    }
+    motor->hall_h.current = (hall == 0 || hall == 7) ? UINT8_MAX : hall;
 }
 
 static inline void spd_update(MotorParameter *motor)
@@ -73,7 +69,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 void motor_hall_exti_cb(MotorParameter *motor)
 {
     motor->hall_h.last = motor->hall_h.current;
-    // hall_update(motor);
+    hall_update(motor);
     motor_foc_hall_exti_cb(motor);
     spd_update(motor);
 }
@@ -107,7 +103,7 @@ static inline void direction_update(MotorParameter *motor)
         {
             if (
                 motor->speed_h.ref_omega == 0.0f ||
-                var_same_sign(motor->speed_h.ref_omega, motor->speed_h.fbk_omega)
+                var_f32_same_sign(motor->speed_h.ref_omega, motor->speed_h.fbk_omega)
             ) break;
             motor_switch_ctrl_fix(motor, MOTOR_CTRL_120_SW);
         }
@@ -188,7 +184,7 @@ __weak void motor_start_spin(MotorParameter *motor)
 {
     motor_set_spd(motor, 0.0f);
     motor_set_rotate_mode(motor, MOTOR_ROT_NORMAL);
-    motor_switch_ctrl(motor, MOTOR_CTRL_FOC);
+    motor_switch_ctrl(motor, MOTOR_CTRL_TEST_LOW);
 }
 
 static inline void control_update(MotorParameter *motor)
@@ -268,7 +264,7 @@ void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef *hadc)
 void motor_pwm_cb(MotorParameter *motor)
 {
     motor_adcs_upd(motor);
-    hall_update(motor);
+    // hall_update(motor);
     if (motor->tim_tick % 200 == 0)
     {
         direction_update(motor);
