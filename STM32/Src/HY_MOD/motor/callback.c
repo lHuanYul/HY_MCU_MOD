@@ -3,75 +3,22 @@
 
 #include "main/main.h"
 #include "HY_MOD/motor/main.h"
+#include "HY_MOD/motor/rotor.h"
 #include "HY_MOD/motor/ctrl_deg.h"
 #include "HY_MOD/motor/ctrl_foc.h"
 #include "HY_MOD/motor/trigonometric.h"
 #include "HY_MOD/fdcan/pkt_write.h"
-
-static inline void hall_update(MotorParameter *motor)
-{
-    uint8_t hall =
-          (GPIO_READ_R(motor->const_h.Hall_GPIO.u) ? 4U : 0U)
-        | (GPIO_READ_R(motor->const_h.Hall_GPIO.v) ? 2U : 0U)
-        | (GPIO_READ_R(motor->const_h.Hall_GPIO.w) ? 1U : 0U);
-    motor->hall_h.current = (hall == 0 || hall == 7) ? UINT8_MAX : hall;
-}
-
-static inline void spd_update(MotorParameter *motor)
-{
-    motor->hall_h.time_hist[motor->hall_h.time_hist_head++] =
-        __HAL_TIM_GET_COMPARE(motor->const_h.Hall_htimx, TIM_CHANNEL_1);
-    motor->hall_h.time_hist_head %= MOTOR_SPD_CNT;
-    if (motor->hall_h.time_hist_len < MOTOR_SPD_CNT)
-        motor->hall_h.time_hist_len++;
-    
-    uint8_t i;
-    uint32_t total = 0;
-    for (i = 0; i < motor->hall_h.time_hist_len; i++)
-    {
-        total += motor->hall_h.time_hist[i];
-    }
-    float32_t omega =
-        motor->hall_h.time_hist_len * motor->calcu_h.omega_fbk / (float32_t)total;
-    if      (motor->hall_h.current == motor_hall_seq_ccw[motor->hall_h.last])
-    {
-        motor->hall_h.wrong = 0;
-    }
-    else if (motor->hall_h.current == motor_hall_seq_clw[motor->hall_h.last])
-    {
-        omega = -omega;
-        motor->hall_h.wrong = 0;
-    }
-    else
-    {
-        motor->hall_h.wrong++;
-        motor->dbg_h.hall_wrong[motor->dbg_h.hall_wrong_c++] =
-            motor->hall_h.last * 10 + motor->hall_h.current;
-        if (motor->dbg_h.hall_wrong_c >= 20) motor->dbg_h.hall_wrong_c = 0;
-        if (motor->hall_h.wrong >= 3)
-        {
-            motor->hall_h.wrong = 3;
-            // omega = 0.0f;
-            // motor->foc_h.rad_itpl = 0.0f;
-        }
-    }
-    motor->speed_h.fbk_omega = omega;
-    motor->speed_h.fbk_rpm = omega * OMEGA_TO_RPM;
-
-    motor->foc_h.rad_itpl = (motor->speed_h.fbk_omega >= 0.0f) ?
-         motor->hall_h.time_hist_len * motor->calcu_h.foc_it_angle_itpl / (float32_t)total :
-        -motor->hall_h.time_hist_len * motor->calcu_h.foc_it_angle_itpl / (float32_t)total;
-}
 
 /*
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 */
 void motor_hall_exti_cb(MotorParameter *motor)
 {
-    motor->hall_h.last = motor->hall_h.current;
-    hall_update(motor);
+    motor->rotor_h.last = motor->rotor_h.current;
+    motor->rotor_h.hall_last = motor->rotor_h.hall_current; //rm
+    motor_rotor_hall_upd(motor);
     motor_foc_hall_exti_cb(motor);
-    spd_update(motor);
+    motor_rotor_speed_upd(motor);
 }
 
 /*
@@ -79,10 +26,10 @@ void HAL_TIM_PeriodElapsedCallback_OWN(TIM_HandleTypeDef *htim)
 */
 void inline motor_stop_cb(MotorParameter *motor)
 {
-    // hall_update(motor);
-    motor->hall_h.stop_tick = HAL_GetTick();
-    motor->hall_h.time_hist_len = 0;
-    motor->hall_h.time_hist_head = 0;
+    // motor_rotor_hall_upd(motor);
+    motor->rotor_h.stop_tick = HAL_GetTick();
+    motor->rotor_h.time_hist_len = 0;
+    motor->rotor_h.time_hist_head = 0;
     motor->speed_h.fbk_omega = 0.0f;
     motor->speed_h.fbk_rpm = 0.0f;
     PI_reset(&motor->deg_h.pi_omega);
@@ -115,7 +62,7 @@ static inline void direction_update(MotorParameter *motor)
                     motor->deg_h.reverse = 0;
                 else
                     motor->deg_h.reverse = 1;
-                motor->hall_h.time_hist_len = 0;
+                motor->rotor_h.time_hist_len = 0;
                 motor->speed_h.fbk_omega = 0;
                 motor_switch_ctrl_fix(motor, MOTOR_CTRL_120);
                 break;
@@ -222,24 +169,27 @@ static inline void control_update(MotorParameter *motor)
         case MOTOR_CTRL_120_DUTY:
         case MOTOR_CTRL_120_SW:
         {
-            motor_deg_120_load(motor, motor->hall_h.current);
+            motor_deg_120_load(motor, motor->rotor_h.current);
+            // motor_deg_120_load(motor, motor->rotor_h.hall_current); //rm
             break;
         }
         case MOTOR_CTRL_120_SIM:
         {
             if (motor->tim_tick % 20000 == 0)
-            // if (motor_h.hall_h.vir_tri)
+            // if (motor_h.rotor_h.vir_tri)
             {
-                motor_h.hall_h.vir_tri = 0;
-                motor->hall_h.virtual = motor_hall_seq_ccw[motor->hall_h.virtual];
-                motor_deg_120_load(motor, motor->hall_h.virtual);
+                motor_h.rotor_h.vir_tri = 0;
+                motor->rotor_h.virtual = (motor->rotor_h.virtual + 1) % 6;
+                // motor->rotor_h.virtual = motor_hall_seq_ccw[motor->rotor_h.virtual]; //rm
+                motor_deg_120_load(motor, motor->rotor_h.virtual);
             }
             break;
         }
         case MOTOR_CTRL_FOC_INIT:
         {
             motor_foc_run(motor);
-            motor_deg_120_load(motor, motor->hall_h.current);
+            motor_deg_120_load(motor, motor->rotor_h.current);
+            // motor_deg_120_load(motor, motor->rotor_h.hall_current); //rm
             break;
         }
         case MOTOR_CTRL_FOC:
@@ -264,7 +214,7 @@ void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef *hadc)
 void motor_pwm_cb(MotorParameter *motor)
 {
     motor_adcs_upd(motor);
-    // hall_update(motor);
+    // motor_rotor_hall_upd(motor);
     if (motor->tim_tick % 200 == 0)
     {
         direction_update(motor);
@@ -275,9 +225,9 @@ void motor_pwm_cb(MotorParameter *motor)
         fdcan_h.motor_rpm_en = 1;
     }
     control_update(motor);
-    // if (motor->hall_h.updated)
+    // if (motor->rotor_h.updated)
     // {
-    //     motor->dbg_h.hall_rad[motor->hall_h.current] = motor->foc_h.rotor_rad;
+    //     motor->dbg_h.hall_rad[motor->rotor_h.current] = motor->foc_h.rotor_rad;
     // }
     if (++motor->tim_tick >= PWM_TIM_IT_CNT_MAX) motor->tim_tick = 0;
 }

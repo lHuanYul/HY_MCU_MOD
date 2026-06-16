@@ -196,7 +196,7 @@ typedef struct MotorADC
 } MotorADC;
 
 // Hall Parameter
-typedef struct MotorHallParam
+typedef struct MotorRotorParam
 {
     // 霍爾跳變間隔 頭id
     volatile uint8_t    time_hist_head;
@@ -204,10 +204,14 @@ typedef struct MotorHallParam
     volatile uint8_t    time_hist_len;
     // 霍爾跳變間隔時間
     uint32_t            time_hist[MOTOR_SPD_CNT];
-    // 目前霍爾相位
+    // 目前轉子位置
     volatile uint8_t    current;
-    // 上次霍爾相位
+    // 上次轉子位置
     uint8_t             last;
+    // 目前霍爾相位
+    volatile uint8_t    hall_current;
+    // 上次霍爾相位
+    uint8_t             hall_last;
 
     volatile uint8_t    wrong;
     // 虛擬霍爾相位 用於自動旋轉
@@ -216,11 +220,7 @@ typedef struct MotorHallParam
     volatile uint8_t    vir_tri;
     // 停轉時間
     uint32_t            stop_tick;
-} MotorHallParam;
-
-typedef struct MotorSLessParam
-{
-} MotorSLessParam;
+} MotorRotorParam;
 
 typedef union MotorPhaseDuty
 {
@@ -253,10 +253,10 @@ typedef struct MotorFOCParam
     uint32_t            init_cnt;
     // clarke
     CLARKE              clarke_h;
-    // 目前霍爾相位
-    float32_t           hall_rad;
-    // 轉子位置
+    // 目前轉子位置
     float32_t           rotor_rad;
+    // 轉子預計位置
+    float32_t           rotor_exp_rad;
     // FOC 應補角度 (Angle Interpolation)
     volatile float32_t  rad_itpl;
     // FOC 角度累積插值 rad_acc += rad_itpl; 過一霍爾中斷後重置
@@ -314,10 +314,8 @@ typedef struct MotorParameter
     uint32_t            tim_tick;
     // 電流 ADC
     MotorADC            adc_h;
-    // 霍爾
-    MotorHallParam      hall_h;
-    // 無感測
-    MotorSLessParam     sless_h;
+    // 轉子
+    MotorRotorParam     rotor_h;
     // 120度控制
     MotorDEGParam       deg_h;
     // FOC控制

@@ -50,13 +50,20 @@ static const float32_t hall_elec_angle[8] = {
 };
 static inline Result motor_vec_ctrl_angle_upd(MotorParameter *motor)
 {
-    uint8_t hall = motor->hall_h.current;
-    if (hall == UINT8_MAX)
+    uint8_t pos = motor->rotor_h.current;
+    if (pos == UINT8_MAX)
     {
-        if (motor->ctrl_h.ref_fix == MOTOR_CTRL_FOC_SIM) hall = 4;
+        if (motor->ctrl_h.ref_fix == MOTOR_CTRL_FOC_SIM) pos = 0;
         else return RESULT_ERROR(RES_ERR_NOT_FOUND);
     }
-    motor->foc_h.hall_rad = hall_elec_angle[hall];
+    motor->foc_h.rotor_rad = pos * PI_DIV_3;
+    // uint8_t pos = motor->rotor_h.hall_current;  //rm
+    // if (pos == UINT8_MAX)
+    // {
+    //     if (motor->ctrl_h.ref_fix == MOTOR_CTRL_FOC_SIM) pos = 4;
+    //     else return RESULT_ERROR(RES_ERR_NOT_FOUND);
+    // }
+    // motor->foc_h.rotor_rad = hall_elec_angle[pos];
     return RESULT_OK(motor);
 }
 
@@ -89,7 +96,7 @@ static inline void motor_vec_ctrl_park(MotorParameter *motor)
     {
         case MOTOR_CTRL_FOC_POS:
         {
-            motor->foc_h.rotor_rad = 0.0f;
+            motor->foc_h.rotor_exp_rad = 0.0f;
             break;
         }
         case MOTOR_CTRL_FOC_ROT_CMD:
@@ -97,15 +104,15 @@ static inline void motor_vec_ctrl_park(MotorParameter *motor)
         case MOTOR_CTRL_FOC_ROT_AUTO:
         case MOTOR_CTRL_FOC_OL_VDQ:
         {
-            motor->foc_h.rotor_rad += 0.001f * PI;
-            motor->foc_h.rotor_rad = var_wrap_P(motor->foc_h.rotor_rad, PI_MUL_2);
+            motor->foc_h.rotor_exp_rad += 0.001f * PI;
+            motor->foc_h.rotor_exp_rad = var_wrap_P(motor->foc_h.rotor_exp_rad, PI_MUL_2);
             break;
         }
         default:
         {
-            motor->foc_h.rotor_rad = var_wrap_P(
+            motor->foc_h.rotor_exp_rad = var_wrap_P(
                 motor->foc_h.rad_acc +
-                motor->foc_h.hall_rad +
+                motor->foc_h.rotor_rad +
                 motor->const_h.model->hall_angle_comp,
                 PI_MUL_2
             );
@@ -113,7 +120,7 @@ static inline void motor_vec_ctrl_park(MotorParameter *motor)
         }
     }
     RESULT_CHECK_HANDLE(trigo_sin_cosf(
-        motor->foc_h.rotor_rad,
+        motor->foc_h.rotor_exp_rad,
         &motor->foc_h.park_h.Sin, &motor->foc_h.park_h.Cos));
     PARK_run(&motor->foc_h.park_h);
 }
