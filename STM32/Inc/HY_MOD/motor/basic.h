@@ -208,6 +208,8 @@ typedef struct MotorRotorParam
     volatile uint8_t    current;
     // 上次轉子位置
     uint8_t             last;
+
+    uint32_t            time_acc;
     // 目前霍爾相位
     volatile uint8_t    hall_current;
     // 上次霍爾相位

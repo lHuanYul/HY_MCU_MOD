@@ -4,5 +4,6 @@
 
 void motor_rotor_hall_upd(MotorParameter *motor);
 void motor_rotor_speed_upd(MotorParameter *motor);
+void motor_rotor_stop(MotorParameter *motor);
 
 #endif
