@@ -12,13 +12,18 @@ void motor_rotor_hall_upd(MotorParameter *motor)
     motor->rotor_h.hall_current = (hall == 0 || hall == 7) ? UINT8_MAX : hall; //rm
 }
 
+#define HISTORY_STORE(store, pos, total_l, value)\
+    do {\
+        store[pos] = value;\
+        pos++;\
+        pos %= total_l;\
+    } while (0)
+
 void motor_rotor_speed_upd(MotorParameter *motor)
 {
     uint32_t time = __HAL_TIM_GET_COMPARE(motor->const_h.Hall_htimx, TIM_CHANNEL_1);
-    
-    motor->rotor_h.time_hist[motor->rotor_h.time_hist_head] = time;
-    motor->rotor_h.time_hist_head++;
-    motor->rotor_h.time_hist_head %= MOTOR_SPD_CNT;
+
+    HISTORY_STORE(motor->rotor_h.time_hist, motor->rotor_h.time_hist_head, MOTOR_SPD_CNT, time);
     if (motor->rotor_h.time_hist_len < MOTOR_SPD_CNT)
         motor->rotor_h.time_hist_len++;
 
