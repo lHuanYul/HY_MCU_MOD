@@ -15,8 +15,7 @@ void motor_rotor_hall_upd(MotorParameter *motor)
 #define HISTORY_STORE(store, pos, total_l, value)\
     do {\
         store[pos] = value;\
-        pos++;\
-        pos %= total_l;\
+        if (++pos >= total_l) pos = 0;\
     } while (0)
 
 void motor_rotor_speed_upd(MotorParameter *motor)
@@ -46,9 +45,16 @@ void motor_rotor_speed_upd(MotorParameter *motor)
         {
             motor->rotor_h.wrong++;
 
-            motor->dbg_h.hall_wrong[motor->dbg_h.hall_wrong_c++] =
-                motor->rotor_h.last * 10 + motor->rotor_h.current;
-            if (motor->dbg_h.hall_wrong_c >= 20) motor->dbg_h.hall_wrong_c = 0;
+            if (motor->rotor_h.current != motor->rotor_h.last)
+            {
+                HISTORY_STORE(motor->dbg_h.hall_wrong, motor->dbg_h.hall_wrong_c,
+                    20, motor->rotor_h.last * 10 + motor->rotor_h.current);
+            }
+            else
+            {
+                HISTORY_STORE(motor->dbg_h.hall_s_wrong, motor->dbg_h.hall_s_wrong_c,
+                    20, motor->rotor_h.last * 10 + motor->rotor_h.current);
+            }
 
             if (motor->rotor_h.wrong >= 3)
             {

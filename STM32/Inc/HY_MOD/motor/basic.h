@@ -289,6 +289,8 @@ typedef struct MotorDbg
     float32_t   hall_rad[8];
     uint8_t     hall_wrong_c;
     uint8_t     hall_wrong[20];
+    uint8_t     hall_s_wrong_c;
+    uint8_t     hall_s_wrong[20];
 } MotorDbg;
 
 typedef struct MotorHistoryArray
