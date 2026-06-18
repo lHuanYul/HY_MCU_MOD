@@ -5,6 +5,7 @@
 #include "main/config.h"
 #include "main.h"
 
+// Result --------------------------------------------------
 typedef struct SuccessResult
 {
     void *obj;
@@ -157,6 +158,7 @@ typedef struct Result
         RESULT_UNWRAP(_res_);\
     })
 
+// STM32 HAL --------------------------------------------------
 #ifdef STM32_DEVICE
 #define ERROR_CHECK_HAL_RET_HAL(expr) \
     do { \
@@ -186,12 +188,5 @@ typedef struct Result
         } \
     } while (0)
 
-#define INSTANCE_CHK(one, two) ((one)->Instance == (two)->Instance)
-
-#define StopTask() \
-({ \
-    osThreadExit(); \
-    return; \
-})
-
+#define INSTANCE_CHK(x, y) ((x)->Instance == (y)->Instance)
 #endif

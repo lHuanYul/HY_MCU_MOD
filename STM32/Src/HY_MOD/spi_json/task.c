@@ -4,6 +4,7 @@
 #include "main/main.h"
 #include "HY_MOD/main/variable_cal.h"
 #include "HY_MOD/packet/json.h"
+#include "HY_MOD/main/free_rtos.h"
 
 #define SPI1_TASK_SMAL_MS      5
 #define SPI1_TASK_NEXT_MS   1000

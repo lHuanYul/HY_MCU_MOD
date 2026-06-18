@@ -2,6 +2,7 @@
 #ifdef HY_MOD_STM32_FDCAN
 
 #include "main/main.h"
+#include "HY_MOD/main/free_rtos.h"
 #include "HY_MOD/fdcan/main.h"
 #include "HY_MOD/fdcan/callback.h"
 
