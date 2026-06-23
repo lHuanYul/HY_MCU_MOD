@@ -10,7 +10,7 @@ AdcCurrentParameter adc_current_h[ADC_COUNT] = {
             .hadcx = &hadc1,
             .rankx = ADC_INJECTED_RANK_1,
         },
-        .sensitive = 0.1f,
+        .sensitive = 0.2f,
     },
     {
         // ADC2 CH12 PB2
