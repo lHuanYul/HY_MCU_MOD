@@ -15,7 +15,6 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 void motor_hall_exti_cb(MotorParameter *motor)
 {
     motor->rotor_h.last = motor->rotor_h.current;
-    motor->rotor_h.hall_last = motor->rotor_h.hall_current; //rm
     motor_rotor_hall_upd(motor);
     motor_foc_hall_exti_cb(motor);
     motor_rotor_speed_upd(motor);
@@ -170,7 +169,6 @@ static inline void control_update(MotorParameter *motor)
         case MOTOR_CTRL_120_SW:
         {
             motor_deg_120_load(motor, motor->rotor_h.current);
-            // motor_deg_120_load(motor, motor->rotor_h.hall_current); //rm
             break;
         }
         case MOTOR_CTRL_120_SIM:
@@ -180,7 +178,6 @@ static inline void control_update(MotorParameter *motor)
             {
                 motor_h.rotor_h.vir_tri = 0;
                 motor->rotor_h.virtual = (motor->rotor_h.virtual + 1) % 6;
-                // motor->rotor_h.virtual = motor_hall_seq_ccw[motor->rotor_h.virtual]; //rm
                 motor_deg_120_load(motor, motor->rotor_h.virtual);
             }
             break;
@@ -189,7 +186,6 @@ static inline void control_update(MotorParameter *motor)
         {
             motor_foc_run(motor);
             motor_deg_120_load(motor, motor->rotor_h.current);
-            // motor_deg_120_load(motor, motor->rotor_h.hall_current); //rm
             break;
         }
         case MOTOR_CTRL_FOC:

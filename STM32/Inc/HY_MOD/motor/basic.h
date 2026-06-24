@@ -31,9 +31,6 @@ typedef struct MotorModelData
 extern const MotorModelData motor_vehicle;
 extern const MotorModelData motor_42BLF01;
 
-extern const uint8_t motor_hall_seq_clw[8];
-extern const uint8_t motor_hall_seq_ccw[8];
-
 typedef union MotorPhaseGPIOData
 {
     struct {

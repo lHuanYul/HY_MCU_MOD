@@ -38,16 +38,6 @@ inline void motor_foc_hall_exti_cb(MotorParameter *motor)
     motor->foc_h.rad_acc = 0.0f;
 }
 
-static const float32_t hall_elec_angle[8] = {
-    F32_MAX,
-    4.0f * PI_DIV_3,
-    2.0f * PI_DIV_3,
-    3.0f * PI_DIV_3,
-    0.0f,
-    5.0f * PI_DIV_3,
-    1.0f * PI_DIV_3,
-    F32_MAX,
-};
 static inline Result motor_vec_ctrl_angle_upd(MotorParameter *motor)
 {
     uint8_t pos = motor->rotor_h.current;
@@ -57,13 +47,6 @@ static inline Result motor_vec_ctrl_angle_upd(MotorParameter *motor)
         else return RESULT_ERROR(RES_ERR_NOT_FOUND);
     }
     motor->foc_h.rotor_rad = pos * PI_DIV_3;
-    // uint8_t pos = motor->rotor_h.hall_current;  //rm
-    // if (pos == UINT8_MAX)
-    // {
-    //     if (motor->ctrl_h.ref_fix == MOTOR_CTRL_FOC_SIM) pos = 4;
-    //     else return RESULT_ERROR(RES_ERR_NOT_FOUND);
-    // }
-    // motor->foc_h.rotor_rad = hall_elec_angle[pos];
     return RESULT_OK(motor);
 }
 

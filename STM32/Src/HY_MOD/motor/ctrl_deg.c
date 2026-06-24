@@ -6,6 +6,18 @@
 #define HIGH_PASS   1
 #define NONE_PASS   0
 #define LOW__PASS  -1
+static const int8_t seq_map_120[][3] = {
+    // 註解從頭順序是ccw 標準化角度-霍爾
+    { HIGH_PASS, NONE_PASS, LOW__PASS }, // 0-4
+    { NONE_PASS, HIGH_PASS, LOW__PASS }, // 1-6
+    { LOW__PASS, HIGH_PASS, NONE_PASS }, // 2-2
+    { LOW__PASS, NONE_PASS, HIGH_PASS }, // 3-3
+    { NONE_PASS, LOW__PASS, HIGH_PASS }, // 4-1
+    { HIGH_PASS, LOW__PASS, NONE_PASS }, // 5-5
+    { HIGH_PASS, HIGH_PASS, HIGH_PASS }, // 6
+    { LOW__PASS, LOW__PASS, LOW__PASS }, // 7
+    { NONE_PASS, NONE_PASS, NONE_PASS }, // 8
+};
 
 static void ctrl_load(MotorParameter *motor, int8_t seq[3], float32_t duty)
 {
@@ -35,22 +47,6 @@ static void ctrl_load(MotorParameter *motor, int8_t seq[3], float32_t duty)
     motor->duty_load = motor->deg_h.duty_h;
     motor_timer_load(motor);
 }
-
-static const int8_t seq_map_120[][3] = {
-    // 註解從頭順序是ccw 標準化角度-霍爾
-    { HIGH_PASS, NONE_PASS, LOW__PASS }, // 0-4
-    { NONE_PASS, HIGH_PASS, LOW__PASS }, // 1-6
-    { LOW__PASS, HIGH_PASS, NONE_PASS }, // 2-2
-    { LOW__PASS, NONE_PASS, HIGH_PASS }, // 3-3
-    { NONE_PASS, LOW__PASS, HIGH_PASS }, // 4-1
-    { HIGH_PASS, LOW__PASS, NONE_PASS }, // 5-5
-    { HIGH_PASS, HIGH_PASS, HIGH_PASS }, // 6
-    { LOW__PASS, LOW__PASS, LOW__PASS }, // 7
-    { NONE_PASS, NONE_PASS, NONE_PASS }, // 8
-};
-//                                         1  2  3  4  5  6
-static const uint8_t index_120_ccw[] = {7, 4, 2, 3, 0, 5, 1, 7};
-static const uint8_t index_120_cw[]  = {7, 1, 5, 0, 3, 2, 4, 7};
 
 void motor_deg_test_HL(MotorParameter *motor)
 {
@@ -101,23 +97,12 @@ void motor_deg_120_load(MotorParameter *motor, uint8_t id)
             }
             break;
         }
-        // case MOTOR_ROT_NORMAL:
-        // {
-        //     for (i = 0; i < 3; i++)
-        //     {
-        //         if (!motor->deg_h.reverse)
-        //             seq[i] = seq_map_120[index_120_ccw[id]][i];
-        //         else
-        //             seq[i] = seq_map_120[ index_120_cw[id]][i];
-        //     }
-        //     break;
-        // }
         case MOTOR_ROT_LOCK_FIN:
         {
             motor->deg_h.duty_val = 0.2f;
             // !
-            for (i = 0; i < 3; i++)
-                seq[i] = seq_map_120[index_120_ccw[id]][i];
+            // for (i = 0; i < 3; i++)
+            //     seq[i] = seq_map_120[index_120_ccw[id]][i];
             break;
         }
     }

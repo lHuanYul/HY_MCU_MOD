@@ -31,7 +31,4 @@ const MotorModelData motor_42BLF01 = {
     .foc_spd_Ki = 0.0f,
 };
 
-const uint8_t motor_hall_seq_ccw[8] = {UINT8_MAX, 5, 3, 1, 6, 4, 2, UINT8_MAX};
-const uint8_t motor_hall_seq_clw[8] = {UINT8_MAX, 3, 6, 2, 5, 1, 4, UINT8_MAX};
-
 #endif

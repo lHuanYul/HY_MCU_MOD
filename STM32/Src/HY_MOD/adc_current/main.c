@@ -59,7 +59,7 @@ Result adc_current_upd(AdcCurrentParameter *adc)
 
 void adc_current_reset(AdcCurrentParameter *adc)
 {
-    adc->current_trs = ADC_TO_VOL / ADC_VOL_SEP / adc->sensitive;
+    adc->current_trs = ADC_TO_VOL / adc->model->proportion / adc->model->sensitive;
     // average(adc->const_h.id, &adc->adc_value);
     adc->val_offset = adc->basic.value;
 }

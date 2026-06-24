@@ -3,31 +3,14 @@
 
 #include "adc.h"
 
-AdcCurrentParameter adc_current_h[ADC_COUNT] = {
-    {
-        // ADC1 CH11 PB12 0.097
-        .basic = {
-            .hadcx = &hadc1,
-            .rankx = ADC_INJECTED_RANK_1,
-        },
-        .sensitive = 0.2f,
-    },
-    {
-        // ADC2 CH12 PB2
-        .basic = {
-            .hadcx = &hadc2,
-            .rankx = ADC_INJECTED_RANK_1,
-        },
-        .sensitive = 0.1f,
-    },
-    {
-        // ADC1 CH14 PB11
-        .basic = {
-            .hadcx = &hadc1,
-            .rankx = ADC_INJECTED_RANK_2,
-        },
-        .sensitive = 0.1f,
-    },
+const AdcIModelData adc_I_acs712 = {
+    .sensitive = 0.1f,
+    .proportion = 2.0f / 3.0f,
+};
+
+const AdcIModelData adc_I_opa325 = {
+    .sensitive = 0.2f,
+    .proportion = 1.0f,
 };
 
 #endif
