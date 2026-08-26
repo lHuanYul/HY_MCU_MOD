@@ -1,4 +1,4 @@
-#include "HY_MOD/motor/trigonometric.h"
+#include "HY_MOD/motor/math/trigonometric.h"
 #ifdef HY_MOD_STM32_MOTOR
 
 #include "HY_MOD/main/variable_cal.h"

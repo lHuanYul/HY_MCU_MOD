@@ -2,10 +2,11 @@
 #include "HY_MOD/adc/basic.h"
 #ifdef HY_MOD_STM32_ADC
 
-void adc_max_min_rst(AdcParameter *adc);
-void adc_hal_start_dma(AdcParameter *adc);
+void adc_max_min_reset(AdcParameter *adc);
+void adc_HAL_start_dma(AdcParameter *adc);
 void adc_upd_dma_get_arr(AdcParameter *adc);
 uint16_t adc_upd_dma_get_val(AdcParameter *adc, uint32_t loop);
 void adc_upd_injected(AdcParameter *adc);
+void adc_current_init(AdcParameter *adc, const AdcCurrentModel *model);
 
 #endif

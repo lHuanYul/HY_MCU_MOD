@@ -52,7 +52,7 @@ void motor_deg_test_HL(MotorParameter *motor)
 {
     uint8_t i;
     int8_t seq[3] = {0};
-    if (motor->ctrl_h.ref_fix == MOTOR_CTRL_TEST_HIGH)
+    if (motor->ctrl_h.ref_sys == MOTOR_CTRL_TEST_HIGH)
         for (i = 0; i < 3; i++) seq[i] = seq_map_120[6][i];
     else
         for (i = 0; i < 3; i++) seq[i] = seq_map_120[7][i];
@@ -72,7 +72,7 @@ void motor_deg_120_load(MotorParameter *motor, uint8_t id)
 {
     uint8_t i;
     int8_t seq[3] = {0};
-    switch (motor->rotate_h.ref_fix)
+    switch (motor->rotate_h.ref_sys)
     {
         case MOTOR_ROT_COAST:
         {
@@ -124,10 +124,10 @@ void motor_deg_120_load(MotorParameter *motor, uint8_t id)
 // static const uint8_t index_180_cw[]   = {7, 2, 0, 1, 4, 3, 5, 7};
 // void deg_ctrl_180_load(MotorParameter *motor)
 // {
-//     if (motor->rotor_h.current == UINT8_MAX) return;
+//     if (motor->rotor_h.curr == UINT8_MAX) return;
 //     uint8_t i;
 //     int8_t seq[3] = {0};
-//     switch (motor->rotate_h.ref_fix)
+//     switch (motor->rotate_h.ref_sys)
 //     {
 //         case MOTOR_ROT_COAST:
 //         {
@@ -146,9 +146,9 @@ void motor_deg_120_load(MotorParameter *motor, uint8_t id)
 //             for (i = 0; i < 3; i++)
 //             {
 //                 if (!motor->deg_h.reverse)
-//                     seq[i] = seq_map_180[index_180_ccw[motor->rotor_h.current]][i];
+//                     seq[i] = seq_map_180[index_180_ccw[motor->rotor_h.curr]][i];
 //                 else
-//                     seq[i] = seq_map_180[ index_180_cw[motor->rotor_h.current]][i];
+//                     seq[i] = seq_map_180[ index_180_cw[motor->rotor_h.curr]][i];
 //             }
 //             break;
 //         }
@@ -156,7 +156,7 @@ void motor_deg_120_load(MotorParameter *motor, uint8_t id)
 //         {
 //             motor->deg_h.duty_val = 0.2f;
 //             for (i = 0; i < 3; i++)
-//                 seq[i] = seq_map_180[index_180_lock[motor->rotor_h.current]][i];
+//                 seq[i] = seq_map_180[index_180_lock[motor->rotor_h.curr]][i];
 //             break;
 //         }
 //     }
@@ -172,5 +172,45 @@ void motor_deg_120_load(MotorParameter *motor, uint8_t id)
 //         }
 //     }
 // }
+
+#include "HY_MOD/motor/rotor.h"
+
+void motor_deg_direc_upd(MotorParameter *motor)
+{
+    motor->rotate_h.ref_sys = motor->rotate_h.ref_user;
+    switch (motor->ctrl_h.ref_sys)
+    {
+        case MOTOR_CTRL_120:
+        case MOTOR_CTRL_120_T:
+        {
+            if (
+                motor->speed_h.ref_omega == 0.0f ||
+                var_f32_same_sign(motor->speed_h.ref_omega, motor->speed_h.fbk_omega)
+            ) break;
+            motor_switch_ctrl_sys(motor, MOTOR_CTRL_120_SW);
+        }
+        case MOTOR_CTRL_120_SW:
+        {
+            if (motor->speed_h.fbk_omega < motor->speed_h.save_stop_omega)
+            {
+                if (motor->speed_h.ref_omega >= 0.0f)
+                    motor->deg_h.reverse = 0;
+                else
+                    motor->deg_h.reverse = 1;
+                motor_rotor_stop(motor);
+                motor_switch_ctrl_sys(motor, MOTOR_CTRL_120);
+                break;
+            }
+            motor->rotate_h.ref_sys = MOTOR_ROT_COAST;
+            break;
+        }
+        default: break;
+    }
+}
+
+void motor_deg_stop(MotorParameter *motor)
+{
+    PID_reset(&motor->deg_h.pi_omega);
+}
 
 #endif

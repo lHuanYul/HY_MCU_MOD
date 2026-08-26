@@ -1,4 +1,4 @@
-#include "HY_MOD/motor/clarke.h"
+#include "HY_MOD/motor/math/clarke.h"
 #ifdef HY_MOD_STM32_MOTOR
 
 #include "HY_MOD/motor/basic.h"

@@ -3,11 +3,11 @@
 #ifdef HY_MOD_STM32_MOTOR
 
 #include "HY_MOD/main/variable_cal.h"
-#include "HY_MOD/motor/pi.h"
-#include "HY_MOD/motor/clarke.h"
-#include "HY_MOD/motor/park.h"
-#include "HY_MOD/motor/svgendq.h"
-#include "HY_MOD/adc_current/basic.h"
+#include "HY_MOD/motor/math/pid.h"
+#include "HY_MOD/motor/math/clarke.h"
+#include "HY_MOD/motor/math/park.h"
+#include "HY_MOD/motor/math/svgendq.h"
+#include "HY_MOD/adc/basic.h"
 #include "cordic.h"
 
 typedef struct MotorModelData
@@ -136,8 +136,8 @@ typedef enum MotorCtrl
 // Control Parameter
 typedef struct MotorCtrlParam
 {
-    MotorCtrl    ref_ori;
-    MotorCtrl    ref_fix;
+    MotorCtrl    ref_user;
+    MotorCtrl    ref_sys;
 } MotorCtrlParam;
 
 typedef enum MotorRot
@@ -152,8 +152,8 @@ typedef enum MotorRot
 // Rotate Parameter
 typedef struct MotorRotParam
 {
-    MotorRot    ref_ori;
-    MotorRot    ref_fix;
+    MotorRot    ref_user;
+    MotorRot    ref_sys;
 } MotorRotParam;
 
 // SPD Parameter
@@ -168,49 +168,63 @@ typedef struct MotorSpdParame
 
 typedef struct MotorADC
 {
+    const AdcCurrentModel *model;
+    AdcParameter basic;
+} MotorADC;
+
+typedef struct MotorADCParame
+{
     union {
         struct {
-            AdcCurrentParameter *adc_u;
-            AdcCurrentParameter *adc_v;
-            AdcCurrentParameter *adc_w;
+            MotorADC adc_ui;
+            MotorADC adc_vi;
+            MotorADC adc_wi;
+            MotorADC adc_uv;
+            MotorADC adc_vv;
+            MotorADC adc_wv;
         };
-        AdcCurrentParameter *adc_uvw[3];
+        MotorADC adcs[6];
     };
+    // Per-Unit
     union {
         struct {
-            // Per-Unit
-            float32_t u;
-            // Per-Unit
-            float32_t v;
-            // Per-Unit
-            float32_t w;
+            float32_t ui;
+            float32_t vi;
+            float32_t wi;
+            float32_t uv;
+            float32_t vv;
+            float32_t wv;
         };
-        // Per-Unit
-        float32_t uvw[3];
+        float32_t fixs[6];
     };
     // 應接近0
     float32_t   total;
-} MotorADC;
+} MotorADCParame;
+
+// 霍爾跳變間隔
+typedef struct MotorRotorTimeDatas
+{
+    uint32_t datas[MOTOR_SPD_CNT];
+    // 長度
+    uint8_t len;
+    // 最舊id
+    uint8_t head;
+    // 總和
+    uint8_t sum;
+} MotorRotorTimeDatas;
 
 // Hall Parameter
 typedef struct MotorRotorParam
 {
-    // 霍爾跳變間隔 頭id
-    volatile uint8_t    time_hist_head;
-    // 霍爾跳變間隔 長度
-    volatile uint8_t    time_hist_len;
-    // 霍爾跳變間隔時間
-    uint32_t            time_hist[MOTOR_SPD_CNT];
+    volatile MotorRotorTimeDatas times;
     // 目前轉子位置
-    volatile uint8_t    current;
+    volatile uint8_t    curr;
     // 上次轉子位置
-    uint8_t             last;
-
-    uint32_t            time_acc;
+    uint8_t             prev;
     // 目前霍爾相位
-    volatile uint8_t    hall_current;
+    volatile uint8_t    hall_curr;
     // 上次霍爾相位
-    uint8_t             hall_last;
+    volatile uint8_t    hall_prev;
 
     volatile uint8_t    wrong;
     // 虛擬霍爾相位 用於自動旋轉
@@ -241,9 +255,9 @@ typedef struct MotorDEGParam
     // DEG uvw duty
     MotorPhaseDuty      duty_h;
 
-    PI_CTRL             pi_omega;
+    PID_CTRL             pi_omega;
 
-    PI_CTRL             pi_current;
+    PID_CTRL             pi_current;
 } MotorDEGParam;
 
 // FOC Parameter
@@ -263,11 +277,11 @@ typedef struct MotorFOCParam
     // park
     PARK                park_h;
 
-    PI_CTRL             pi_omega;
+    PID_CTRL             pi_omega;
     // 
-    PI_CTRL             pi_Id_h;
+    PID_CTRL             pi_Id_h;
     // 
-    PI_CTRL             pi_Iq_h;
+    PID_CTRL             pi_Iq_h;
     // 磁場位置
     float32_t           magn_rad;
     // ipark
@@ -313,8 +327,8 @@ typedef struct MotorParameter
     MotorSpdParame      speed_h;
     // 計時中斷計數
     uint32_t            tim_tick;
-    // 電流 ADC
-    MotorADC            adc_h;
+    // ADC
+    MotorADCParame      adc_h;
     // 轉子
     MotorRotorParam     rotor_h;
     // 120度控制

@@ -1,4 +1,4 @@
-#include "HY_MOD/motor/park.h"
+#include "HY_MOD/motor/math/park.h"
 #ifdef HY_MOD_STM32_MOTOR
 
 // Id = Ialpha * cos(theta) + Ibata * sin(theta)

@@ -1,4 +1,4 @@
-#include "HY_MOD/motor/svgendq.h"
+#include "HY_MOD/motor/math/svgendq.h"
 #ifdef HY_MOD_STM32_MOTOR
 
 #include "HY_MOD/main/variable_cal.h"

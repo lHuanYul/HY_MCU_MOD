@@ -2,9 +2,9 @@
 #ifdef HY_MOD_STM32_MOTOR
 
 #include "tim.h"
-#include "dac.h"
+#include "HY_MOD/motor/rotor.h"
 #include "HY_MOD/motor/ctrl_foc.h"
-#include "HY_MOD/adc_current/main.h"
+#include "HY_MOD/adc/main.h"
 
 // Motor init
 void motor_init(MotorParameter *motor)
@@ -38,13 +38,13 @@ void motor_init(MotorParameter *motor)
     motor_foc_pi_setup(motor);
 
     ERROR_CHECK_HAL_HANDLE(HAL_ADCEx_Calibration_Start(
-        motor->adc_h.adc_v->basic.hadcx, ADC_SINGLE_ENDED));
+        motor->adc_h.adc_vi.basic.hadcx, ADC_SINGLE_ENDED));
     ERROR_CHECK_HAL_HANDLE(HAL_ADCEx_Calibration_Start(
-        motor->adc_h.adc_u->basic.hadcx, ADC_SINGLE_ENDED));
+        motor->adc_h.adc_ui.basic.hadcx, ADC_SINGLE_ENDED));
     ERROR_CHECK_HAL_HANDLE(
-        HAL_ADCEx_InjectedStart(motor->adc_h.adc_v->basic.hadcx));
+        HAL_ADCEx_InjectedStart(motor->adc_h.adc_vi.basic.hadcx));
     ERROR_CHECK_HAL_HANDLE(
-        HAL_ADCEx_InjectedStart_IT(motor->adc_h.adc_u->basic.hadcx));
+        HAL_ADCEx_InjectedStart_IT(motor->adc_h.adc_ui.basic.hadcx));
 
     __HAL_TIM_SET_COMPARE(motor->const_h.PWM_htimx, motor->const_h.PWM_TIM_CH_x.mid,
         motor->const_h.PWM_htimx->Init.Period - TIM1_ADC_TRI_DL);
@@ -60,9 +60,10 @@ void motor_init(MotorParameter *motor)
     __HAL_TIM_ENABLE_IT(motor->const_h.Hall_htimx, TIM_IT_UPDATE);
     __HAL_TIM_URS_ENABLE(motor->const_h.Hall_htimx);
     HAL_TIMEx_HallSensor_Start_IT(motor->const_h.Hall_htimx);
+    motor_rotor_hall_prev_set(motor, motor_rotor_hall_get(motor));
     
-    HAL_DAC_Start(&hdac1, DAC_CHANNEL_1); 
-    HAL_DAC_Start(&hdac1, DAC_CHANNEL_2);
+    // HAL_DAC_Start(&hdac1, DAC_CHANNEL_1); 
+    // HAL_DAC_Start(&hdac1, DAC_CHANNEL_2);
 }
 
 void motor_timer_load(MotorParameter *motor)
@@ -76,18 +77,21 @@ void motor_timer_load(MotorParameter *motor)
     }
 }
 
-inline void motor_adcs_reset(MotorParameter *motor)
+inline void motor_adcs_init(MotorParameter *motor)
 {
     uint8_t i;
     for (i = 0; i < 3; i++)
-        adc_current_reset(motor->adc_h.adc_uvw[i]);
+    {
+        adc_current_init(&motor->adc_h.adcs[i].basic, motor->adc_h.adcs[i].model);
+        // adc_voltage_init(&motor->adc_h.adcs[i+3].basic, motor->adc_h.adcs[i+3].model);
+    }
 }
 
 inline void motor_adcs_upd(MotorParameter *motor)
 {
     uint8_t i;
     for (i = 0; i < 3; i++)
-        RESULT_CHECK_HANDLE(adc_current_upd(motor->adc_h.adc_uvw[i]));
+        adc_upd_injected(&motor->adc_h.adcs[i].basic);
 }
 
 void motor_set_spd(MotorParameter *motor, float32_t rpm)
@@ -98,7 +102,7 @@ void motor_set_spd(MotorParameter *motor, float32_t rpm)
 
 void motor_set_rotate_mode(MotorParameter *motor, MotorRot mode)
 {
-    if (motor->rotate_h.ref_ori == mode) return;
+    if (motor->rotate_h.ref_user == mode) return;
     switch (mode)
     {
         case MOTOR_ROT_LOCK_FIN:
@@ -113,12 +117,11 @@ void motor_set_rotate_mode(MotorParameter *motor, MotorRot mode)
             break;
         }
     }
-    motor->rotate_h.ref_ori = mode;
+    motor->rotate_h.ref_user = mode;
 }
 
-void motor_switch_ctrl(MotorParameter *motor, MotorCtrl ctrl)
+void motor_switch_ctrl_user(MotorParameter *motor, MotorCtrl ctrl)
 {
-    if (motor->ctrl_h.ref_ori == ctrl) return;
     switch (ctrl)
     {
         case MOTOR_CTRL_INIT:
@@ -133,7 +136,7 @@ void motor_switch_ctrl(MotorParameter *motor, MotorCtrl ctrl)
         case MOTOR_CTRL_120_SW:
         case MOTOR_CTRL_FOC_INIT:
         {
-            motor_switch_ctrl_fix(motor, ctrl);
+            motor_switch_ctrl_sys(motor, ctrl);
             break;
         }
         case MOTOR_CTRL_FOC:
@@ -144,17 +147,16 @@ void motor_switch_ctrl(MotorParameter *motor, MotorCtrl ctrl)
         case MOTOR_CTRL_FOC_OL_VDQ:
         case MOTOR_CTRL_FOC_OL_IQ:
         {
-            motor_switch_ctrl_fix(motor, ctrl);
+            motor_switch_ctrl_sys(motor, ctrl);
             motor->foc_h.init_cnt = 2000;
             break;
         }
     }
-    motor->ctrl_h.ref_ori = ctrl;
+    motor->ctrl_h.ref_user = ctrl;
 }
 
-void motor_switch_ctrl_fix(MotorParameter *motor, MotorCtrl ctrl)
+void motor_switch_ctrl_sys(MotorParameter *motor, MotorCtrl ctrl)
 {
-    if (motor->ctrl_h.ref_fix == ctrl) return;
     const MotorConst *const_h = &motor->const_h;
     uint8_t i;
     uint32_t temp;
@@ -204,7 +206,7 @@ void motor_switch_ctrl_fix(MotorParameter *motor, MotorCtrl ctrl)
             break;
         }
     }
-    motor->ctrl_h.ref_fix = ctrl;
+    motor->ctrl_h.ref_sys = ctrl;
 }
 
 // 主要程式皆在callback中

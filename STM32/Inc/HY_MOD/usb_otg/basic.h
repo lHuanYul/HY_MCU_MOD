@@ -2,6 +2,7 @@
 #include "main/config.h"
 #ifdef HY_MOD_STM32_USB_OTG
 
+#define HY_MOD_STM32_RBYTES
 #include "usbd_def.h"
 #include "HY_MOD/packet/raw_bytes.h"
 

@@ -5,7 +5,8 @@
 void motor_deg_test_HL(MotorParameter *motor);
 void motor_deg_test_WAVE(MotorParameter *motor);
 void motor_deg_120_load(MotorParameter *motor, uint8_t id);
-
 // void deg_ctrl_180_load(MotorParameter *motor);
+void motor_deg_direc_upd(MotorParameter *motor);
+void motor_deg_stop(MotorParameter *motor);
 
 #endif

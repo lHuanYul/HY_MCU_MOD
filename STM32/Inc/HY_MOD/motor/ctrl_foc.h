@@ -9,5 +9,6 @@ void motor_foc_reset(MotorParameter *motor);
 void motor_foc_hall_exti_cb(MotorParameter *motor);
 void motor_foc_run(MotorParameter *motor);
 void motor_foc_load(MotorParameter *motor);
+void motor_foc_stop(MotorParameter *motor);
 
 #endif
