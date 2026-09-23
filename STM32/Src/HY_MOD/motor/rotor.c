@@ -65,7 +65,7 @@ void motor_rotor_speed_upd(MotorParameter *motor)
         motor->rotor_h.wrong++;
         if (motor->rotor_h.wrong >= 3)
         {
-            motor->rotor_h.wrong = 3;
+            if (motor->rotor_h.wrong >= 253) motor->rotor_h.wrong = 3;
             // omega = 0.0f;
             // motor->foc_h.rad_itpl = 0.0f;
         }

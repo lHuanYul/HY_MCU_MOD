@@ -180,7 +180,7 @@ void motor_deg_direc_upd(MotorParameter *motor)
     motor->rotate_h.ref_sys = motor->rotate_h.ref_user;
     switch (motor->ctrl_h.ref_sys)
     {
-        case MOTOR_CTRL_120:
+        case MOTOR_CTRL_120_NORMAL:
         case MOTOR_CTRL_120_T:
         {
             if (
@@ -198,7 +198,7 @@ void motor_deg_direc_upd(MotorParameter *motor)
                 else
                     motor->deg_h.reverse = 1;
                 motor_rotor_stop(motor);
-                motor_switch_ctrl_sys(motor, MOTOR_CTRL_120);
+                motor_switch_ctrl_sys(motor, MOTOR_CTRL_120_NORMAL);
                 break;
             }
             motor->rotate_h.ref_sys = MOTOR_ROT_COAST;

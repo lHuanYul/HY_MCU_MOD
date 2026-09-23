@@ -129,7 +129,7 @@ void motor_switch_ctrl_user(MotorParameter *motor, MotorCtrl ctrl)
         case MOTOR_CTRL_TEST_HIGH:
         case MOTOR_CTRL_TEST_LOW:
         case MOTOR_CTRL_TEST_WAVE:
-        case MOTOR_CTRL_120:
+        case MOTOR_CTRL_120_NORMAL:
         case MOTOR_CTRL_120_T:
         case MOTOR_CTRL_120_DUTY:
         case MOTOR_CTRL_120_SIM:
@@ -139,7 +139,7 @@ void motor_switch_ctrl_user(MotorParameter *motor, MotorCtrl ctrl)
             motor_switch_ctrl_sys(motor, ctrl);
             break;
         }
-        case MOTOR_CTRL_FOC:
+        case MOTOR_CTRL_FOC_NORMAL:
         case MOTOR_CTRL_FOC_SIM:
         case MOTOR_CTRL_FOC_POS:
         case MOTOR_CTRL_FOC_ROT_CMD:
@@ -181,7 +181,7 @@ void motor_switch_ctrl_sys(MotorParameter *motor, MotorCtrl ctrl)
             return;
         case MOTOR_CTRL_TEST_HIGH:
         case MOTOR_CTRL_TEST_LOW:
-        case MOTOR_CTRL_120:
+        case MOTOR_CTRL_120_NORMAL:
         case MOTOR_CTRL_120_T:
         case MOTOR_CTRL_120_DUTY:
         case MOTOR_CTRL_120_SIM:
@@ -193,7 +193,7 @@ void motor_switch_ctrl_sys(MotorParameter *motor, MotorCtrl ctrl)
             break;
         }
         case MOTOR_CTRL_TEST_WAVE:
-        case MOTOR_CTRL_FOC:
+        case MOTOR_CTRL_FOC_NORMAL:
         case MOTOR_CTRL_FOC_SIM:
         case MOTOR_CTRL_FOC_POS:
         case MOTOR_CTRL_FOC_ROT_CMD:

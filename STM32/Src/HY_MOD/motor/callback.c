@@ -51,7 +51,7 @@ static void rotate_status_upd(MotorParameter *motor)
         case MOTOR_ROT_LOCK_FIN:
         {
             motor->deg_h.duty_val = 0.5f;
-            motor_switch_ctrl_sys(motor, MOTOR_CTRL_120);
+            motor_switch_ctrl_sys(motor, MOTOR_CTRL_120_NORMAL);
             break;
         }
         case MOTOR_ROT_LOCK:
@@ -59,7 +59,7 @@ static void rotate_status_upd(MotorParameter *motor)
             motor->rotate_h.ref_sys = MOTOR_ROT_BREAK;
             if (motor->speed_h.fbk_omega < motor->speed_h.save_stop_omega)
                 motor->rotate_h.ref_sys = MOTOR_ROT_LOCK_FIN;
-            motor_switch_ctrl_sys(motor, MOTOR_CTRL_120);
+            motor_switch_ctrl_sys(motor, MOTOR_CTRL_120_NORMAL);
             break;
         }
         case MOTOR_ROT_NORMAL:
@@ -93,7 +93,7 @@ static void rotate_status_upd(MotorParameter *motor)
 /* 20kHz
 void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef *hadc)
 */
-#define PWM_TIM_IT_CNT_MAX 200000
+#define PWM_TIM_IT_CNT_MAX 200000 // 10s
 void motor_pwm_cb(MotorParameter *motor)
 {
     motor_adcs_upd(motor);
@@ -136,7 +136,7 @@ void motor_pwm_cb(MotorParameter *motor)
                 motor_deg_test_WAVE(motor);
             break;
         }
-        case MOTOR_CTRL_120:
+        case MOTOR_CTRL_120_NORMAL:
         case MOTOR_CTRL_120_T:
         case MOTOR_CTRL_120_DUTY:
         case MOTOR_CTRL_120_SW:
@@ -147,9 +147,10 @@ void motor_pwm_cb(MotorParameter *motor)
         case MOTOR_CTRL_120_SIM:
         {
             if (motor->tim_tick % 20000 == 0)
-            // if (motor_h.rotor_h.vir_tri)
+            // if (motor->rotor_h.vir_tri)
             {
-                motor_h.rotor_h.vir_tri = 0;
+                // motor->rotor_h.vir_tri = 0;
+                motor->deg_h.duty_val = 0.2;
                 motor->rotor_h.virtual = (motor->rotor_h.virtual + 1) % 6;
                 motor_deg_120_load(motor, motor->rotor_h.virtual);
             }
@@ -161,7 +162,7 @@ void motor_pwm_cb(MotorParameter *motor)
             motor_deg_120_load(motor, motor->rotor_h.curr);
             break;
         }
-        case MOTOR_CTRL_FOC:
+        case MOTOR_CTRL_FOC_NORMAL:
         case MOTOR_CTRL_FOC_SIM:
         case MOTOR_CTRL_FOC_POS:
         case MOTOR_CTRL_FOC_ROT_CMD:
