@@ -3,33 +3,118 @@
 
 #include "HY_MOD/main/buffer.h"
 
-static const uint8_t angle_hall_to_pu[8] = {UINT8_MAX, 4, 2, 3, 0, 5, 1, UINT8_MAX};
+/* ---------- Hall Sensor ---------- */
+
+static const uint8_t angle_hall_to_pu[8] = {10, 4, 2, 3, 0, 5, 1, 10};
+
+static void motor_rotor_hall_enable(MotorParameter *motor)
+{
+    TIM_TypeDef *hall = motor->system.const_h.Hall_htimx->Instance;
+    // 關閉中斷
+    FLAGS_CLR(hall->DIER, TIM_DIER_TIE);
+
+    // 開啟 XOR 組合輸入
+    FLAGS_SET(hall->CR2, TIM_CR2_TI1S);
+    // 設定 Slave 模式：TS = 100b (TI1F_ED), SMS = 100b (Reset Mode)
+    FLAGS_FULLSET(hall->SMCR,
+        TIM_SMCR_SMS | TIM_SMCR_TS, TIM_SMCR_SMS_2 | TIM_SMCR_TS_2);
+
+    // 清除旗標
+    FLAGS_CLR(hall->SR, TIM_SR_TIF);
+    // 重新啟用中斷
+    FLAGS_SET(hall->DIER, TIM_DIER_TIE);
+    // 確保 Timer 運作
+    FLAGS_SET(hall->CR1, TIM_CR1_CEN);
+}
+
+static void motor_rotor_hall_disable(MotorParameter *motor)
+{
+    TIM_TypeDef *hall = motor->system.const_h.Hall_htimx->Instance;
+    // 關閉中斷
+    FLAGS_CLR(hall->DIER, TIM_DIER_TIE);
+
+    // 解除 Slave Mode 與觸發源選擇
+    FLAGS_CLR(hall->SMCR, TIM_SMCR_SMS | TIM_SMCR_TS);
+    // 關閉 XOR 組合輸入
+    FLAGS_CLR(hall->CR2, TIM_CR2_TI1S);
+
+    // 清除旗標
+    FLAGS_CLR(hall->SR, TIM_SR_TIF);
+    // 新啟用中斷
+    FLAGS_SET(hall->DIER, TIM_DIER_TIE);
+    // 確保 Timer 運作
+    FLAGS_SET(hall->CR1, TIM_CR1_CEN);
+}
 
 uint8_t motor_rotor_hall_get(MotorParameter *motor)
 {
+    const MotorConst *const_h = &motor->system.const_h;
     uint8_t hall =
-          (GPIO_READ_R(motor->const_h.Hall_GPIO.u) ? 4U : 0U)
-        | (GPIO_READ_R(motor->const_h.Hall_GPIO.v) ? 2U : 0U)
-        | (GPIO_READ_R(motor->const_h.Hall_GPIO.w) ? 1U : 0U);
+          (GPIO_READ_R(const_h->Hall_a.gpio) ? 4U : 0U)
+        | (GPIO_READ_R(const_h->Hall_b.gpio) ? 2U : 0U)
+        | (GPIO_READ_R(const_h->Hall_c.gpio) ? 1U : 0U);
     hall = angle_hall_to_pu[hall];
     return hall;
 }
 
-inline void motor_rotor_hall_curr_upd(MotorParameter *motor)
+/* ---------- SensorLess ---------- */
+
+/* ---------- Proccess ---------- */
+
+inline void motor_rotor_set_overflow(MotorParameter *motor, uint32_t of)
 {
-    motor->rotor_h.curr = motor_rotor_hall_get(motor);
+    motor->rotor_h.overflow = of;
+    __HAL_TIM_SET_AUTORELOAD(motor->system.const_h.Hall_htimx, of);
 }
 
-inline void motor_rotor_hall_prev_set(MotorParameter *motor, uint8_t value)
+void motor_rotor_mode_change(MotorParameter *motor, MotorSensorMode mode)
 {
-    motor->rotor_h.prev = value;
+    if (motor->rotor_h.mode == mode) return;
+    switch (mode)
+    {
+        case MOTOR_SENSOR_UNINIT: return;
+        case MOTOR_SENSOR_SIMULATE:
+        case MOTOR_SENSOR_LESS_VOLTAGE:
+        case MOTOR_SENSOR_LESS_CURRENT:
+        {
+            motor_rotor_hall_disable(motor);
+            break;
+        }
+        case MOTOR_SENSOR_HALL_EXTI:
+        case MOTOR_SENSOR_HALL_PWM_T:
+        {
+            motor_rotor_hall_enable(motor);
+            break;
+        }
+        default: break;
+    }
+    motor->rotor_h.mode = mode;
 }
 
-void motor_rotor_hall_upd(MotorParameter *motor)
+void motor_rotor_phase_trigger(MotorParameter *motor)
 {
-    uint8_t hall = motor_rotor_hall_get(motor);
-    if (hall == motor->rotor_h.curr) return;
-    motor->rotor_h.curr = hall;
+    switch (motor->rotor_h.mode)
+    {
+        case MOTOR_SENSOR_UNINIT: return;
+        case MOTOR_SENSOR_SIMULATE:
+        case MOTOR_SENSOR_LESS_VOLTAGE:
+        case MOTOR_SENSOR_LESS_CURRENT:
+        {
+            FLAGS_SET(*(motor->system.Hall_Addr_IT), TIM_EGR_CC1G | TIM_EGR_UG);
+            break;
+        }
+        default: break;
+    }
+}
+
+static void phase_upd(MotorParameter *motor, uint8_t phase)
+{
+    if (
+        (phase == UINT8_MAX) ||
+        (phase == motor->rotor_h.curr)
+    ) return;
+    motor->rotor_h.prev = motor->rotor_h.curr;
+    motor->rotor_h.curr = phase;
 }
 
 #define ROTOR_HISTORY_STORE() \
@@ -41,20 +126,20 @@ void motor_rotor_hall_upd(MotorParameter *motor)
         motor->rotor_h.times.sum, \
         time \
     )
-void motor_rotor_speed_upd(MotorParameter *motor)
+static void time_upd(MotorParameter *motor, uint32_t time)
 {
-    uint32_t time = __HAL_TIM_GET_COMPARE(motor->const_h.Hall_htimx, TIM_CHANNEL_1);
     uint8_t reverse = 0;
     if (motor->rotor_h.curr == motor->rotor_h.prev)
     {
+        // Todo
         if (motor->speed_h.fbk_omega < 0) reverse = 1;
     }
-    else if (motor->rotor_h.curr == (motor->rotor_h.prev + 1))
+    else if (motor->rotor_h.curr == ((motor->rotor_h.prev + 1) % 6))
     {
         motor->rotor_h.wrong = 0;
         ROTOR_HISTORY_STORE();
     }
-    else if (motor->rotor_h.curr == (motor->rotor_h.prev - 1))
+    else if (motor->rotor_h.curr == ((motor->rotor_h.prev + 5) % 6))
     {
         motor->rotor_h.wrong = 0;
         ROTOR_HISTORY_STORE();
@@ -77,18 +162,66 @@ void motor_rotor_speed_upd(MotorParameter *motor)
     if (total == 0) return;
     float32_t total_i = 1.0f / (float32_t)total;
     float32_t omega =
-        motor->rotor_h.times.len * motor->calcu_h.omega_fbk * total_i;
+        motor->rotor_h.times.len * motor->system.omega_fbk * total_i;
     if (reverse) omega *= -1.0f;
     motor->speed_h.fbk_omega    = omega;
     motor->speed_h.fbk_rpm      = omega * OMEGA_TO_RPM;
     motor->foc_h.rad_itpl       = (omega >= 0.0f ? 1.0f : -1.0f) *
-        (motor->rotor_h.times.len * motor->calcu_h.foc_it_angle_itpl * total_i);
+        (motor->rotor_h.times.len * motor->system.foc_it_angle_itpl * total_i);
 }
 
-void motor_rotor_stop(MotorParameter *motor)
+void motor_rotor_hall_timer_cbi(MotorParameter *motor)
+{
+    uint32_t time = *(motor->system.Hall_Addr_CCR);
+    switch (motor->rotor_h.mode)
+    {
+        case MOTOR_SENSOR_UNINIT: return;
+        case MOTOR_SENSOR_SIMULATE:
+        {
+
+            phase_upd(motor, motor->rotor_h.virtual);
+            break;
+        }
+        case MOTOR_SENSOR_HALL_EXTI:
+        {
+            phase_upd(motor, motor_rotor_hall_get(motor));
+            break;
+        }
+        default: break;
+    }
+    time_upd(motor, time);
+}
+
+void motor_rotor_pwm_cbi(MotorParameter *motor)
+{
+    uint8_t phase = UINT8_MAX;
+    switch (motor->rotor_h.mode)
+    {
+        case MOTOR_SENSOR_UNINIT: return;
+        case MOTOR_SENSOR_HALL_PWM_T:
+        {
+            phase = motor_rotor_hall_get(motor);
+            break;
+        }
+        case MOTOR_SENSOR_LESS_VOLTAGE:
+        case MOTOR_SENSOR_LESS_CURRENT:
+        {
+            // Todo
+            phase = motor_rotor_hall_get(motor);
+            break;
+        }
+        default: return;
+    }
+    phase_upd(motor, phase);
+}
+
+/* ---------- Stop ---------- */
+
+void motor_rotor_stop_cbi(MotorParameter *motor)
 {
     motor->rotor_h.stop_tick = HAL_GetTick();
     motor->rotor_h.times = (typeof(motor->rotor_h.times)){0};
+    motor->rotor_h.prev = motor->rotor_h.curr;
     motor->speed_h.fbk_omega = 0.0f;
     motor->speed_h.fbk_rpm = 0.0f;
 }

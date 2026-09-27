@@ -8,7 +8,7 @@
 
 #define SPI1_TASK_SMAL_MS      5
 #define SPI1_TASK_NEXT_MS   1000
-#define SPI_JSON_START_TRCV(spi, len) spi_start_transceive(&(spi)->spi_p,(spi)->tx_pkt->data,(spi)->rx_pkt->data, (len))
+#define SPI_JSON_START_TRCV(spi, len) spi_start_transceive_dma(&(spi)->spi_p,(spi)->tx_pkt->data,(spi)->rx_pkt->data, (len))
 void StartSpi1Task(void *argument)
 {
     const uint32_t osPeriod_next = pdMS_TO_TICKS(SPI1_TASK_NEXT_MS);

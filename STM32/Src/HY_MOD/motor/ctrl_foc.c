@@ -2,26 +2,27 @@
 #ifdef HY_MOD_STM32_MOTOR
 
 #include "HY_MOD/main/variable_cal.h"
-#include "HY_MOD/motor/main.h"
 #include "HY_MOD/motor/math/trigonometric.h"
 #include "tim.h"
 
-inline void motor_foc_pi_setup(MotorParameter *motor)
+inline void motor_foc_pi_init(MotorParameter *motor)
 {
-    motor->foc_h.pi_omega.Kp = motor->const_h.model->foc_spd_Kp;
-    motor->foc_h.pi_omega.Ki = motor->const_h.model->foc_spd_Ki;
+	const MotorConst *const_h = &motor->system.const_h;
+
+    motor->foc_h.pi_omega.Kp = const_h->model->foc_spd_Kp;
+    motor->foc_h.pi_omega.Ki = const_h->model->foc_spd_Ki;
     motor->foc_h.pi_omega.max =  1.0f;
     motor->foc_h.pi_omega.min = -1.0f;
 
     const float32_t bw =
-        motor->calcu_h.pwm_it_f / MOTOR_I_BW_INDEX * PI_MUL_2;
+        motor->system.pwm_it_f / MOTOR_I_BW_INDEX * PI_MUL_2;
     const float32_t Vbase = MOTOR_VBUS / SQRT3;
-    motor->foc_h.pi_Id_h.Kp = motor->const_h.model->ll * bw / Vbase;
-    motor->foc_h.pi_Id_h.Ki = 1.0f / motor->const_h.model->tau * motor->calcu_h.pwm_T;
+    motor->foc_h.pi_Id_h.Kp = const_h->model->ll * bw / Vbase;
+    motor->foc_h.pi_Id_h.Ki = 1.0f / const_h->model->tau * motor->system.pwm_period;
     motor->foc_h.pi_Id_h.max =  MOTOR_MAX_MODULATION_INDEX;
     motor->foc_h.pi_Id_h.min = -MOTOR_MAX_MODULATION_INDEX;
-    motor->foc_h.pi_Iq_h.Kp = motor->const_h.model->ll * bw / Vbase;
-    motor->foc_h.pi_Iq_h.Ki = 1.0f / motor->const_h.model->tau * motor->calcu_h.pwm_T;
+    motor->foc_h.pi_Iq_h.Kp = const_h->model->ll * bw / Vbase;
+    motor->foc_h.pi_Iq_h.Ki = 1.0f / const_h->model->tau * motor->system.pwm_period;
 }
 
 inline void motor_foc_reset(MotorParameter *motor)
@@ -32,7 +33,7 @@ inline void motor_foc_reset(MotorParameter *motor)
     motor->foc_h.pi_Id_h.out_fix = 0.0f;
 }
 
-inline void motor_foc_hall_exti_cb(MotorParameter *motor)
+inline void motor_foc_hall_timer_cbi(MotorParameter *motor)
 {
     motor->foc_h.rad_acc = 0.0f;
 }
@@ -40,7 +41,7 @@ inline void motor_foc_hall_exti_cb(MotorParameter *motor)
 static inline Result motor_vec_ctrl_angle_upd(MotorParameter *motor)
 {
     uint8_t pos = motor->rotor_h.curr;
-    if (pos == UINT8_MAX)
+    if (pos > 5)
     {
         if (motor->ctrl_h.ref_sys == MOTOR_CTRL_FOC_SIM) pos = 0;
         else return RESULT_ERROR(RES_ERR_NOT_FOUND);
@@ -62,7 +63,7 @@ static inline void motor_vec_ctrl_clarke(MotorParameter *motor)
     {
         // To Per-Unit
         motor->adc_h.fixs[i] =
-            (motor->adc_h.adcs[i].basic.value_fix - avg) / motor->const_h.model->rated_current;
+            (motor->adc_h.adcs[i].basic.value_fix - avg) / motor->system.const_h.model->rated_current;
         motor->foc_h.clarke_h.ABC[i] = motor->adc_h.fixs[i];
     }
     CLARKE_run_ideal(&motor->foc_h.clarke_h);
@@ -95,7 +96,7 @@ static inline void motor_vec_ctrl_park(MotorParameter *motor)
             motor->foc_h.rotor_exp_rad = var_wrap_P(
                 motor->foc_h.rad_acc +
                 motor->foc_h.rotor_rad +
-                motor->const_h.model->hall_angle_comp,
+                motor->system.const_h.model->hall_angle_comp,
                 PI_MUL_2
             );
             break;
@@ -257,6 +258,9 @@ static inline void motor_vec_ctrl_svpwm(MotorParameter *motor)
             break;
         }
     }
+    motor->foc_h.duty_h.iu = 1.0f - motor->foc_h.duty_h.u;
+    motor->foc_h.duty_h.iv = 1.0f - motor->foc_h.duty_h.v;
+    motor->foc_h.duty_h.iw = 1.0f - motor->foc_h.duty_h.w;
 }
 
 #include "main/main.h"
@@ -269,7 +273,7 @@ void motor_foc_run(MotorParameter *motor)
         motor->foc_h.init_cnt--;
         if (motor->foc_h.init_cnt == 0)
         // Todo FOC初始角度測試 先用簡單的120度控制等效於60度換相 讓馬達轉起來再說
-            motor_switch_ctrl_sys(motor, motor->ctrl_h.ref_user);
+            motor_switch_ctrl_system(motor, motor->ctrl_h.ref_user);
         return;
     }
     motor_vec_ctrl_clarke(motor);
@@ -312,11 +316,11 @@ void motor_foc_run(MotorParameter *motor)
 
 void motor_foc_load(MotorParameter *motor)
 {
-    motor->duty_load = motor->foc_h.duty_h;
+    motor->phases_duty_load = motor->foc_h.duty_h;
     motor_timer_load(motor);
 }
 
-void motor_foc_stop(MotorParameter *motor)
+void motor_foc_stop_cbi(MotorParameter *motor)
 {
     motor->foc_h.rad_itpl = 0.0f;
     motor->foc_h.rad_acc  = 0.0f;

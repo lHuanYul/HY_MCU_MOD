@@ -1,7 +1,6 @@
 #pragma once
 #include "main/config.h"
-#if defined(HY_MOD_STM32_SPI_JSON)
-#define HY_MOD_STM32_SPI
+#ifdef HY_MOD_STM32_SPI
 
 #include "HY_MOD/main/fn_state.h"
 #include "HY_MOD/main/typedef.h"
@@ -43,6 +42,6 @@ typedef struct SpiParametar
 Result spi_init(SpiParametar *spi);
 Result spi_start_receive(SpiParametar *spi, uint8_t *buf, uint16_t len);
 Result spi_start_transmit(SpiParametar *spi, uint8_t *buf, uint16_t len);
-Result spi_start_transceive(SpiParametar *spi, uint8_t *tx_buf, uint8_t *rx_buf, uint16_t len);
+Result spi_start_transceive_dma(SpiParametar *spi, uint8_t *tx_buf, uint8_t *rx_buf, uint16_t len);
 
 #endif

@@ -23,16 +23,12 @@ static Result wait_it(SpiParametar *spi, osSemaphoreId_t tag, uint32_t time_out)
     return RESULT_OK(NULL);
 }
 
-Result spi_start_transceive(SpiParametar *spi, uint8_t *tx_buf, uint8_t *rx_buf, uint16_t len)
+Result spi_start_transceive_dma(SpiParametar *spi, uint8_t *tx_buf, uint8_t *rx_buf, uint16_t len)
 {
     GPIO_WRITE(spi->const_h.NSS, 0);
     for(volatile int i = 0; i < 800; i++) __NOP();
     // HAL_SPI_Transmit_IT HAL_SPI_Transmit_DMA
-#ifdef STM32H7
     if (HAL_SPI_TransmitReceive_DMA(spi->const_h.hspix, tx_buf, rx_buf, len) != HAL_OK)
-#else
-    if (HAL_SPI_TransmitReceive_DMA(spi->const_h.hspix, tx_buf, rx_buf, len) != HAL_OK)
-#endif
     {
         GPIO_WRITE(spi->const_h.NSS, 1);
         return RESULT_ERROR(RES_ERR_FAIL);

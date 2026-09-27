@@ -4,11 +4,11 @@
 
 #include "HY_MOD/main/fn_state.h"
 
-void motor_foc_pi_setup(MotorParameter *motor);
+void motor_foc_pi_init(MotorParameter *motor);
 void motor_foc_reset(MotorParameter *motor);
-void motor_foc_hall_exti_cb(MotorParameter *motor);
+void motor_foc_hall_timer_cbi(MotorParameter *motor);
 void motor_foc_run(MotorParameter *motor);
 void motor_foc_load(MotorParameter *motor);
-void motor_foc_stop(MotorParameter *motor);
+void motor_foc_stop_cbi(MotorParameter *motor);
 
 #endif

@@ -6,7 +6,7 @@
 #include "HY_MOD/main/variable_cal.h"
 
 #ifdef MCU_MOTOR_CTRL
-#include "HY_MOD/motor/main.h"
+#include "HY_MOD/motor/basic.h"
 
 Result fdcan_pkt_ist_read(FdcanParametar *fdcan, FdcanPkt *pkt)
 {
@@ -22,26 +22,26 @@ Result fdcan_pkt_ist_read(FdcanParametar *fdcan, FdcanPkt *pkt)
             {
                 case CMD_WHEEL_B0_COAST:
                 {
-                    motor_set_rotate_mode(motor, MOTOR_ROT_COAST);
+                    motor_set_rotate_mode(motor, MOTOR_ROTATE_COAST);
                     return RESULT_OK(NULL);
                 }
                 case CMD_WHEEL_B0_BREAK:
                 {
-                    motor_set_rotate_mode(motor, MOTOR_ROT_BREAK);
+                    motor_set_rotate_mode(motor, MOTOR_ROTATE_BREAK);
                     return RESULT_OK(NULL);
                 }
                 case CMD_WHEEL_B0_NORMAL:
                 {
                     if (pkt->len < 6) break;
-                    motor_set_rotate_mode(motor, MOTOR_ROT_NORMAL);
+                    motor_set_rotate_mode(motor, MOTOR_ROTATE_NORMAL);
                     uint8_t u8s[sizeof(float32_t)];
                     memcpy(u8s, pkt->data + 2, sizeof(float32_t));
-                    motor_set_spd(motor, var_u8_to_f32_be(u8s));
+                    motor_set_speed(motor, var_u8_to_f32_be(u8s));
                     return RESULT_OK(NULL);
                 }
                 case CMD_WHEEL_B0_LOCK:
                 {
-                    motor_set_rotate_mode(motor, MOTOR_ROT_LOCK);
+                    motor_set_rotate_mode(motor, MOTOR_ROTATE_LOCK);
                     return RESULT_OK(NULL);
                 }
                 case (uint8_t)0xF0:

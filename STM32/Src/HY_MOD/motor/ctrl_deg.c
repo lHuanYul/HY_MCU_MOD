@@ -1,12 +1,10 @@
 #include "HY_MOD/motor/ctrl_deg.h"
 #ifdef HY_MOD_STM32_MOTOR
 
-#include "HY_MOD/motor/main.h"
-
 #define HIGH_PASS   1
 #define NONE_PASS   0
 #define LOW__PASS  -1
-static const int8_t seq_map_120[][3] = {
+static const int8_t seq_map_120[9][3] = {
     // 註解從頭順序是ccw 標準化角度-霍爾
     { HIGH_PASS, NONE_PASS, LOW__PASS }, // 0-4
     { NONE_PASS, HIGH_PASS, LOW__PASS }, // 1-6
@@ -21,51 +19,62 @@ static const int8_t seq_map_120[][3] = {
 
 static void ctrl_load(MotorParameter *motor, int8_t seq[3], float32_t duty)
 {
+    // 上臂全關
+    motor_timer_load_inner(motor, 0, 0, 0);
+
+    const MotorPhaseConst *phase = motor->system.const_h.PWM_uvw;
     uint8_t i;
-    for (i = 0; i < 3; i++)
-    {
-        __HAL_TIM_SET_COMPARE(motor->const_h.PWM_htimx, motor->const_h.PWM_TIM_CH_x.uvw[i], 0);
-    }
     for (i = 0; i < 3; i++)
     {
         if (seq[i] == HIGH_PASS)
         {
-            motor->deg_h.duty_h.uvw[i] = duty;
-            GPIO_WRITE_R(motor->const_h.PWMN_GPIO.uvw[i], 0);
+            motor->deg_h.phases_duty.uvw[i] = duty;
+            motor->deg_h.phases_duty.uvw[i+3] = 0.0f;
+            GPIO_WRITE_R(phase[i].pwmn_gpio, 0);
         }
         else if (seq[i] == LOW__PASS)
         {
-            motor->deg_h.duty_h.uvw[i] = 0.0f;
-            GPIO_WRITE_R(motor->const_h.PWMN_GPIO.uvw[i], 1);
+            motor->deg_h.phases_duty.uvw[i] = 0.0f;
+            motor->deg_h.phases_duty.uvw[i+3] = 1.0f;
+            GPIO_WRITE_R(phase[i].pwmn_gpio, 1);
         }
         else
         {
-            motor->deg_h.duty_h.uvw[i] = 0.0f;
-            GPIO_WRITE_R(motor->const_h.PWMN_GPIO.uvw[i], 0);
+            motor->deg_h.phases_duty.uvw[i] = 0.0f;
+            motor->deg_h.phases_duty.uvw[i+3] = 0.0f;
+            GPIO_WRITE_R(phase[i].pwmn_gpio, 0);
         }
     }
-    motor->duty_load = motor->deg_h.duty_h;
+    motor->phases_duty_load = motor->deg_h.phases_duty;
     motor_timer_load(motor);
 }
 
-void motor_deg_test_HL(MotorParameter *motor)
+void motor_deg_test(MotorParameter *motor)
 {
     uint8_t i;
+    float32_t duty = 1.0f;
     int8_t seq[3] = {0};
-    if (motor->ctrl_h.ref_sys == MOTOR_CTRL_TEST_HIGH)
-        for (i = 0; i < 3; i++) seq[i] = seq_map_120[6][i];
-    else
-        for (i = 0; i < 3; i++) seq[i] = seq_map_120[7][i];
-    motor->duty_load = motor->deg_h.duty_h;
-    ctrl_load(motor, seq, 1.0f);
-}
-
-void motor_deg_test_WAVE(MotorParameter *motor)
-{
-    uint8_t i;
-    int8_t seq[3] = {0};
-    for (i = 0; i < 3; i++) seq[i] = seq_map_120[6][i];
-    ctrl_load(motor, seq, 0.3f);
+    switch (motor->ctrl_h.ref_sys)
+    {
+        case MOTOR_CTRL_TEST_HIGH:
+        {
+            for (i = 0; i < 3; i++) seq[i] = seq_map_120[6][i];
+            break;
+        }
+        case MOTOR_CTRL_TEST_LOW:
+        {
+            for (i = 0; i < 3; i++) seq[i] = seq_map_120[7][i];
+            break;
+        }
+        case MOTOR_CTRL_TEST_WAVE:
+        {
+            duty = 0.3f;
+            for (i = 0; i < 3; i++) seq[i] = seq_map_120[6][i];
+            break;
+        }
+        default: return;
+    }
+    ctrl_load(motor, seq, duty);
 }
 
 void motor_deg_120_load(MotorParameter *motor, uint8_t id)
@@ -74,19 +83,20 @@ void motor_deg_120_load(MotorParameter *motor, uint8_t id)
     int8_t seq[3] = {0};
     switch (motor->rotate_h.ref_sys)
     {
-        case MOTOR_ROT_COAST:
+    	case MOTOR_ROTATE_UNINIT: return;
+        case MOTOR_ROTATE_COAST:
         {
             motor->deg_h.duty_val = 1.0f;
             for (i = 0; i < 3; i++) seq[i] = seq_map_120[8][i];
             break;
         }
-        case MOTOR_ROT_BREAK:
-        case MOTOR_ROT_LOCK:
+        case MOTOR_ROTATE_BREAK:
+        case MOTOR_ROTATE_LOCK:
         {
             for (i = 0; i < 3; i++) seq[i] = seq_map_120[7][i];
             break;
         }
-        case MOTOR_ROT_NORMAL:
+        case MOTOR_ROTATE_NORMAL:
         {
             for (i = 0; i < 3; i++)
             {
@@ -97,12 +107,13 @@ void motor_deg_120_load(MotorParameter *motor, uint8_t id)
             }
             break;
         }
-        case MOTOR_ROT_LOCK_FIN:
+        case MOTOR_ROTATE_LOCK_FIN:
         {
             motor->deg_h.duty_val = 0.2f;
-            // !
-            // for (i = 0; i < 3; i++)
-            //     seq[i] = seq_map_120[index_120_ccw[id]][i];
+            // Todo
+            // motor->rotor_h.virtual = motor->rotor_h.curr;
+            for (i = 0; i < 3; i++)
+                seq[i] = seq_map_120[motor->rotor_h.virtual][i];
             break;
         }
     }
@@ -129,19 +140,19 @@ void motor_deg_120_load(MotorParameter *motor, uint8_t id)
 //     int8_t seq[3] = {0};
 //     switch (motor->rotate_h.ref_sys)
 //     {
-//         case MOTOR_ROT_COAST:
+//         case MOTOR_ROTATE_COAST:
 //         {
 //             motor->deg_h.duty_val = 1.0f;
 //             for (i = 0; i < 3; i++) seq[i] = seq_map_180[6][i];
 //             break;
 //         }
-//         case MOTOR_ROT_BREAK:
-//         case MOTOR_ROT_LOCK:
+//         case MOTOR_ROTATE_BREAK:
+//         case MOTOR_ROTATE_LOCK:
 //         {
 //             for (i = 0; i < 3; i++) seq[i] = seq_map_180[7][i];
 //             break;
 //         }
-//         case MOTOR_ROT_NORMAL:
+//         case MOTOR_ROTATE_NORMAL:
 //         {
 //             for (i = 0; i < 3; i++)
 //             {
@@ -152,7 +163,7 @@ void motor_deg_120_load(MotorParameter *motor, uint8_t id)
 //             }
 //             break;
 //         }
-//         case MOTOR_ROT_LOCK_FIN:
+//         case MOTOR_ROTATE_LOCK_FIN:
 //         {
 //             motor->deg_h.duty_val = 0.2f;
 //             for (i = 0; i < 3; i++)
@@ -175,40 +186,33 @@ void motor_deg_120_load(MotorParameter *motor, uint8_t id)
 
 #include "HY_MOD/motor/rotor.h"
 
-void motor_deg_direc_upd(MotorParameter *motor)
+void motor_deg_check_rev(MotorParameter *motor)
 {
-    motor->rotate_h.ref_sys = motor->rotate_h.ref_user;
-    switch (motor->ctrl_h.ref_sys)
-    {
-        case MOTOR_CTRL_120_NORMAL:
-        case MOTOR_CTRL_120_T:
-        {
-            if (
-                motor->speed_h.ref_omega == 0.0f ||
-                var_f32_same_sign(motor->speed_h.ref_omega, motor->speed_h.fbk_omega)
-            ) break;
-            motor_switch_ctrl_sys(motor, MOTOR_CTRL_120_SW);
-        }
-        case MOTOR_CTRL_120_SW:
-        {
-            if (motor->speed_h.fbk_omega < motor->speed_h.save_stop_omega)
-            {
-                if (motor->speed_h.ref_omega >= 0.0f)
-                    motor->deg_h.reverse = 0;
-                else
-                    motor->deg_h.reverse = 1;
-                motor_rotor_stop(motor);
-                motor_switch_ctrl_sys(motor, MOTOR_CTRL_120_NORMAL);
-                break;
-            }
-            motor->rotate_h.ref_sys = MOTOR_ROT_COAST;
-            break;
-        }
-        default: break;
-    }
+    if (
+        motor->speed_h.ref_omega == 0.0f ||
+        var_f32_same_sign(motor->speed_h.ref_omega, motor->speed_h.fbk_omega)
+    ) return;
+    motor->ctrl_h.ref_sys_temp = motor->ctrl_h.ref_sys;
+    motor_switch_ctrl_system(motor, MOTOR_CTRL_120_DIREC_SW);
 }
 
-void motor_deg_stop(MotorParameter *motor)
+void motor_deg_proc_safe_rev(MotorParameter *motor)
+{
+    if (fabsf(motor->speed_h.fbk_omega) > motor->speed_h.save_stop_omega)
+    {
+        motor->rotate_h.ref_sys = MOTOR_ROTATE_COAST;
+        return;
+    }
+    if (motor->speed_h.ref_omega >= 0.0f)
+        motor->deg_h.reverse = 0;
+    else
+        motor->deg_h.reverse = 1;
+    motor_rotor_stop_cbi(motor);
+    motor_switch_ctrl_system(motor, motor->ctrl_h.ref_sys_temp);
+    return;
+}
+
+void motor_deg_stop_cbi(MotorParameter *motor)
 {
     PID_reset(&motor->deg_h.pi_omega);
 }

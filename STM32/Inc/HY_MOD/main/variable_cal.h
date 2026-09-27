@@ -3,17 +3,34 @@
 #include "HY_MOD/main/fn_state.h"
 #include "HY_MOD/main/typedef.h"
 
+// 單一 bit 遮罩常數 (第 0 位元為 1)
 #define BIT_SNG_MASK                (0x01UL)
+// 將指定 bit 設為 1
 #define BIT_SNG_SET(flags, bit)     ((flags) |= (0x01UL << (bit)))
+// 將指定 bit 清除為 0
 #define BIT_SNG_CLR(flags, bit)     ((flags) &= ~(0x01UL << (bit)))
+// 反轉 (Toggle) 指定 bit
 #define BIT_SNG_REV(flags, bit)     ((flags) ^= (0x01UL << (bit)))
+// 取得指定 bit 的值 (右移至第 0 位，結果為 0 或 1)
 #define BIT_SNG_GET(flags, bit)     (((flags) >> (bit)) & 0x01UL)
+// 檢查指定 bit 是否為 1 (保留原位元權重，非 0 即為 1)
 #define BIT_SNG_CHK(flags, bit)     ((flags) & (0x01UL << (bit)))
+// 低 4 位元遮罩 (Bit 0~3)
 #define BIT_0_3_MASK                (0x0FUL)
+// 次 4 位元遮罩 (Bit 4~7)
 #define BIT_4_7_MASK                (0xF0UL)
-#define FLAGS_SET(flags, mask, val) ((flags) = ((flags) & ~(mask)) | ((val) & (mask)))
+// flags: 目標變數
+// mask : 位元遮罩（定義欲操作的特定位元欄位範圍，對應位元為 1 代表要處理）
+// val  : 欲寫入或比對的數值（配合 mask 寫入或與 mask 範圍內的欄位進行比較）
+// 依據遮罩寫入指定的多位元數值
+#define FLAGS_FULLSET(flags, mask, val) ((flags) = ((flags) & ~(mask)) | ((val) & (mask)))
+// 依據遮罩將指定位元強制置 1 (設為 1)
+#define FLAGS_SET(flags, mask)      ((flags) |= (mask))
+// 依據遮罩清除指定的多位元欄位 (設為 0)
 #define FLAGS_CLR(flags, mask)      ((flags) &= ~(mask))
+// 依據遮罩擷取指定的多位元欄位數值
 #define FLAGS_GET(flags, mask)      ((flags) & (mask))
+// 檢查遮罩範圍內的位元值是否等於目標值 val
 #define FLAGS_CHK(flags, mask, val) (((flags) & (mask)) == (val))
 
 #define VAR_CLAMPF(val, min, max)   \

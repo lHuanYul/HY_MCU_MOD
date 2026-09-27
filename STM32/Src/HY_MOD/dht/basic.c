@@ -30,7 +30,7 @@ void dht_tim_mode_switch(DhtParametar *dht)
         // 行為: CNT < CCR 時為 Inactive (Low), CNT > CCR 時為 Active (High/Float)
         // 目的: 拉低電位 18ms (Start Signal) -> 放開拉高 (Wait Response) -> Update 中斷
         tmpccmr1 |= (0x7U << TIM_CCMR1_OC1M_Pos);
-        // ! 不可移除 否則CPU鎖定
+        // 不可移除 否則CPU鎖定
         Instance->CCMR1 = tmpccmr1;
         
         // 設定 ARR 與 CCR
