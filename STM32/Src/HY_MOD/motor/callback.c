@@ -12,7 +12,7 @@ __weak void motor_start_spin(MotorParameter *motor)
     motor_rotor_mode_change(motor, MOTOR_SENSOR_SIMULATE);
     motor_switch_ctrl(motor, MOTOR_CTRL_120_SIMULATE);
     motor_set_rotate_mode(motor, MOTOR_ROTATE_NORMAL);
-    motor_set_speed(motor, 1.0f);
+    motor_set_speed(motor, -1.0f);
 }
 
 /*
@@ -40,7 +40,9 @@ static inline void rotate_status_upd(MotorParameter *motor)
     // {
     //     motor_set_rotate_mode(motor, MOTOR_ROTATE_COAST);
     // }
+
     if (motor->ctrl_h.ref_sys == MOTOR_CTRL_INIT) return;
+    motor->rotate_h.ref_sys = motor->rotate_h.ref_user;
     switch (motor->rotate_h.ref_sys)
     {
     	case MOTOR_ROTATE_UNINIT: return;
@@ -70,10 +72,14 @@ static inline void rotate_status_upd(MotorParameter *motor)
             PI_run(&motor->foc_h.pi_omega);
             switch (motor->ctrl_h.ref_sys)
             {
-                case MOTOR_CTRL_120_DUTY:
                 case MOTOR_CTRL_120_SIMULATE:
+                case MOTOR_CTRL_120_DUTY:
                 {
-                    VAR_CLAMPF_STATIC(motor->deg_h.duty_val, motor->speed_h.ref_rpm, 0.0f, 1.0f);
+                    VAR_CLAMPF_STATIC(
+                        motor->deg_h.duty_val,
+                        fabsf(motor->speed_h.ref_rpm),
+                        0.0f, 1.0f
+                    );
                     break;
                 }
                 default:
@@ -91,20 +97,14 @@ static inline void rotate_status_upd(MotorParameter *motor)
 /* 20kHz
 void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef *hadc)
 */
-#define PWM_TIM_IT_CNT_MAX 200000 // 10s
+#define PWM_TIM_IT_CNT_MAX  200000 // 10s
+#define ROTATE_SIM_SPEED    10000
 void motor_pwm_cb(MotorParameter *motor)
 {
     motor_adcs_upd(motor);
     motor_rotor_pwm_cbi(motor);
-    if (motor->tim_tick % 200 == 0)
-    {
-        motor->rotate_h.ref_sys = motor->rotate_h.ref_user;
-        rotate_status_upd(motor);
-    }
-    if (motor->tim_tick % 1000 == 0)
-    {
-        fdcan_h.motor_rpm_en = 1;
-    }
+    if (motor->tim_tick % 200 == 0) rotate_status_upd(motor);
+    if (motor->tim_tick % 1000 == 0) fdcan_h.motor_rpm_en = 1;
 
     switch (motor->ctrl_h.ref_sys)
     {
@@ -130,27 +130,27 @@ void motor_pwm_cb(MotorParameter *motor)
         case MOTOR_CTRL_120_NORMAL:
         case MOTOR_CTRL_120_DUTY:
         {
-            if (motor->tim_tick % 200 == 0) motor_deg_check_rev(motor);
+            if (motor->tim_tick % 200 == 0) motor_deg_check_reverse(motor);
             motor_deg_120_load(motor, motor->rotor_h.curr);
             break;
         }
         case MOTOR_CTRL_120_DIREC_SW:
         {
-            if (motor->tim_tick % 200 == 0) motor_deg_proc_safe_rev(motor);
+            if (motor->tim_tick % 200 == 0) motor_deg_proc_safe_reverse(motor);
             motor_deg_120_load(motor, motor->rotor_h.curr);
             break;
         }
         case MOTOR_CTRL_120_SIMULATE:
         {
-            if (motor->tim_tick % 10000 == 0)
+            if (motor->tim_tick % 200 == 0) motor_deg_check_reverse(motor);
+            motor_deg_120_load(motor, motor->rotor_h.curr);
+            if (motor->tim_tick % ROTATE_SIM_SPEED == 0)
             {
-                motor->rotor_h.virtual = (motor->rotor_h.virtual + 1) % 6;
+                if (!motor->deg_h.reverse)
+                    motor->rotor_h.virtual = (motor->rotor_h.virtual + 1) % 6;
+                else
+                    motor->rotor_h.virtual = (motor->rotor_h.virtual + 5) % 6;
                 motor_rotor_phase_trigger(motor);
-            }
-            if (motor->tim_tick % 200 == 0) 
-            {
-                motor_deg_check_rev(motor);
-                motor_deg_120_load(motor, motor->rotor_h.curr);
             }
             break;
         }

@@ -25,7 +25,7 @@ uint32_t hyrun[5] = {0};
 Result us_sensor_start(void)
 {
     USSensor *uss = &us_sensor_head;
-    if (uss->state != USS_STATE_WAITING) return RESULT_ERROR(RES_ERR_INVALID);
+    if (uss->state != USS_STATE_WAITING) return RESULT_ERROR(RESULT_ERROR_INVALID);
     hyrun[0]++;
     uss->state = USS_STATE_RUNNING;
     HAL_GPIO_WritePin(uss->const_h.trig_GPIOx, uss->const_h.trig_Pin, GPIO_PIN_SET);
@@ -35,7 +35,7 @@ Result us_sensor_start(void)
 const Result us_sensor_enable(void)
 {
     USSensor *uss = &us_sensor_head;
-    if (uss->state != USS_STATE_STOP) return RESULT_ERROR(RES_ERR_BUSY);
+    if (uss->state != USS_STATE_STOP) return RESULT_ERROR(RESULT_ERROR_BUSY);
     HAL_TIM_Base_Start_IT(uss->const_h.htimx);
     HAL_TIM_PWM_Start_IT(uss->const_h.htimx, uss->const_h.TIM_CHANNEL_x);
     __HAL_TIM_SET_COMPARE(uss->const_h.htimx, uss->const_h.TIM_CHANNEL_x, 10);
@@ -47,7 +47,7 @@ const Result us_sensor_enable(void)
 Result us_sensor_tri_off(void)
 {
     USSensor *uss = &us_sensor_head;
-    if (uss->state != USS_STATE_RUNNING) return RESULT_ERROR(RES_ERR_INVALID);
+    if (uss->state != USS_STATE_RUNNING) return RESULT_ERROR(RESULT_ERROR_INVALID);
     hyrun[1]++;
     HAL_GPIO_WritePin(uss->const_h.trig_GPIOx, uss->const_h.trig_Pin, GPIO_PIN_RESET);
     return RESULT_OK(uss);
@@ -74,7 +74,7 @@ Result us_sensor_overflow(void)
         us_sensor_start();
         return RESULT_OK(uss);
     }
-    else return RESULT_ERROR(RES_ERR_INVALID);
+    else return RESULT_ERROR(RESULT_ERROR_INVALID);
 }
 
 int text_a = 0;
@@ -82,7 +82,7 @@ Result us_sensor_echo(void)
 {
     text_a++;
     USSensor *uss = &us_sensor_head;
-    if (uss->state != USS_STATE_RUNNING) return RESULT_ERROR(RES_ERR_INVALID);
+    if (uss->state != USS_STATE_RUNNING) return RESULT_ERROR(RESULT_ERROR_INVALID);
     hyrun[2]++;
     uss->state = USS_STATE_STOP;
     const USSConst *const_h = &uss->const_h;

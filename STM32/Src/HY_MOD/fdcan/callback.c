@@ -20,7 +20,7 @@ void fdcan_tx_fifo_cb(FdcanParametar *fdcan, uint32_t TxEventFifoITs)
     if (ITS_CHECK(TxEventFifoITs, FDCAN_IT_TX_EVT_FIFO_NEW_DATA))
     {
         FDCAN_TxEventFifoTypeDef txEvent;
-        ERROR_CHECK_HAL_HANDLE(HAL_FDCAN_GetTxEvent(fdcan->const_h.hfdcanx, &txEvent));
+        RESULT_HAL_CHECK_HANDLE(HAL_FDCAN_GetTxEvent(fdcan->const_h.hfdcanx, &txEvent));
         
         RESULT_CHECK_HANDLE(fdcan_tx_push(fdcan));
     }
@@ -38,7 +38,7 @@ void fdcan_rx_fifo0_cb(FdcanParametar *fdcan, uint32_t RxFifo0ITs)
     {
         FdcanPkt pkt = {0};
 		FDCAN_RxHeaderTypeDef header = {0};
-        ERROR_CHECK_HAL_HANDLE(HAL_FDCAN_GetRxMessage(
+        RESULT_HAL_CHECK_HANDLE(HAL_FDCAN_GetRxMessage(
             fdcan->const_h.hfdcanx, FDCAN_RX_FIFO0, &header, pkt.data));
         RESULT_CHECK_HANDLE(fdcan_pkt_set_len(&pkt, header.DataLength));
 		fdcan_pkt_set_id(&pkt, header.Identifier);
@@ -50,7 +50,7 @@ void fdcan_rx_fifo0_cb(FdcanParametar *fdcan, uint32_t RxFifo0ITs)
 	}
 }
 
-ATTR_WEAK Result fdcan_pkt_ist_read(FdcanParametar *fdcan, FdcanPkt *pkt) { return RESULT_ERROR(RES_ERR_NOT_FOUND); }
+ATTR_WEAK Result fdcan_pkt_ist_read(FdcanParametar *fdcan, FdcanPkt *pkt) { return RESULT_ERROR(RESULT_ERROR_NOT_FOUND); }
 void fdcan_rx_fifo1_cb(FdcanParametar *fdcan, uint32_t RxFifo1ITs)
 {
     fdcan->alive_tick = HAL_GetTick();
@@ -59,7 +59,7 @@ void fdcan_rx_fifo1_cb(FdcanParametar *fdcan, uint32_t RxFifo1ITs)
     {
 		FdcanPkt pkt = {0};
 		FDCAN_RxHeaderTypeDef header = {0};
-        ERROR_CHECK_HAL_HANDLE(HAL_FDCAN_GetRxMessage(
+        RESULT_HAL_CHECK_HANDLE(HAL_FDCAN_GetRxMessage(
             fdcan->const_h.hfdcanx, FDCAN_RX_FIFO1, &header, pkt.data));
         RESULT_CHECK_HANDLE(fdcan_pkt_set_len(&pkt, header.DataLength));
 		fdcan_pkt_set_id(&pkt, header.Identifier);

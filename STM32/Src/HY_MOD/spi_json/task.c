@@ -52,7 +52,7 @@ void StartSpi1Task(void *argument)
                 spi->tx_pkt->len = sizeof(SPI_LENGTH_H);
                 memcpy(spi->tx_pkt->data, SPI_LENGTH_H, sizeof(SPI_LENGTH_H));
                 Result res = json_pkt_buf_get(&spi_trsm_buf);
-                if (RESULT_CHECK_RAW(res))
+                if (RESULT_CHECK_FAIL(res))
                 {
                     spi->tx_hold = NULL;
                     var_u16_to_u8_be(0, (spi->tx_pkt->data + 3));

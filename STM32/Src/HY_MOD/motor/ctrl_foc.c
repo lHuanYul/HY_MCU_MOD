@@ -44,7 +44,7 @@ static inline Result motor_vec_ctrl_angle_upd(MotorParameter *motor)
     if (pos > 5)
     {
         if (motor->ctrl_h.ref_sys == MOTOR_CTRL_FOC_SIM) pos = 0;
-        else return RESULT_ERROR(RES_ERR_NOT_FOUND);
+        else return RESULT_ERROR(RESULT_ERROR_NOT_FOUND);
     }
     motor->foc_h.rotor_rad = pos * PI_DIV_3;
     return RESULT_OK(motor);
@@ -170,7 +170,7 @@ static inline void motor_vec_ctrl_ipark(MotorParameter *motor)
     IPARK_run(&motor->foc_h.ipark_h);
     Result res = trigo_atan(
         motor->foc_h.ipark_h.Alpha, motor->foc_h.ipark_h.Beta, &motor->foc_h.magn_rad);
-    if (RESULT_CHECK_RAW(res))
+    if (RESULT_CHECK_FAIL(res))
     {
         if (motor->ctrl_h.ref_sys == MOTOR_CTRL_FOC_SIM) motor->foc_h.magn_rad = 0.0f;
         else Error_Handler();

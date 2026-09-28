@@ -51,7 +51,7 @@ typedef struct MotorHallConst
     // uint32_t    tim_ch;
 } MotorHallConst;
 
-// CONST: constant
+// 預寫好於 Core/Src/main/motor.c
 typedef struct MotorConst
 {
     // 馬達data sheet
@@ -184,16 +184,6 @@ typedef struct MotorRotateParam
     MotorRotateMode ref_sys;
 } MotorRotateParam;
 
-// SPD Parameter
-typedef struct MotorSpeedParame
-{
-    float32_t       ref_rpm;
-    float32_t       ref_omega;
-    float32_t       fbk_rpm;
-    float32_t       fbk_omega;
-    const float32_t save_stop_omega;
-} MotorSpeedParame;
-
 typedef struct MotorADC
 {
     const AdcCurrentModel *model;
@@ -277,6 +267,16 @@ typedef struct MotorRotorParam
     // 停轉時間
     uint32_t                stop_tick;
 } MotorRotorParam;
+
+// SPD Parameter
+typedef struct MotorSpeedParame
+{
+    float32_t       ref_rpm;
+    float32_t       ref_omega;
+    float32_t       fbk_rpm;
+    float32_t       fbk_omega;
+    const float32_t save_stop_omega;
+} MotorSpeedParame;
 
 typedef union MotorPhaseDuty
 {
@@ -367,14 +367,14 @@ typedef struct MotorParameter
     MotorCtrlParam              ctrl_h;
     // 馬達旋轉模式 (滑行與剎車等)
     MotorRotateParam            rotate_h;
-    // 從座往轉子 順時針為負
-    MotorSpeedParame            speed_h;
     // 計時中斷計數
     uint32_t                    tim_tick;
     // ADC
     MotorADCParame              adc_h;
     // 轉子
     volatile MotorRotorParam    rotor_h;
+    // 從座往轉子 順時針為負
+    MotorSpeedParame            speed_h;
     // 120度控制
     MotorDEGParam               deg_h;
     // FOC控制
@@ -391,20 +391,67 @@ typedef struct MotorParameter
 
 #include "HY_MOD/main/fn_state.h"
 
+/**
+ * @brief 初始化馬達控制系統 (包含常數換算、ADC校正、PWM與霍爾定時器啟動)
+ * 
+ * @param motor 馬達控制參數結構體指標
+ */
 void motor_init(MotorParameter *motor);
+/**
+ * @brief 直接寫入三相 PWM 定時器的比較暫存器 (CCR)
+ * 
+ * @param motor 馬達控制參數結構體指標
+ * @param u     U 相 CCR 原始計數值
+ * @param v     V 相 CCR 原始計數值
+ * @param w     W 相 CCR 原始計數值
+ */
 void motor_timer_load_inner(MotorParameter *motor, uint32_t u, uint32_t v, uint32_t w);
+/**
+ * @brief 根據當前三相占空比 (phases_duty_load) 限幅並計算寫入 PWM 定時器
+ * 
+ * @param motor 馬達控制參數結構體指標
+ */
 void motor_timer_load(MotorParameter *motor);
+/**
+ * @brief 初始化三相電流 (及電壓) ADC 取樣結構體與校正參數
+ * 
+ * @param motor 馬達控制參數結構體指標
+ */
 void motor_adcs_init(MotorParameter *motor);
-// 電流進motor為 正
+/**
+ * @brief 更新注入組 ADC 原始取樣值並換算 (規定流入馬達繞組為正電流)
+ * 
+ * @param motor 馬達控制參數結構體指標
+ */
 void motor_adcs_upd(MotorParameter *motor);
 /**
- * @brief 設定轉速 從尾往轉子看 逆時針為正
- *
- * @param rpm 速度 ( DUTY 模式下為 DUTY 值 )
+ * @brief 設定目標轉速 (從尾端向轉子看，逆時針 CCW 為正)
+ * 
+ * @param motor 馬達控制參數結構體指標
+ * @param rpm   目標轉速 (正負代表轉向): 
+ *              在 DUTY 模式下作為占空比使用，範圍 [-1.0, 1.0]，正負同樣代表轉向。
  */
 void motor_set_speed(MotorParameter *motor, float32_t rpm);
+/**
+ * @brief 設定馬達運轉/停機模式 (滑行、煞車、鎖軸、正常運轉等)
+ * 
+ * @param motor 馬達控制參數結構體指標
+ * @param mode  目標旋轉模式
+ */
 void motor_set_rotate_mode(MotorParameter *motor, MotorRotateMode mode);
+/**
+ * @brief 使用者請求切換馬達控制模式 (更新 ref_user 並自動配置內部計數與狀態)
+ * 
+ * @param motor 馬達控制參數結構體指標
+ * @param ctrl  目標控制模式 (120度方波、FOC、開環測試等)
+ */
 void motor_switch_ctrl(MotorParameter *motor, MotorCtrlMode ctrl);
+/**
+ * @brief 系統內部狀態機切換控制模式 (切換下橋 PWMN GPIO/AF 模式並配置計時器溢位週期)
+ * 
+ * @param motor 馬達控制參數結構體指標
+ * @param ctrl  目標控制模式
+ */
 void motor_switch_ctrl_system(MotorParameter *motor, MotorCtrlMode ctrl);
 
 #endif

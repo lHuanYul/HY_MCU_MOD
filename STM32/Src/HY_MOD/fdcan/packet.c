@@ -5,7 +5,7 @@
 
 Result fdcan_pkt_get_byte(FdcanPkt *pkt, uint8_t id, uint8_t* container)
 {
-    if (pkt->len <= id) return RESULT_ERROR(RES_ERR_NOT_FOUND);
+    if (pkt->len <= id) return RESULT_ERROR(RESULT_ERROR_NOT_FOUND);
     *container = pkt->data[id];
     return RESULT_OK(container);
 }
@@ -17,7 +17,7 @@ inline void fdcan_pkt_set_id(FdcanPkt *pkt, uint32_t id)
 
 Result fdcan_pkt_set_len(FdcanPkt *pkt, uint8_t len)
 {
-    if (len > FDCAN_PKT_LEN) return RESULT_ERROR(RES_ERR_FULL);
+    if (len > FDCAN_PKT_LEN) return RESULT_ERROR(RESULT_ERROR_FULL);
     pkt->len = len;
     return RESULT_OK(pkt);
 }
@@ -28,7 +28,7 @@ Result fdcan_pkt_set_len(FdcanPkt *pkt, uint8_t len)
 Result fdcan_ring_push(FdcanRing *self, FdcanPkt *pkt, uint8_t drop)
 {
     if (drop && (self->in - self->out) >= self->cap)
-        return RESULT_ERROR(RES_ERR_FULL);
+        return RESULT_ERROR(RESULT_ERROR_FULL);
     uint32_t real_idx = self->in & RING_MASK;
     self->buf[real_idx] = *pkt;
     __DMB();
@@ -40,7 +40,7 @@ Result fdcan_ring_pop(FdcanRing *self, FdcanPkt *pkt)
 {
     uint32_t cur_in = self->in;
     uint32_t cur_out = self->out;
-    if (cur_in == cur_out) return RESULT_ERROR(RES_ERR_EMPTY);
+    if (cur_in == cur_out) return RESULT_ERROR(RESULT_ERROR_EMPTY);
     // 無號數相減，免疫溢位
     if ((cur_in - cur_out) > self->cap) 
     {

@@ -31,16 +31,16 @@ static Result restart_check(SD_CARD *sd_card)
     sd_running = 2;
     sd_card->MSD_state = BSP_SD_Init();
     FATFS_LinkDriver(&SD_Driver, sd_card->const_h.SDPath);
-    if (sd_card->MSD_state != MSD_OK) return RESULT_ERROR(RES_ERR_FAIL);
+    if (sd_card->MSD_state != MSD_OK) return RESULT_ERROR(RESULT_ERROR_FAIL);
     uint32_t t=0;
     while (BSP_SD_GetCardState() != SD_TRANSFER_OK)
     {
         osDelay(1);
-        if (++t >= 2000) return RESULT_ERROR(RES_ERR_FAIL);
+        if (++t >= 2000) return RESULT_ERROR(RESULT_ERROR_FAIL);
     }
     sd_running = 3;
     sd_card->f_result = f_mount(&sd_card->fatfs_h, sd_card->const_h.SDPath, 1);
-    if (sd_card->f_result != FR_OK) return RESULT_ERROR(RES_ERR_FAIL);
+    if (sd_card->f_result != FR_OK) return RESULT_ERROR(RESULT_ERROR_FAIL);
     sd_card->state = SD_CARD_STATE_READY;
     return RESULT_OK(sd_card);
 }
@@ -63,7 +63,7 @@ void StartSDCardTask(void *argument)
     while (retSD != 0);
     for(;;)
     {
-        if(RESULT_CHECK_RAW(restart_check(&sd_card0)))
+        if(RESULT_CHECK_FAIL(restart_check(&sd_card0)))
         {
             osDelay(1000);
             continue;

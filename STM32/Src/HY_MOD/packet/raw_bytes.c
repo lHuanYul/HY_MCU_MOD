@@ -11,14 +11,14 @@ bool rbytes_pkt_check_len(RBytesPkt *pkt, uint8_t len)
 
 Result rbytes_pkt_get_byte(RBytesPkt *pkt, uint8_t id, uint8_t* container)
 {
-    if (pkt->len <= id) return RESULT_ERROR(RES_ERR_NOT_FOUND);
+    if (pkt->len <= id) return RESULT_ERROR(RESULT_ERROR_NOT_FOUND);
     *container = pkt->data[id];
     return RESULT_OK(container);
 }
 
 Result rbytes_pkt_set_len(RBytesPkt *pkt, uint8_t len)
 {
-    if (len > RBYTES_PKT_LEN) return RESULT_ERROR(RES_ERR_FULL);
+    if (len > RBYTES_PKT_LEN) return RESULT_ERROR(RESULT_ERROR_FULL);
     pkt->len = len;
     return RESULT_OK(pkt);
 }
@@ -75,7 +75,7 @@ Result rbytes_pkt_buf_push(RBytesPktBuf* self, RBytesPkt *pkt, RBytesPktPool *po
                 rbytes_pkt_pool_free(pool, pkt);
                 return RESULT_OK(self);
             }
-            default: return RESULT_ERROR(RES_ERR_OVERFLOW);
+            default: return RESULT_ERROR(RESULT_ERROR_OVERFLOW);
         }
     }
     uint8_t tail = (self->head + self->len) % self->cap;
@@ -86,7 +86,7 @@ Result rbytes_pkt_buf_push(RBytesPktBuf* self, RBytesPkt *pkt, RBytesPktPool *po
 
 Result rbytes_pkt_buf_get(RBytesPktBuf* self)
 {
-    if (self->len == 0) return RESULT_ERROR(RES_ERR_EMPTY);
+    if (self->len == 0) return RESULT_ERROR(RESULT_ERROR_EMPTY);
     RBytesPkt *pkt = self->buf[self->head];
     return RESULT_OK(pkt);
 }

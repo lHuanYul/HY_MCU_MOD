@@ -1,6 +1,6 @@
 #include "HY_MOD/main/fn_state.h"
 
-ErrorType last_error;
+ResultErrorType last_error;
 
 #ifdef PRINCIPAL_PROGRAM
 #include "HY_MOD/vehicle/basic.h"
@@ -12,7 +12,7 @@ void timeout_error(uint32_t start_time, Result *error_parameter) {
     if (!runtime_switch.timeout) return;
 
     if (HAL_GetTick() - start_time > ERROR_TIMEOUT_TIME_LIMIT) {
-        *error_parameter = RESULT_ERROR(RES_ERR_TIMEOUT);
+        *error_parameter = RESULT_ERROR(RESULT_ERROR_TIMEOUT);
         vehicle_ensure_stop();
         while (true) osDelay(10);
     }

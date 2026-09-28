@@ -18,7 +18,7 @@ static Result wait_it(SpiParametar *spi, osSemaphoreId_t tag, uint32_t time_out)
     {
         HAL_SPI_DMAStop(spi->const_h.hspix);
         GPIO_WRITE(spi->const_h.NSS, 1);
-        return RESULT_ERROR(RES_ERR_FAIL);
+        return RESULT_ERROR(RESULT_ERROR_FAIL);
     }
     return RESULT_OK(NULL);
 }
@@ -31,7 +31,7 @@ Result spi_start_transceive_dma(SpiParametar *spi, uint8_t *tx_buf, uint8_t *rx_
     if (HAL_SPI_TransmitReceive_DMA(spi->const_h.hspix, tx_buf, rx_buf, len) != HAL_OK)
     {
         GPIO_WRITE(spi->const_h.NSS, 1);
-        return RESULT_ERROR(RES_ERR_FAIL);
+        return RESULT_ERROR(RESULT_ERROR_FAIL);
     }
     RESULT_CHECK_RET_RES(wait_it(spi, spi->txrx.id, 100));
 #ifdef STM32G0
@@ -48,7 +48,7 @@ Result spi_start_transceive_dma(SpiParametar *spi, uint8_t *tx_buf, uint8_t *rx_
 //     if (HAL_SPI_Receive_DMA(spi->const_h.hspix, buf, len) != HAL_OK)
 //     {
 //         GPIO_WRITE(spi->const_h.NSS, 1);
-//         return RESULT_ERROR(RES_ERR_FAIL);
+//         return RESULT_ERROR(RESULT_ERROR_FAIL);
 //     }
 //     RESULT_CHECK_RET_RES(wait_it(spi, spi->rx.id, 100));
 //     return RESULT_OK(NULL);
@@ -67,7 +67,7 @@ Result spi_start_transceive_dma(SpiParametar *spi, uint8_t *tx_buf, uint8_t *rx_
 // #endif
 //     {
 //         GPIO_WRITE(spi->const_h.NSS, 1);
-//         return RESULT_ERROR(RES_ERR_FAIL);
+//         return RESULT_ERROR(RESULT_ERROR_FAIL);
 //     }
 //     RESULT_CHECK_RET_RES(wait_it(spi, spi->tx.id, 100));
 // #ifdef STM32G0

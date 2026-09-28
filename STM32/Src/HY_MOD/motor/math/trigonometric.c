@@ -2,7 +2,6 @@
 #ifdef HY_MOD_STM32_MOTOR
 
 #include "HY_MOD/main/variable_cal.h"
-#include <math.h>
 
 static const float32_t Table_sin[316] = {
     0,           //	0
@@ -1894,13 +1893,13 @@ Result trigo_sin_cosf(float32_t theta, float32_t *sin, float32_t *cos)
     if (cordic_currunt != &cordic_cfg_sin_cos)
     {
         cordic_currunt = &cordic_cfg_sin_cos;
-        ERROR_CHECK_HAL_RET_RES(HAL_CORDIC_Configure(&hcordic, cordic_currunt));
+        RESULT_HAL_CHECK_RET_RES(HAL_CORDIC_Configure(&hcordic, cordic_currunt));
     }
     int32_t in[2];
     in[0] = (int32_t)((var_wrap_PN(theta, PI_MUL_2) / PI) * 2147483648.0f);
     in[1] = 0x7FFFFFFF;
     int32_t out[2];
-    ERROR_CHECK_HAL_HANDLE(HAL_CORDIC_Calculate(&hcordic, in, out, 1, HAL_MAX_DELAY));
+    RESULT_HAL_CHECK_HANDLE(HAL_CORDIC_Calculate(&hcordic, in, out, 1, HAL_MAX_DELAY));
     *sin = (float32_t)out[0] / 2147483648.0f;
     *cos = (float32_t)out[1] / 2147483648.0f;
     return RESULT_OK(NULL);
@@ -1911,18 +1910,18 @@ Result trigo_atan(float32_t x, float32_t y, float32_t *theta)
     if (cordic_currunt != &cordic_cfg_atan)
     {
         cordic_currunt = &cordic_cfg_atan;
-        ERROR_CHECK_HAL_HANDLE(HAL_CORDIC_Configure(&hcordic, cordic_currunt));
+        RESULT_HAL_CHECK_HANDLE(HAL_CORDIC_Configure(&hcordic, cordic_currunt));
     }
     float32_t ax = var_fabsf(x);
     float32_t ay = var_fabsf(y);
     float32_t norm = (ax > ay) ? ax : ay;
-    if (norm == 0.0f) return RESULT_ERROR(RES_ERR_DIV_0);
+    if (norm == 0.0f) return RESULT_ERROR(RESULT_ERROR_DIV_0);
     x /= norm;
     y /= norm;
     int32_t in[2], out;
     in[0] = (int32_t)(x * 2147483648.0f);
     in[1] = (int32_t)(y * 2147483648.0f);
-    ERROR_CHECK_HAL_HANDLE(HAL_CORDIC_Calculate(&hcordic, in, &out, 1, HAL_MAX_DELAY));
+    RESULT_HAL_CHECK_HANDLE(HAL_CORDIC_Calculate(&hcordic, in, &out, 1, HAL_MAX_DELAY));
     float32_t angle = (float32_t)out / 2147483648.0f * PI; // [-π, π)
     if (angle < 0) angle += PI_MUL_2;
     *theta = angle;

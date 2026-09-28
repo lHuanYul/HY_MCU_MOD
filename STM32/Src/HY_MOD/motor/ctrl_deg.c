@@ -186,27 +186,38 @@ void motor_deg_120_load(MotorParameter *motor, uint8_t id)
 
 #include "HY_MOD/motor/rotor.h"
 
-void motor_deg_check_rev(MotorParameter *motor)
+Result motor_deg_reverse_upd(MotorParameter *motor)
 {
-    if (
-        motor->speed_h.ref_omega == 0.0f ||
-        var_f32_same_sign(motor->speed_h.ref_omega, motor->speed_h.fbk_omega)
-    ) return;
+    if (fabsf(motor->speed_h.fbk_omega) > motor->speed_h.save_stop_omega)
+        return RESULT_ERROR(RESULT_ERROR_FAIL);
+    
+    motor->deg_h.reverse = (motor->speed_h.ref_omega < 0.0f);
+    return RESULT_OK(NULL);
+}
+
+void motor_deg_check_reverse(MotorParameter *motor)
+{
+    if (motor->speed_h.ref_omega == 0.0f) return;
+    if (motor->deg_h.reverse == (motor->speed_h.ref_omega < 0.0f)) return;
+
+    if (RESULT_CHECK_OK(motor_deg_reverse_upd(motor)))
+    {
+        motor_rotor_stop_cbi(motor);
+        return;
+    }
+
     motor->ctrl_h.ref_sys_temp = motor->ctrl_h.ref_sys;
     motor_switch_ctrl_system(motor, MOTOR_CTRL_120_DIREC_SW);
 }
 
-void motor_deg_proc_safe_rev(MotorParameter *motor)
+void motor_deg_proc_safe_reverse(MotorParameter *motor)
 {
-    if (fabsf(motor->speed_h.fbk_omega) > motor->speed_h.save_stop_omega)
+    if (RESULT_CHECK_FAIL(motor_deg_reverse_upd(motor)))
     {
         motor->rotate_h.ref_sys = MOTOR_ROTATE_COAST;
         return;
     }
-    if (motor->speed_h.ref_omega >= 0.0f)
-        motor->deg_h.reverse = 0;
-    else
-        motor->deg_h.reverse = 1;
+
     motor_rotor_stop_cbi(motor);
     motor_switch_ctrl_system(motor, motor->ctrl_h.ref_sys_temp);
     return;

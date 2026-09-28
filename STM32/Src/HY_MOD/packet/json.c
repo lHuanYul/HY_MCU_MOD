@@ -18,8 +18,8 @@ Result json_pkt_get_num(JsonPkt *pkt, char *id, uint64_t *container)
     );
 
     if (status != JSONSuccess || type != JSONNumber)
-        return RESULT_ERROR(RES_ERR_NOT_FOUND);
-    if (valueLength > 64) return RESULT_ERROR(RES_ERR_OVERFLOW);
+        return RESULT_ERROR(RESULT_ERROR_NOT_FOUND);
+    if (valueLength > 64) return RESULT_ERROR(RESULT_ERROR_OVERFLOW);
 
     char temp[65];
     memcpy(temp, value, valueLength);
@@ -45,9 +45,9 @@ Result json_pkt_get_char(
     );
     
     if (status != JSONSuccess || type != JSONString)
-        return RESULT_ERROR(RES_ERR_NOT_FOUND);
-    if (valueLength >= container_cap) return RESULT_ERROR(RES_ERR_OVERFLOW);
-    if (valueLength < 2) return RESULT_ERROR(RES_ERR_INVALID);
+        return RESULT_ERROR(RESULT_ERROR_NOT_FOUND);
+    if (valueLength >= container_cap) return RESULT_ERROR(RESULT_ERROR_OVERFLOW);
+    if (valueLength < 2) return RESULT_ERROR(RESULT_ERROR_INVALID);
 
     uint16_t contentLen = (uint16_t)valueLength - 2;
     memcpy(container, value + 1, contentLen);
@@ -58,7 +58,7 @@ Result json_pkt_get_char(
 
 Result json_pkt_set_len(JsonPkt *pkt, uint16_t len)
 {
-    if (len > JSON_PKT_LEN) return RESULT_ERROR(RES_ERR_FULL);
+    if (len > JSON_PKT_LEN) return RESULT_ERROR(RESULT_ERROR_FULL);
     pkt->len = len;
     return RESULT_OK(pkt);
 }
@@ -115,7 +115,7 @@ Result json_pkt_buf_push(JsonPktBuf* self, JsonPkt *pkt, JsonPktPool *pool, uint
                 json_pkt_pool_free(pool, pkt);
                 return RESULT_OK(self);
             }
-            default: return RESULT_ERROR(RES_ERR_OVERFLOW);
+            default: return RESULT_ERROR(RESULT_ERROR_OVERFLOW);
         }
     }
     uint8_t tail = (self->head + self->len) % self->cap;
@@ -126,7 +126,7 @@ Result json_pkt_buf_push(JsonPktBuf* self, JsonPkt *pkt, JsonPktPool *pool, uint
 
 Result json_pkt_buf_get(JsonPktBuf* self)
 {
-    if (self->len == 0) return RESULT_ERROR(RES_ERR_EMPTY);
+    if (self->len == 0) return RESULT_ERROR(RESULT_ERROR_EMPTY);
     JsonPkt *pkt = self->buf[self->head];
     return RESULT_OK(pkt);
 }

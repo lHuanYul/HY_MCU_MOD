@@ -92,13 +92,13 @@ static void motor_init_system(MotorParameter *motor)
 
 static void motor_init_adc(MotorParameter *motor)
 {
-    ERROR_CHECK_HAL_HANDLE(HAL_ADCEx_Calibration_Start(
+    RESULT_HAL_CHECK_HANDLE(HAL_ADCEx_Calibration_Start(
         motor->adc_h.adc_vi.basic.hadcx, ADC_SINGLE_ENDED));
-    ERROR_CHECK_HAL_HANDLE(HAL_ADCEx_Calibration_Start(
+    RESULT_HAL_CHECK_HANDLE(HAL_ADCEx_Calibration_Start(
         motor->adc_h.adc_ui.basic.hadcx, ADC_SINGLE_ENDED));
-    ERROR_CHECK_HAL_HANDLE(
+    RESULT_HAL_CHECK_HANDLE(
         HAL_ADCEx_InjectedStart(motor->adc_h.adc_vi.basic.hadcx));
-    ERROR_CHECK_HAL_HANDLE(
+    RESULT_HAL_CHECK_HANDLE(
         HAL_ADCEx_InjectedStart_IT(motor->adc_h.adc_ui.basic.hadcx));
 }
 
@@ -108,8 +108,8 @@ static void motor_init_timer(MotorParameter *motor)
     const MotorConst *const_h = &motor->system.const_h;
     __HAL_TIM_SET_COMPARE(const_h->PWM_htimx, const_h->PWM_mid_ch,
         const_h->PWM_htimx->Init.Period - TIM1_ADC_TRI_DL);
-    ERROR_CHECK_HAL_HANDLE(HAL_TIM_Base_Start(const_h->PWM_htimx));
-    ERROR_CHECK_HAL_HANDLE(
+    RESULT_HAL_CHECK_HANDLE(HAL_TIM_Base_Start(const_h->PWM_htimx));
+    RESULT_HAL_CHECK_HANDLE(
         HAL_TIM_PWM_Start(const_h->PWM_htimx, const_h->PWM_mid_ch));
     for (i = 0; i < 3; i++)
     {

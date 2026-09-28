@@ -8,7 +8,7 @@
 
 void fdcan_setup(FdcanParametar *fdcan)
 {
-    ERROR_CHECK_HAL_HANDLE(
+    RESULT_HAL_CHECK_HANDLE(
         HAL_FDCAN_ConfigGlobalFilter(
             fdcan->const_h.hfdcanx,
             FDCAN_REJECT,
@@ -25,7 +25,7 @@ void fdcan_setup(FdcanParametar *fdcan)
         .FilterID1 = FDCAN_FIFO0_FILTER0_ID_MIN,
         .FilterID2 = FDCAN_FIFO0_FILTER0_ID_MAX,
     };
-    ERROR_CHECK_HAL_HANDLE(
+    RESULT_HAL_CHECK_HANDLE(
         HAL_FDCAN_ConfigFilter(
             fdcan->const_h.hfdcanx, &fifo0_filter0)
     );
@@ -40,7 +40,7 @@ void fdcan_setup(FdcanParametar *fdcan)
         // .FilterID1 = FDCAN_FIFO1_FILTER0_ID_MIN,
         // .FilterID2 = FDCAN_FIFO1_FILTER0_ID_MAX,
     };
-    ERROR_CHECK_HAL_HANDLE(
+    RESULT_HAL_CHECK_HANDLE(
         HAL_FDCAN_ConfigFilter(
             fdcan->const_h.hfdcanx, &fifo1_filter0)
     );
@@ -48,8 +48,8 @@ void fdcan_setup(FdcanParametar *fdcan)
     HAL_FDCAN_ConfigTxDelayCompensation(fdcan->const_h.hfdcanx, MY_FDCAN_TDCR, 0);
     HAL_FDCAN_EnableTxDelayCompensation(fdcan->const_h.hfdcanx);
 #endif
-    ERROR_CHECK_HAL_HANDLE(HAL_FDCAN_Start(fdcan->const_h.hfdcanx));
-    ERROR_CHECK_HAL_HANDLE(
+    RESULT_HAL_CHECK_HANDLE(HAL_FDCAN_Start(fdcan->const_h.hfdcanx));
+    RESULT_HAL_CHECK_HANDLE(
         HAL_FDCAN_ActivateNotification(
             fdcan->const_h.hfdcanx,
               FDCAN_IT_BUS_OFF
@@ -58,7 +58,7 @@ void fdcan_setup(FdcanParametar *fdcan)
             | FDCAN_IT_TX_EVT_FIFO_ELT_LOST
         , 0)
     );
-    ERROR_CHECK_HAL_HANDLE(
+    RESULT_HAL_CHECK_HANDLE(
         HAL_FDCAN_ActivateNotification(
             fdcan->const_h.hfdcanx,
             FDCAN_IT_TX_COMPLETE,
@@ -67,11 +67,11 @@ void fdcan_setup(FdcanParametar *fdcan)
             | FDCAN_TX_BUFFER2
         )
     );
-    ERROR_CHECK_HAL_HANDLE(
+    RESULT_HAL_CHECK_HANDLE(
         HAL_FDCAN_ActivateNotification(
             fdcan->const_h.hfdcanx, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0)
     );
-    ERROR_CHECK_HAL_HANDLE(
+    RESULT_HAL_CHECK_HANDLE(
         HAL_FDCAN_ActivateNotification(
             fdcan->const_h.hfdcanx, FDCAN_IT_RX_FIFO1_NEW_MESSAGE, 0)
     );
@@ -83,7 +83,7 @@ void fdcan_tim_start(FdcanParametar *fdcan)
         (float32_t)*fdcan->const_h.tim_clk /
         (float32_t)(fdcan->const_h.htimx->Init.Prescaler + 1U);
     fdcan->dbg_h.tim_freq = tim_f / (fdcan->const_h.htimx->Init.Period + 1U);
-    ERROR_CHECK_HAL_HANDLE(HAL_TIM_Base_Start_IT(fdcan->const_h.htimx));
+    RESULT_HAL_CHECK_HANDLE(HAL_TIM_Base_Start_IT(fdcan->const_h.htimx));
 }
 
 static uint32_t len_to_dlc(uint8_t len) 
@@ -108,7 +108,7 @@ static uint32_t len_to_dlc(uint8_t len)
 
 static Result fdcan_pkt_transmit(FdcanParametar *fdcan, FdcanPkt *pkt)
 {
-    if (pkt == NULL) return RESULT_ERROR(RES_ERR_NOT_FOUND);
+    if (pkt == NULL) return RESULT_ERROR(RESULT_ERROR_NOT_FOUND);
     FDCAN_TxHeaderTypeDef header = {
         .IdType                 = FDCAN_EXTENDED_ID,
         .FDFormat               = FDCAN_FD_CAN,
@@ -119,7 +119,7 @@ static Result fdcan_pkt_transmit(FdcanParametar *fdcan, FdcanPkt *pkt)
         .Identifier             = pkt->id,
         .DataLength             = len_to_dlc(pkt->len),
     };
-    ERROR_CHECK_HAL_HANDLE(
+    RESULT_HAL_CHECK_HANDLE(
         HAL_FDCAN_AddMessageToTxFifoQ(fdcan->const_h.hfdcanx, &header, pkt->data)
     );
     return RESULT_OK(NULL);
@@ -134,7 +134,7 @@ Result fdcan_tx_push(FdcanParametar *fdcan)
 
         FdcanPkt pkt = {0};
         Result result = fdcan_ring_pop(&fdcan->tx_buf, &pkt);
-        if (RESULT_CHECK_RAW(result)) break;
+        if (RESULT_CHECK_FAIL(result)) break;
         RESULT_CHECK_RET_RES(fdcan_pkt_transmit(fdcan, &pkt));
         
         uint32_t timeout = 50;
@@ -149,12 +149,12 @@ Result fdcan_tx_push(FdcanParametar *fdcan)
 static Result trsm_pkts_proc(FdcanParametar *fdcan)
 {
     if (HAL_FDCAN_GetTxFifoFreeLevel(fdcan->const_h.hfdcanx) != FDCAN_TX_FIFO_SIZE)
-        return RESULT_ERROR(RES_ERR_BUSY);
+        return RESULT_ERROR(RESULT_ERROR_BUSY);
     RESULT_CHECK_RET_RES(fdcan_tx_push(fdcan));
     return RESULT_OK(NULL);
 }
 
-ATTR_WEAK Result fdcan_pkt_rcv_read(FdcanPkt *pkt) { return RESULT_ERROR(RES_ERR_NOT_FOUND); }
+ATTR_WEAK Result fdcan_pkt_rcv_read(FdcanPkt *pkt) { return RESULT_ERROR(RESULT_ERROR_NOT_FOUND); }
 static Result recv_pkts_proc(FdcanParametar *fdcan, uint8_t count)
 {
     for (uint8_t i = 0; i < count; i++)

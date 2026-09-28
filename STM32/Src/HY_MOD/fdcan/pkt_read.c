@@ -61,7 +61,7 @@ Result fdcan_pkt_ist_read(FdcanParametar *fdcan, FdcanPkt *pkt)
         }
         default: break;
     }
-    return RESULT_ERROR(RES_ERR_NOT_FOUND);
+    return RESULT_ERROR(RESULT_ERROR_NOT_FOUND);
 }
 #endif
 
@@ -71,7 +71,7 @@ Result fdcan_pkt_ist_read(FdcanParametar *fdcan, FdcanPkt *pkt)
 static Result motor_pkt(FdcanPkt *pkt, MotorParameter *motor)
 {
     motor->alive_tick = HAL_GetTick();
-    if (FDCAN_PKT_CHK_LEN(pkt, 2 + sizeof(float32_t))) return RESULT_ERROR(RES_ERR_NOT_FOUND);
+    if (FDCAN_PKT_CHK_LEN(pkt, 2 + sizeof(float32_t))) return RESULT_ERROR(RESULT_ERROR_NOT_FOUND);
     motor->mode_fbk = pkt->data[0];
     motor->reverse_fbk = pkt->data[1];
     uint8_t u8s[sizeof(float32_t)];
@@ -169,19 +169,19 @@ Result fdcan_pkt_ist_read(FdcanParametar *fdcan, FdcanPkt *pkt)
                 }
                 case CMD_VEHI_B0_SET_FREE_VAR:
                 {
-                    if (pkt->len < 3) return RESULT_ERROR(RES_ERR_NOT_FOUND);
+                    if (pkt->len < 3) return RESULT_ERROR(RESULT_ERROR_NOT_FOUND);
                     vehicle_set_var_free(&vehicle_h, pkt->data[1], pkt->data[2]);
                     return RESULT_OK(NULL);
                 }
                 case CMD_VEHI_B0_SET_TRACK_VAR:
                 {
-                    if (pkt->len < 3) return RESULT_ERROR(RES_ERR_NOT_FOUND);
+                    if (pkt->len < 3) return RESULT_ERROR(RESULT_ERROR_NOT_FOUND);
                     vehicle_set_var_track(&vehicle_h, pkt->data[1], pkt->data[2]);
                     return RESULT_OK(NULL);
                 }
                 case CMD_VEHI_B0_SET_ROTATE_VAR:
                 {
-                    if (pkt->len < 4) return RESULT_ERROR(RES_ERR_NOT_FOUND);
+                    if (pkt->len < 4) return RESULT_ERROR(RESULT_ERROR_NOT_FOUND);
                     vehicle_set_var_rotate(&vehicle_h, pkt->data[1], pkt->data[2], pkt->data[3]);
                     return RESULT_OK(NULL);
                 }
@@ -197,7 +197,7 @@ Result fdcan_pkt_ist_read(FdcanParametar *fdcan, FdcanPkt *pkt)
         }
         default: break;
     }
-    return RESULT_ERROR(RES_ERR_NOT_FOUND);
+    return RESULT_ERROR(RESULT_ERROR_NOT_FOUND);
 }
 
 Result fdcan_pkt_rcv_read(FdcanPkt *pkt)
@@ -205,7 +205,7 @@ Result fdcan_pkt_rcv_read(FdcanPkt *pkt)
     uint8_t code;
     RESULT_CHECK_RET_RES(fdcan_pkt_get_byte(pkt, 0, &code));
     
-    return RESULT_ERROR(RES_ERR_NOT_FOUND);
+    return RESULT_ERROR(RESULT_ERROR_NOT_FOUND);
 }
 #endif
 
@@ -218,7 +218,7 @@ Result fdcan_pkt_ist_read(FdcanParametar *fdcan, FdcanPkt *pkt)
         
         default: break;
     }
-    return RESULT_ERROR(RES_ERR_NOT_FOUND);
+    return RESULT_ERROR(RESULT_ERROR_NOT_FOUND);
 }
 #endif
 
