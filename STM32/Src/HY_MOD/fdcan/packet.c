@@ -22,13 +22,20 @@ Result fdcan_pkt_set_len(FdcanPkt *pkt, uint8_t len)
     return RESULT_OK(pkt);
 }
 
+/* -------------------- RING -------------------- */
+
 #define RING_MASK (self->cap - 1)
 
 // drop != 0 丟新的並回ERR
 Result fdcan_ring_push(FdcanRing *self, FdcanPkt *pkt, uint8_t drop)
 {
-    if (drop && (self->in - self->out) >= self->cap)
-        return RESULT_ERROR(RESULT_ERROR_FULL);
+    if (FDCAN_RING_IS_FULL(self))
+    {
+        if (drop) return RESULT_ERROR(RESULT_ERROR_FULL);
+        /* 覆寫模式：推進讀取端指標以避免計數溢位失真 */
+        self->out = self->in - self->cap + 1;
+        self->drop_cnt++;
+    }
     uint32_t real_idx = self->in & RING_MASK;
     self->buf[real_idx] = *pkt;
     __DMB();
@@ -51,7 +58,7 @@ Result fdcan_ring_pop(FdcanRing *self, FdcanPkt *pkt)
     *pkt = self->buf[real_idx];
     __DMB();
     self->out = cur_out + 1;
-    return RESULT_OK(NULL);
+    return RESULT_OK(pkt);
 }
 
 inline void fdcan_ring_clear(FdcanRing *self)

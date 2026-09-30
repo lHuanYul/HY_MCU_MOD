@@ -41,9 +41,9 @@ static inline void rotate_status_upd(MotorParameter *motor)
     //     motor_set_rotate_mode(motor, MOTOR_ROTATE_COAST);
     // }
 
-    if (motor->ctrl_h.ref_sys == MOTOR_CTRL_INIT) return;
-    motor->rotate_h.ref_sys = motor->rotate_h.ref_user;
-    switch (motor->rotate_h.ref_sys)
+    if (motor->ctrl.ref_sys == MOTOR_CTRL_INIT) return;
+    motor->rotate.ref_sys = motor->rotate.ref_user;
+    switch (motor->rotate.ref_sys)
     {
     	case MOTOR_ROTATE_UNINIT: return;
         case MOTOR_ROTATE_COAST:
@@ -56,28 +56,28 @@ static inline void rotate_status_upd(MotorParameter *motor)
         }
         case MOTOR_ROTATE_LOCK:
         {
-            motor->rotate_h.ref_sys = MOTOR_ROTATE_BREAK;
-            if (motor->speed_h.fbk_omega < motor->speed_h.save_stop_omega)
-                motor->rotate_h.ref_sys = MOTOR_ROTATE_LOCK_FIN;
+            motor->rotate.ref_sys = MOTOR_ROTATE_BREAK;
+            if (motor->speed.fbk_omega < motor->speed.save_stop_omega)
+                motor->rotate.ref_sys = MOTOR_ROTATE_LOCK_FIN;
             motor_switch_ctrl_system(motor, MOTOR_CTRL_120_NORMAL);
             break;
         }
         case MOTOR_ROTATE_NORMAL:
         {
-            motor->deg_h.pi_omega.reference = motor->speed_h.ref_omega;
-            motor->deg_h.pi_omega.feedback = motor->speed_h.fbk_omega;
-            motor->foc_h.pi_omega.reference = motor->speed_h.ref_omega;
-            motor->foc_h.pi_omega.feedback = motor->speed_h.fbk_omega;
+            motor->deg_h.pi_omega.reference = motor->speed.ref_omega;
+            motor->deg_h.pi_omega.feedback = motor->speed.fbk_omega;
+            motor->foc_h.pi_omega.reference = motor->speed.ref_omega;
+            motor->foc_h.pi_omega.feedback = motor->speed.fbk_omega;
             PI_run(&motor->deg_h.pi_omega);
             PI_run(&motor->foc_h.pi_omega);
-            switch (motor->ctrl_h.ref_sys)
+            switch (motor->ctrl.ref_sys)
             {
                 case MOTOR_CTRL_120_SIMULATE:
                 case MOTOR_CTRL_120_DUTY:
                 {
                     VAR_CLAMPF_STATIC(
                         motor->deg_h.duty_val,
-                        fabsf(motor->speed_h.ref_rpm),
+                        fabsf(motor->speed.ref_rpm),
                         0.0f, 1.0f
                     );
                     break;
@@ -88,7 +88,7 @@ static inline void rotate_status_upd(MotorParameter *motor)
                     break;
                 }
             }
-            motor_switch_ctrl_system(motor, motor->ctrl_h.ref_user);
+            motor_switch_ctrl_system(motor, motor->ctrl.ref_user);
             break;
         }
     }
@@ -106,7 +106,7 @@ void motor_pwm_cb(MotorParameter *motor)
     if (motor->tim_tick % 200 == 0) rotate_status_upd(motor);
     if (motor->tim_tick % 1000 == 0) fdcan_h.motor_rpm_en = 1;
 
-    switch (motor->ctrl_h.ref_sys)
+    switch (motor->ctrl.ref_sys)
     {
     	case MOTOR_CTRL_UNINIT: break;
         case MOTOR_CTRL_INIT:
@@ -131,25 +131,25 @@ void motor_pwm_cb(MotorParameter *motor)
         case MOTOR_CTRL_120_DUTY:
         {
             if (motor->tim_tick % 200 == 0) motor_deg_check_reverse(motor);
-            motor_deg_120_load(motor, motor->rotor_h.curr);
+            motor_deg_120_load(motor, motor->rotor.curr);
             break;
         }
         case MOTOR_CTRL_120_DIREC_SW:
         {
             if (motor->tim_tick % 200 == 0) motor_deg_proc_safe_reverse(motor);
-            motor_deg_120_load(motor, motor->rotor_h.curr);
+            motor_deg_120_load(motor, motor->rotor.curr);
             break;
         }
         case MOTOR_CTRL_120_SIMULATE:
         {
             if (motor->tim_tick % 200 == 0) motor_deg_check_reverse(motor);
-            motor_deg_120_load(motor, motor->rotor_h.curr);
+            motor_deg_120_load(motor, motor->rotor.curr);
             if (motor->tim_tick % ROTATE_SIM_SPEED == 0)
             {
                 if (!motor->deg_h.reverse)
-                    motor->rotor_h.virtual = (motor->rotor_h.virtual + 1) % 6;
+                    motor->rotor.virtual = (motor->rotor.virtual + 1) % 6;
                 else
-                    motor->rotor_h.virtual = (motor->rotor_h.virtual + 5) % 6;
+                    motor->rotor.virtual = (motor->rotor.virtual + 5) % 6;
                 motor_rotor_phase_trigger(motor);
             }
             break;
@@ -157,7 +157,7 @@ void motor_pwm_cb(MotorParameter *motor)
         case MOTOR_CTRL_FOC_INIT:
         {
             motor_foc_run(motor);
-            motor_deg_120_load(motor, motor->rotor_h.curr);
+            motor_deg_120_load(motor, motor->rotor.curr);
             // Todo
             motor->foc_h.init_cnt++;
             if (motor->foc_h.init_cnt >= 20000)

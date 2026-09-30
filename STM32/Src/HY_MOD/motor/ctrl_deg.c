@@ -54,7 +54,7 @@ void motor_deg_test(MotorParameter *motor)
     uint8_t i;
     float32_t duty = 1.0f;
     int8_t seq[3] = {0};
-    switch (motor->ctrl_h.ref_sys)
+    switch (motor->ctrl.ref_sys)
     {
         case MOTOR_CTRL_TEST_HIGH:
         {
@@ -81,7 +81,7 @@ void motor_deg_120_load(MotorParameter *motor, uint8_t id)
 {
     uint8_t i;
     int8_t seq[3] = {0};
-    switch (motor->rotate_h.ref_sys)
+    switch (motor->rotate.ref_sys)
     {
     	case MOTOR_ROTATE_UNINIT: return;
         case MOTOR_ROTATE_COAST:
@@ -111,9 +111,9 @@ void motor_deg_120_load(MotorParameter *motor, uint8_t id)
         {
             motor->deg_h.duty_val = 0.2f;
             // Todo
-            // motor->rotor_h.virtual = motor->rotor_h.curr;
+            // motor->rotor.virtual = motor->rotor.curr;
             for (i = 0; i < 3; i++)
-                seq[i] = seq_map_120[motor->rotor_h.virtual][i];
+                seq[i] = seq_map_120[motor->rotor.virtual][i];
             break;
         }
     }
@@ -135,10 +135,10 @@ void motor_deg_120_load(MotorParameter *motor, uint8_t id)
 // static const uint8_t index_180_cw[]   = {7, 2, 0, 1, 4, 3, 5, 7};
 // void deg_ctrl_180_load(MotorParameter *motor)
 // {
-//     if (motor->rotor_h.curr == UINT8_MAX) return;
+//     if (motor->rotor.curr == UINT8_MAX) return;
 //     uint8_t i;
 //     int8_t seq[3] = {0};
-//     switch (motor->rotate_h.ref_sys)
+//     switch (motor->rotate.ref_sys)
 //     {
 //         case MOTOR_ROTATE_COAST:
 //         {
@@ -157,9 +157,9 @@ void motor_deg_120_load(MotorParameter *motor, uint8_t id)
 //             for (i = 0; i < 3; i++)
 //             {
 //                 if (!motor->deg_h.reverse)
-//                     seq[i] = seq_map_180[index_180_ccw[motor->rotor_h.curr]][i];
+//                     seq[i] = seq_map_180[index_180_ccw[motor->rotor.curr]][i];
 //                 else
-//                     seq[i] = seq_map_180[ index_180_cw[motor->rotor_h.curr]][i];
+//                     seq[i] = seq_map_180[ index_180_cw[motor->rotor.curr]][i];
 //             }
 //             break;
 //         }
@@ -167,7 +167,7 @@ void motor_deg_120_load(MotorParameter *motor, uint8_t id)
 //         {
 //             motor->deg_h.duty_val = 0.2f;
 //             for (i = 0; i < 3; i++)
-//                 seq[i] = seq_map_180[index_180_lock[motor->rotor_h.curr]][i];
+//                 seq[i] = seq_map_180[index_180_lock[motor->rotor.curr]][i];
 //             break;
 //         }
 //     }
@@ -188,17 +188,17 @@ void motor_deg_120_load(MotorParameter *motor, uint8_t id)
 
 Result motor_deg_reverse_upd(MotorParameter *motor)
 {
-    if (fabsf(motor->speed_h.fbk_omega) > motor->speed_h.save_stop_omega)
+    if (fabsf(motor->speed.fbk_omega) > motor->speed.save_stop_omega)
         return RESULT_ERROR(RESULT_ERROR_FAIL);
     
-    motor->deg_h.reverse = (motor->speed_h.ref_omega < 0.0f);
+    motor->deg_h.reverse = (motor->speed.ref_omega < 0.0f);
     return RESULT_OK(NULL);
 }
 
 void motor_deg_check_reverse(MotorParameter *motor)
 {
-    if (motor->speed_h.ref_omega == 0.0f) return;
-    if (motor->deg_h.reverse == (motor->speed_h.ref_omega < 0.0f)) return;
+    if (motor->speed.ref_omega == 0.0f) return;
+    if (motor->deg_h.reverse == (motor->speed.ref_omega < 0.0f)) return;
 
     if (RESULT_CHECK_OK(motor_deg_reverse_upd(motor)))
     {
@@ -206,7 +206,7 @@ void motor_deg_check_reverse(MotorParameter *motor)
         return;
     }
 
-    motor->ctrl_h.ref_sys_temp = motor->ctrl_h.ref_sys;
+    motor->ctrl.ref_sys_temp = motor->ctrl.ref_sys;
     motor_switch_ctrl_system(motor, MOTOR_CTRL_120_DIREC_SW);
 }
 
@@ -214,12 +214,12 @@ void motor_deg_proc_safe_reverse(MotorParameter *motor)
 {
     if (RESULT_CHECK_FAIL(motor_deg_reverse_upd(motor)))
     {
-        motor->rotate_h.ref_sys = MOTOR_ROTATE_COAST;
+        motor->rotate.ref_sys = MOTOR_ROTATE_COAST;
         return;
     }
 
     motor_rotor_stop_cbi(motor);
-    motor_switch_ctrl_system(motor, motor->ctrl_h.ref_sys_temp);
+    motor_switch_ctrl_system(motor, motor->ctrl.ref_sys_temp);
     return;
 }
 

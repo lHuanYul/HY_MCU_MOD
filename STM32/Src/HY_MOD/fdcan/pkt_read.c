@@ -6,6 +6,7 @@
 #include "HY_MOD/main/variable_cal.h"
 
 #ifdef MCU_MOTOR_CTRL
+
 #include "HY_MOD/motor/basic.h"
 
 Result fdcan_pkt_ist_read(FdcanParametar *fdcan, FdcanPkt *pkt)
@@ -63,9 +64,11 @@ Result fdcan_pkt_ist_read(FdcanParametar *fdcan, FdcanPkt *pkt)
     }
     return RESULT_ERROR(RESULT_ERROR_NOT_FOUND);
 }
+
 #endif
 
 #ifdef MCU_VEHICLE_MAIN
+
 #include "HY_MOD/vehicle/main.h"
 
 static Result motor_pkt(FdcanPkt *pkt, MotorParameter *motor)
@@ -207,9 +210,11 @@ Result fdcan_pkt_rcv_read(FdcanPkt *pkt)
     
     return RESULT_ERROR(RESULT_ERROR_NOT_FOUND);
 }
+
 #endif
 
 #ifdef MCU_SENSOR
+
 Result fdcan_pkt_ist_read(FdcanParametar *fdcan, FdcanPkt *pkt)
 {
     uint8_t code;
@@ -220,6 +225,7 @@ Result fdcan_pkt_ist_read(FdcanParametar *fdcan, FdcanPkt *pkt)
     }
     return RESULT_ERROR(RESULT_ERROR_NOT_FOUND);
 }
+
 #endif
 
 #endif

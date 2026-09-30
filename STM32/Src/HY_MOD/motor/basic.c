@@ -116,7 +116,7 @@ static void motor_init_timer(MotorParameter *motor)
         HAL_TIM_PWM_Start(const_h->PWM_htimx, const_h->PWM_uvw[i].pwm_ch);
         HAL_TIMEx_PWMN_Start(const_h->PWM_htimx, const_h->PWM_uvw[i].pwm_ch);
     }
-    __HAL_TIM_SET_AUTORELOAD(const_h->Hall_htimx, motor->rotor_h.overflow);
+    __HAL_TIM_SET_AUTORELOAD(const_h->Hall_htimx, motor->rotor.overflow);
     __HAL_TIM_ENABLE_IT(const_h->Hall_htimx, TIM_IT_UPDATE);
     __HAL_TIM_URS_ENABLE(const_h->Hall_htimx);
     HAL_TIMEx_HallSensor_Start_IT(const_h->Hall_htimx);
@@ -131,13 +131,13 @@ void motor_init(MotorParameter *motor)
 
     // Todo Sensorless
     uint8_t phase = motor_rotor_hall_get(motor);
-    motor->rotor_h.curr = phase;
-    motor->rotor_h.prev = phase;
+    motor->rotor.curr = phase;
+    motor->rotor.prev = phase;
 
     // HAL_DAC_Start(&hdac1, DAC_CHANNEL_1); 
     // HAL_DAC_Start(&hdac1, DAC_CHANNEL_2);
 
-    motor->ctrl_h.ref_sys = MOTOR_CTRL_INIT;
+    motor->ctrl.ref_sys = MOTOR_CTRL_INIT;
 }
 
 /* ---------- Motor timer ---------- */
@@ -204,13 +204,13 @@ inline void motor_adcs_upd(MotorParameter *motor)
 
 void motor_set_speed(MotorParameter *motor, float32_t rpm)
 {
-    motor->speed_h.ref_rpm = rpm;
-    motor->speed_h.ref_omega = rpm * RPM_TO_OMEGA;
+    motor->speed.ref_rpm = rpm;
+    motor->speed.ref_omega = rpm * RPM_TO_OMEGA;
 }
 
 void motor_set_rotate_mode(MotorParameter *motor, MotorRotateMode mode)
 {
-    if (motor->rotate_h.ref_user == mode) return;
+    if (motor->rotate.ref_user == mode) return;
     switch (mode)
     {
     	case MOTOR_ROTATE_UNINIT: return;
@@ -226,7 +226,7 @@ void motor_set_rotate_mode(MotorParameter *motor, MotorRotateMode mode)
             break;
         }
     }
-    motor->rotate_h.ref_user = mode;
+    motor->rotate.ref_user = mode;
 }
 
 void motor_switch_ctrl_system(MotorParameter *motor, MotorCtrlMode ctrl)
@@ -273,7 +273,7 @@ void motor_switch_ctrl_system(MotorParameter *motor, MotorCtrlMode ctrl)
             break;
         }
     }
-    motor->ctrl_h.ref_sys = ctrl;
+    motor->ctrl.ref_sys = ctrl;
 }
 
 void motor_switch_ctrl(MotorParameter *motor, MotorCtrlMode ctrl)
@@ -308,7 +308,7 @@ void motor_switch_ctrl(MotorParameter *motor, MotorCtrlMode ctrl)
             break;
         }
     }
-    motor->ctrl_h.ref_user = ctrl;
+    motor->ctrl.ref_user = ctrl;
 }
 
 #endif

@@ -364,17 +364,17 @@ typedef struct MotorParameter
 
     uint32_t                    init_cnt;
     // 馬達控制模式 (120度與foc以及細部)
-    MotorCtrlParam              ctrl_h;
+    MotorCtrlParam              ctrl;
     // 馬達旋轉模式 (滑行與剎車等)
-    MotorRotateParam            rotate_h;
+    MotorRotateParam            rotate;
     // 計時中斷計數
     uint32_t                    tim_tick;
     // ADC
     MotorADCParame              adc_h;
     // 轉子
-    volatile MotorRotorParam    rotor_h;
+    volatile MotorRotorParam    rotor;
     // 從座往轉子 順時針為負
-    MotorSpeedParame            speed_h;
+    MotorSpeedParame            speed;
     // 120度控制
     MotorDEGParam               deg_h;
     // FOC控制

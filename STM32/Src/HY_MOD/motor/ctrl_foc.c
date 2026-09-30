@@ -40,10 +40,10 @@ inline void motor_foc_hall_timer_cbi(MotorParameter *motor)
 
 static inline Result motor_vec_ctrl_angle_upd(MotorParameter *motor)
 {
-    uint8_t pos = motor->rotor_h.curr;
+    uint8_t pos = motor->rotor.curr;
     if (pos > 5)
     {
-        if (motor->ctrl_h.ref_sys == MOTOR_CTRL_FOC_SIM) pos = 0;
+        if (motor->ctrl.ref_sys == MOTOR_CTRL_FOC_SIM) pos = 0;
         else return RESULT_ERROR(RESULT_ERROR_NOT_FOUND);
     }
     motor->foc_h.rotor_rad = pos * PI_DIV_3;
@@ -75,7 +75,7 @@ static inline void motor_vec_ctrl_park(MotorParameter *motor)
     motor->foc_h.park_h.Beta = motor->foc_h.clarke_h.Beta;
     motor->foc_h.rad_acc += motor->foc_h.rad_itpl;
     VAR_CLAMPF(motor->foc_h.rad_acc, -PI_DIV_3, PI_DIV_3);
-    switch (motor->ctrl_h.ref_sys)
+    switch (motor->ctrl.ref_sys)
     {
         case MOTOR_CTRL_FOC_POS:
         {
@@ -112,12 +112,12 @@ static inline void motor_vec_ctrl_park(MotorParameter *motor)
 static inline void motor_vec_ctrl_pi_id_iq(MotorParameter *motor)
 {
     motor->foc_h.pi_Id_h.reference = 0.0f;
-    switch (motor->ctrl_h.ref_sys)
+    switch (motor->ctrl.ref_sys)
     {
         case MOTOR_CTRL_FOC_OL_IQ:
         {
             // 0.4f
-            VAR_CLAMPF_STATIC(motor->foc_h.pi_Iq_h.reference, motor->speed_h.ref_rpm, 0.0f, 1.0f);
+            VAR_CLAMPF_STATIC(motor->foc_h.pi_Iq_h.reference, motor->speed.ref_rpm, 0.0f, 1.0f);
             break;
         }
         default:
@@ -140,14 +140,14 @@ static inline void motor_vec_ctrl_pi_id_iq(MotorParameter *motor)
 
 static inline void motor_vec_ctrl_ipark(MotorParameter *motor)
 {
-    switch (motor->ctrl_h.ref_sys)
+    switch (motor->ctrl.ref_sys)
     {
         case MOTOR_CTRL_FOC_POS:
         case MOTOR_CTRL_FOC_ROT_CMD:
         case MOTOR_CTRL_FOC_ROT_AUTO:
         {
             // 0.2f
-            motor->foc_h.ipark_h.Vdref = motor->speed_h.ref_rpm;
+            motor->foc_h.ipark_h.Vdref = motor->speed.ref_rpm;
             motor->foc_h.ipark_h.Vqref = 0.0f;
             break;
         }
@@ -155,7 +155,7 @@ static inline void motor_vec_ctrl_ipark(MotorParameter *motor)
         {
             motor->foc_h.ipark_h.Vdref = 0.0f;
             // 0.15f
-            VAR_CLAMPF_STATIC(motor->foc_h.ipark_h.Vqref, motor->speed_h.ref_rpm, 0.0f, 1.0f);
+            VAR_CLAMPF_STATIC(motor->foc_h.ipark_h.Vqref, motor->speed.ref_rpm, 0.0f, 1.0f);
             break;
         }
         default:
@@ -172,7 +172,7 @@ static inline void motor_vec_ctrl_ipark(MotorParameter *motor)
         motor->foc_h.ipark_h.Alpha, motor->foc_h.ipark_h.Beta, &motor->foc_h.magn_rad);
     if (RESULT_CHECK_FAIL(res))
     {
-        if (motor->ctrl_h.ref_sys == MOTOR_CTRL_FOC_SIM) motor->foc_h.magn_rad = 0.0f;
+        if (motor->ctrl.ref_sys == MOTOR_CTRL_FOC_SIM) motor->foc_h.magn_rad = 0.0f;
         else Error_Handler();
     }
 }
@@ -191,7 +191,7 @@ static inline void motor_vec_ctrl_svpwm(MotorParameter *motor)
             SQUARE(motor->foc_h.svgendq_h.Ualpha) + SQUARE(motor->foc_h.svgendq_h.Ubeta),
             &motor->foc_h.Vref_s) != ARM_MATH_SUCCESS
     ) {
-        if (motor->ctrl_h.ref_sys == MOTOR_CTRL_FOC_SIM) motor->foc_h.Vref_s = 0.0f;
+        if (motor->ctrl.ref_sys == MOTOR_CTRL_FOC_SIM) motor->foc_h.Vref_s = 0.0f;
         else Error_Handler();
     }
     float32_t theta = var_wrap_P(motor->foc_h.magn_rad, PI_DIV_3);
@@ -273,7 +273,7 @@ void motor_foc_run(MotorParameter *motor)
         motor->foc_h.init_cnt--;
         if (motor->foc_h.init_cnt == 0)
         // Todo FOC初始角度測試 先用簡單的120度控制等效於60度換相 讓馬達轉起來再說
-            motor_switch_ctrl_system(motor, motor->ctrl_h.ref_user);
+            motor_switch_ctrl_system(motor, motor->ctrl.ref_user);
         return;
     }
     motor_vec_ctrl_clarke(motor);

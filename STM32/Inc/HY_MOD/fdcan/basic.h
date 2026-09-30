@@ -48,5 +48,33 @@ typedef struct FdcanParametar
     volatile bool   motor_idq_en2;
 #endif
 } FdcanParametar;
+/**
+ * @brief 初始化 FDCAN 硬體周邊與過濾器設定
+ * @details 配置全域過濾器規則 (Global Filter)、FIFO0/1 範圍過濾器、發送延遲補償 (TDC)，
+ *          並啟動 FDCAN 實例及相關發送、接收與中斷通知。
+ * 
+ * @param fdcan 指向 FDCAN 控制結構體指標
+ */
+void fdcan_setup(FdcanParametar *fdcan);
+/**
+ * @brief 計算計時器頻率並啟動基礎定時中斷 (IT)
+ * 
+ * @param fdcan 指向 FDCAN 控制結構體指標
+ */
+void fdcan_tim_start(FdcanParametar *fdcan);
+/**
+ * @brief 將發送環形緩衝區 (tx_buf) 內的封包推送至硬體 Tx FIFO
+ * 
+ * @param fdcan 指向 FDCAN 控制結構體指標
+ * @return Result 成功推送或無待發封包時返回 RESULT_OK
+ */
+Result fdcan_tx_push(FdcanParametar *fdcan);
+/**
+ * @brief FDCAN 模組的主狀態機與週期任務處理常式
+ * @details 負責處理 Bus-Off 復位與重啟延遲、自動週期封包發送、Tx FIFO 佇列推送及 Rx FIFO 封包讀取。
+ * 
+ * @param fdcan 指向 FDCAN 控制結構體指標
+ */
+void fdcan_main(FdcanParametar *fdcan);
 
 #endif
