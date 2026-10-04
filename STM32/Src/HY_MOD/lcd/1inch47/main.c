@@ -1,7 +1,7 @@
-#include "HY_MOD/lcd_1inch47/main.h"
+#include "HY_MOD/lcd/1inch47/main.h"
 #ifdef HY_MOD_STM32_LCD_1INCH47
 
-#include "HY_MOD/lcd_1inch47/font_8x16.h"
+#include "HY_MOD/lcd/graph.h"
 
 #define LCD_SPI lcd->const_h.spi_h.hspix
 
@@ -24,7 +24,7 @@ void LCD_init(Lcd1I47Parametar *lcd)
     lcd_write_cmd(lcd, 0x11);
     osDelay(120);
 
-    GPIO_WRITE(lcd->const_h.spi_h.NSS, GPIO_PIN_RESET);
+    GPIO_WRITE(lcd->const_h.spi_h.CS_NSS, GPIO_PIN_RESET);
     // 【新增】進入正常顯示模式 (Normal Display Mode On)
     // GPIO_WRITE(lcd_1i47->const_h.DC, GPIO_PIN_RESET);
     // LCD_SPI_TRSM(0x13);
@@ -99,7 +99,7 @@ void LCD_init(Lcd1I47Parametar *lcd)
     // 9. 開啟顯示 (Display On)
     GPIO_WRITE(lcd->const_h.DC, GPIO_PIN_RESET); LCD_SPI_TRSM(0x29);
     
-    GPIO_WRITE(lcd->const_h.spi_h.NSS, GPIO_PIN_SET);
+    GPIO_WRITE(lcd->const_h.spi_h.CS_NSS, GPIO_PIN_SET);
 
     // 10. 開啟背光
     HAL_TIM_PWM_Start(lcd->const_h.htimx, lcd->const_h.TIM_CHANNEL_x);
@@ -156,7 +156,7 @@ void LCD_Fill_DMA(Lcd1I47Parametar *lcd, uint16_t color)
     lcd_set_addr_window(lcd, 0, 0, lcd->const_h.lcd->width - 1, lcd->const_h.lcd->height - 1);
 
     GPIO_WRITE(lcd->const_h.DC, GPIO_PIN_SET);
-    GPIO_WRITE(lcd->const_h.spi_h.NSS, GPIO_PIN_RESET);
+    GPIO_WRITE(lcd->const_h.spi_h.CS_NSS, GPIO_PIN_RESET);
 
     // 4. 分批傳送 (共 lcd->const_h.lcd->height 行)
     for (i = 0; i < lcd->const_h.lcd->height; i++)
@@ -166,7 +166,7 @@ void LCD_Fill_DMA(Lcd1I47Parametar *lcd, uint16_t color)
         while (__HAL_SPI_GET_FLAG(lcd->const_h.spi_h.hspix, SPI_FLAG_BSY));
     }
 
-    GPIO_WRITE(lcd->const_h.spi_h.NSS, GPIO_PIN_SET);
+    GPIO_WRITE(lcd->const_h.spi_h.CS_NSS, GPIO_PIN_SET);
 }
 
 

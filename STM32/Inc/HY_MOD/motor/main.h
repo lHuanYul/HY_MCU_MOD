@@ -2,7 +2,8 @@
 #include "HY_MOD/motor/basic.h"
 #ifdef HY_MOD_STM32_MOTOR
 
-void motor_setup(MotorParameter *motor);
+#include "HY_MOD/motor/rotor.h"
+
 void motor_main(MotorParameter *motor);
 
 #endif

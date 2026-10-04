@@ -22,7 +22,7 @@ void motor_rotor_set_overflow(MotorParameter *motor, uint32_t of);
  * @param motor 馬達控制參數結構體指標
  * @param mode  目標感測模式
  */
-void motor_rotor_mode_change(MotorParameter *motor, MotorSensorMode mode);
+void motor_set_rotor_mode(MotorParameter *motor, MotorSensorMode mode);
 /**
  * @brief 軟體觸發霍爾定時器捕獲與更新事件 (用於模擬模式或無感測模式步進觸發)
  * 

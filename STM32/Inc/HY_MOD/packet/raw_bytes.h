@@ -3,6 +3,9 @@
 #ifdef HY_MOD_STM32_RBYTES
 
 #include "HY_MOD/main/fn_state.h"
+#include "HY_MOD/main/buffer.h"
+
+extern uint8_t rbytes_buffers[RBYTES_PKT_POOL_CAP][ALIGN_32(RBYTES_PKT_LEN)];
 
 typedef struct RBytesPkt
 {

@@ -55,10 +55,10 @@ typedef struct MotorHallConst
 typedef struct MotorConst
 {
     // 馬達data sheet
-    const MotorModelData    *const model;
+    const MotorModelData    *model;
     // PWM timer
     TIM_HandleTypeDef       *PWM_htimx;
-    const uint32_t          *const PWM_tim_clk;
+    const uint32_t          *PWM_tim_clk;
     union {
         struct {
             MotorPhaseConst PWM_u;
@@ -70,7 +70,7 @@ typedef struct MotorConst
     uint32_t                PWM_mid_ch;
     // Hall timer
     TIM_HandleTypeDef       *Hall_htimx;
-    uint32_t                *const Hall_tim_clk;
+    uint32_t                *Hall_tim_clk;
     union {
         struct {
             MotorHallConst  Hall_a;
@@ -445,7 +445,7 @@ void motor_set_rotate_mode(MotorParameter *motor, MotorRotateMode mode);
  * @param motor 馬達控制參數結構體指標
  * @param ctrl  目標控制模式 (120度方波、FOC、開環測試等)
  */
-void motor_switch_ctrl(MotorParameter *motor, MotorCtrlMode ctrl);
+void motor_set_ctrl_mode(MotorParameter *motor, MotorCtrlMode ctrl);
 /**
  * @brief 系統內部狀態機切換控制模式 (切換下橋 PWMN GPIO/AF 模式並配置計時器溢位週期)
  * 

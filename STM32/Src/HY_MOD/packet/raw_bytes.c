@@ -1,7 +1,7 @@
 #include "HY_MOD/packet/raw_bytes.h"
 #ifdef HY_MOD_STM32_RBYTES
 
-#include "HY_MOD/main/buffer.h"
+uint8_t rbytes_buffers[RBYTES_PKT_POOL_CAP][ALIGN_32(RBYTES_PKT_LEN)];
 
 bool rbytes_pkt_check_len(RBytesPkt *pkt, uint8_t len)
 {

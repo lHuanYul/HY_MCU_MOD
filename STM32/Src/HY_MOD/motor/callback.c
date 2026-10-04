@@ -9,15 +9,15 @@
 
 __weak void motor_start_spin(MotorParameter *motor)
 {
-    motor_rotor_mode_change(motor, MOTOR_SENSOR_SIMULATE);
-    motor_switch_ctrl(motor, MOTOR_CTRL_120_SIMULATE);
+    motor_set_rotor_mode(motor, MOTOR_SENSOR_SIMULATE);
+    motor_set_ctrl_mode(motor, MOTOR_CTRL_120_SIMULATE);
     motor_set_rotate_mode(motor, MOTOR_ROTATE_NORMAL);
     motor_set_speed(motor, -1.0f);
 }
 
-/*
-void HAL_TIM_PeriodElapsedCallback_OWN(TIM_HandleTypeDef *htim)
-*/
+/**
+ * void HAL_TIM_PeriodElapsedCallback_OWN(TIM_HandleTypeDef *htim)
+ */
 void motor_stop_cb(MotorParameter *motor)
 {
     motor_rotor_stop_cbi(motor);
@@ -25,9 +25,9 @@ void motor_stop_cb(MotorParameter *motor)
     motor_foc_stop_cbi(motor);
 }
 
-/*
-void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
-*/
+/**
+ * void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
+ */
 void motor_hall_timer_cb(MotorParameter *motor)
 {
     motor_rotor_hall_timer_cbi(motor);
@@ -94,9 +94,10 @@ static inline void rotate_status_upd(MotorParameter *motor)
     }
 }
 
-/* 20kHz
-void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef *hadc)
-*/
+/**
+ * 20kHz
+ * void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef *hadc)
+ */
 #define PWM_TIM_IT_CNT_MAX  200000 // 10s
 #define ROTATE_SIM_SPEED    10000
 void motor_pwm_cb(MotorParameter *motor)

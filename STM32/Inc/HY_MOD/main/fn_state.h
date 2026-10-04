@@ -6,7 +6,7 @@
 #include "main.h"
 
 // Result --------------------------------------------------
-typedef struct ResultSuccess
+typedef union ResultSuccess
 {
     void *obj;
 } ResultSuccess;
@@ -96,7 +96,7 @@ typedef struct Result
 #define RESULT_ERROR(_err_) ((Result){.is_ok = false, .result.error   = (_err_)})
 
 #define RESULT_CHECK_OK(_res_)      ( (_res_).is_ok)
-#define RESULT_CHECK_FAIL(_res_)    (!(_res_).is_ok)
+#define RESULT_CHECK_ERR(_res_)    (!(_res_).is_ok)
 #define RESULT_UNWRAP(_res_)        ((_res_).result.success.obj)
 
 #define RESULT_BOOL_TO_RES(_cond_) ((_cond_) ? RESULT_OK(NULL) : RESULT_ERROR(RESULT_ERROR_FAIL))
@@ -104,7 +104,7 @@ typedef struct Result
 #define RESULT_UNWRAP_SKIP(expr)\
     ({\
         Result _res_ = (expr);\
-        if (RESULT_CHECK_FAIL(_res_))\
+        if (RESULT_CHECK_ERR(_res_))\
         {\
             last_error = _res_.result.error;\
             NULL;\
@@ -117,7 +117,7 @@ typedef struct Result
 
 #define RESULT_CHECK_SIMPLE(_res_)\
     do {\
-        if (RESULT_CHECK_FAIL(_res_))\
+        if (RESULT_CHECK_ERR(_res_))\
             return EXIT_FAILURE;\
     } while (0)
 
@@ -125,7 +125,7 @@ typedef struct Result
 #define RESULT_CHECK_HANDLE(expr)\
     do {\
         Result _res_ = (expr);\
-        if (RESULT_CHECK_FAIL(_res_))\
+        if (RESULT_CHECK_ERR(_res_))\
         {\
             last_error = _res_.result.error;\
             Error_Handler();\
@@ -136,7 +136,7 @@ typedef struct Result
 #define RESULT_UNWRAP_HANDLE(expr)\
     ({\
         Result _res_ = (expr);\
-        if (RESULT_CHECK_FAIL(_res_))\
+        if (RESULT_CHECK_ERR(_res_))\
         {\
             last_error = _res_.result.error;\
             Error_Handler();\
@@ -147,7 +147,7 @@ typedef struct Result
 #define RESULT_CHECK_RET_VOID(expr)\
     do {\
         Result _res_ = (expr);\
-        if (RESULT_CHECK_FAIL(_res_))\
+        if (RESULT_CHECK_ERR(_res_))\
         {\
             last_error = _res_.result.error;\
             return;\
@@ -157,7 +157,7 @@ typedef struct Result
 #define RESULT_UNWRAP_RET_VOID(expr)\
     ({\
         Result _res_ = (expr);\
-        if (RESULT_CHECK_FAIL(_res_))\
+        if (RESULT_CHECK_ERR(_res_))\
         {\
             last_error = _res_.result.error;\
             return;\
@@ -168,7 +168,7 @@ typedef struct Result
 #define RESULT_CHECK_RET_RES(expr)\
     do {\
         Result _res_ = (expr);\
-        if (RESULT_CHECK_FAIL(_res_))\
+        if (RESULT_CHECK_ERR(_res_))\
         {\
             last_error = _res_.result.error;\
             return _res_;\
@@ -178,7 +178,7 @@ typedef struct Result
 #define RESULT_UNWRAP_RET_RES(expr)\
     ({\
         Result _res_ = (expr);\
-        if (RESULT_CHECK_FAIL(_res_))\
+        if (RESULT_CHECK_ERR(_res_))\
         {\
             last_error = _res_.result.error;\
             return _res_;\
@@ -189,7 +189,7 @@ typedef struct Result
 #define RESULT_CHECK_GOTO(expr,tag)\
     do {\
         Result _res_ = (expr);\
-        if (RESULT_CHECK_FAIL(_res_))\
+        if (RESULT_CHECK_ERR(_res_))\
         {\
             last_error = _res_.result.error;\
             goto tag;\
@@ -199,7 +199,7 @@ typedef struct Result
 #define RESULT_UNWRAP_GOTO(expr,tag)\
     ({\
         Result _res_ = (expr);\
-        if (RESULT_CHECK_FAIL(_res_))\
+        if (RESULT_CHECK_ERR(_res_))\
         {\
             last_error = _res_.result.error;\
             goto tag;\

@@ -63,7 +63,7 @@ void StartSDCardTask(void *argument)
     while (retSD != 0);
     for(;;)
     {
-        if(RESULT_CHECK_FAIL(restart_check(&sd_card0)))
+        if(RESULT_CHECK_ERR(restart_check(&sd_card0)))
         {
             osDelay(1000);
             continue;

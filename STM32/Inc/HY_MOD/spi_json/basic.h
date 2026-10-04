@@ -4,8 +4,8 @@
 
 #define HY_MOD_STM32_SPI
 #include "HY_MOD/spi/basic.h"
-
 #include "HY_MOD/main/variable_cal.h"
+#include "HY_MOD/main/buffer.h"
 #include "HY_MOD/packet/json.h"
 
 #define SPI_JSON_STATE_OK     0
@@ -33,14 +33,29 @@ STM32H7 REMBER TO SET MPU (SET IN CUBEMX)
     MPU_InitStruct.IsBufferable = MPU_ACCESS_NOT_BUFFERABLE;
 */
 
+typedef struct SpiJsonConst
+{
+    SpiParametar    *spi_p;
+    bool            high_sel;
+    GPIOData        CS_NSS;
+} SpiJsonConst;
+
 typedef struct SpiJsonParametar
 {
-    SpiParametar spi_p;
-    uint8_t     state;
-    JsonPkt     *rx_pkt;
-    JsonPkt     *tx_pkt;
-    JsonPkt     *tx_hold;
+    const SpiJsonConst  const_h;
+    uint8_t             state;
+    JsonPkt             *rx_pkt;
+    JsonPkt             *tx_pkt;
+    JsonPkt             *tx_hold;
 } SpiJsonParametar;
+
+extern uint8_t json_buffers[JSON_PKT_POOL_CAP][ALIGN_32(JSON_PKT_LEN)];
+
+extern SpiJsonParametar spi_json_h;
+
+extern JsonPktPool json_pkt_pool;
+extern JsonPktBuf spi_recv_buf;
+extern JsonPktBuf spi_trsm_buf;
 
 Result spi_json_init(SpiJsonParametar *spi);
 

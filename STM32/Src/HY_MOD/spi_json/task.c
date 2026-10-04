@@ -8,13 +8,17 @@
 
 #define SPI1_TASK_SMAL_MS      5
 #define SPI1_TASK_NEXT_MS   1000
-#define SPI_JSON_START_TRCV(spi, len) spi_start_transceive_dma(&(spi)->spi_p,(spi)->tx_pkt->data,(spi)->rx_pkt->data, (len))
+#define SPI_JSON_START_TRCV(spi, len) \
+    spi_start_transceive_dma( \
+        (spi)->const_h.spi_p,&(spi)->const_h.CS_NSS, \
+        (spi)->tx_pkt->data,(spi)->rx_pkt->data, \
+        (len))
 void StartSpi1Task(void *argument)
 {
     const uint32_t osPeriod_next = pdMS_TO_TICKS(SPI1_TASK_NEXT_MS);
     uint32_t next_wake = osKernelGetTickCount();
     json_pkt_pool_init(&json_pkt_pool);
-    SpiJsonParametar *spi = &spi1_h;
+    SpiJsonParametar *spi = &spi_json_h;
     spi_json_init(spi);
 
     const char json_response[] = "{\"TR\":\"SC\"}";
@@ -52,7 +56,7 @@ void StartSpi1Task(void *argument)
                 spi->tx_pkt->len = sizeof(SPI_LENGTH_H);
                 memcpy(spi->tx_pkt->data, SPI_LENGTH_H, sizeof(SPI_LENGTH_H));
                 Result res = json_pkt_buf_get(&spi_trsm_buf);
-                if (RESULT_CHECK_FAIL(res))
+                if (RESULT_CHECK_ERR(res))
                 {
                     spi->tx_hold = NULL;
                     var_u16_to_u8_be(0, (spi->tx_pkt->data + 3));

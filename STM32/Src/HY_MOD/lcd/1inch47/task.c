@@ -1,4 +1,4 @@
-#include "HY_MOD/lcd_1inch47/main.h"
+#include "HY_MOD/lcd/1inch47/main.h"
 #ifdef HY_MOD_STM32_LCD_1INCH47
 
 #include "main/lcd_1inch47.h"

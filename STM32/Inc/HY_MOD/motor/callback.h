@@ -2,11 +2,11 @@
 #include "HY_MOD/motor/basic.h"
 #ifdef HY_MOD_STM32_MOTOR
 
-#define MOTOR_HAL_TIM_PeriodElapsedCB_CHK(htim, motor) \
+#define MOTOR_HAL_TIM_PeriodElapsedCB_CALL(motor, htim) \
     do { \
-        if (INSTANCE_CHK((htim), (motor)->system.const_h.Hall_htimx)) \
+        if (INSTANCE_CHK((htim), (motor).system.const_h.Hall_htimx)) \
         { \
-            motor_stop_cb(motor); \
+            motor_stop_cb(&(motor)); \
         } \
     } while (0)
 /**
@@ -16,7 +16,7 @@
  * ```c
  * void HAL_TIM_PeriodElapsedCallback_OWN(TIM_HandleTypeDef *htim)
  * {
- *     MOTOR_HAL_TIM_PeriodElapsedCB_CHK(htim, &motor_h);
+ *     MOTOR_HAL_TIM_PeriodElapsedCB_CALL(motor_h, htim);
  * }
  * ```
  * 
@@ -24,13 +24,13 @@
  */
 void motor_stop_cb(MotorParameter *motor);
 
-#define MOTOR_HAL_TIM_IC_CaptureCB_CHK(htim, motor) \
+#define MOTOR_HAL_TIM_IC_CaptureCB_CALL(motor, htim) \
     do { \
         if ( \
-            INSTANCE_CHK((htim), (motor)->system.const_h.Hall_htimx) && \
-            ((htim)->Channel == (motor)->system.const_h.Hall_Active_ch) \
+            INSTANCE_CHK((htim), (motor).system.const_h.Hall_htimx) && \
+            ((htim)->Channel == (motor).system.const_h.Hall_Active_ch) \
         ) { \
-            motor_hall_timer_cb(motor); \
+            motor_hall_timer_cb(&(motor)); \
         } \
     } while (0)
 /**
@@ -40,7 +40,7 @@ void motor_stop_cb(MotorParameter *motor);
  * ```c
  * void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
  * {
- *     MOTOR_HAL_TIM_IC_CaptureCB_CHK(htim, &motor_h);
+ *     MOTOR_HAL_TIM_IC_CaptureCB_CALL(motor_h, htim);
  * }
  * ```
  * 
@@ -48,11 +48,11 @@ void motor_stop_cb(MotorParameter *motor);
  */
 void motor_hall_timer_cb(MotorParameter *motor);
 
-#define MOTOR_HAL_ADCEx_InjectedConvCpltCB_CHK(hadc, motor) \
+#define MOTOR_HAL_ADCEx_InjectedConvCpltCB_CALL(motor, hadc) \
     do { \
-        if (INSTANCE_CHK((hadc), (motor)->adc_h.adc_ui.basic.hadcx)) \
+        if (INSTANCE_CHK((hadc), (motor).adc_h.adc_ui.basic.hadcx)) \
         { \
-            motor_pwm_cb(motor); \
+            motor_pwm_cb(&(motor)); \
         } \
     } while (0)
 /**
@@ -62,7 +62,7 @@ void motor_hall_timer_cb(MotorParameter *motor);
  * ```c
  * void HAL_ADCEx_InjectedConvCpltCallback(TIM_HandleTypeDef *htim)
  * {
- *     MOTOR_HAL_ADCEx_InjectedConvCpltCB_CHK(htim, &motor_h);
+ *     MOTOR_HAL_ADCEx_InjectedConvCpltCB_CALL(motor_h, hadc);
  * }
  * ```
  * 

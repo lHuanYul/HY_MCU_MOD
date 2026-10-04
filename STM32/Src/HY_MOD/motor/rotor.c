@@ -67,7 +67,7 @@ inline void motor_rotor_set_overflow(MotorParameter *motor, uint32_t of)
     __HAL_TIM_SET_AUTORELOAD(motor->system.const_h.Hall_htimx, of);
 }
 
-void motor_rotor_mode_change(MotorParameter *motor, MotorSensorMode mode)
+void motor_set_rotor_mode(MotorParameter *motor, MotorSensorMode mode)
 {
     if (motor->rotor.mode == mode) return;
     switch (mode)

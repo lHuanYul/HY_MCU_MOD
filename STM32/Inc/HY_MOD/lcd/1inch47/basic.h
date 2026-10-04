@@ -14,22 +14,17 @@ typedef struct LcdDatas
 } LcdDatas;
 extern const LcdDatas waveshare_1inch47;
 
-#ifndef SpiConst
-typedef struct SpiConst
+typedef struct Lcd1I47Const
 {
-    SPI_HandleTypeDef *hspix;
-    GPIOData MISO;
-    GPIOData MOSI;
-    GPIOData SCK;
-    // CS
-    GPIOData NSS;
-} SpiConst;
-#endif
+    SpiParametar    *spi_p;
+    bool            high_sel;
+    GPIOData        CS_NSS;
+} Lcd1I47Const;
 
 typedef struct Lcd1I47Const
 {
     const LcdDatas *lcd;
-    SpiConst spi_h;
+    const Lcd1I47Const spi;
     GPIOData DC;
     GPIOData RST;
     TIM_HandleTypeDef   *htimx;

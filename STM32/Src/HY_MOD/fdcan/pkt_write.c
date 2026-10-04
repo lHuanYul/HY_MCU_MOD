@@ -15,7 +15,7 @@ Result fdcan_pkt_write_test(FdcanParametar *fdcan)
     var_u32_to_u8_be(fdcan->tim_tick, pkt.data + 1);
     pkt.data[5] = 0xAA;
     RESULT_CHECK_HANDLE(fdcan_ring_push(&fdcan->tx_buf, &pkt, 0));
-    return RESULT_OK(NULL);
+    return RESULT_OK(fdcan);
 }
 
 #ifdef MCU_MOTOR_CTRL
@@ -32,7 +32,7 @@ Result fdcan_motor_rpm_send(FdcanParametar *fdcan, MotorParameter *motor)
     var_f32_to_u8_be(motor->speed.fbk_omega, pkt.data + 8);
 
     RESULT_CHECK_HANDLE(fdcan_ring_push(&fdcan->tx_buf, &pkt, 0));
-    return RESULT_OK(NULL);
+    return RESULT_OK(fdcan);
 }
 
 Result fdcan_motor_idq_send(FdcanParametar *fdcan, MotorParameter *motor, uint8_t idq_sel)
@@ -51,7 +51,7 @@ Result fdcan_motor_idq_send(FdcanParametar *fdcan, MotorParameter *motor, uint8_
     }
 
     RESULT_CHECK_HANDLE(fdcan_ring_push(&fdcan->tx_buf, &pkt, 0));
-    return RESULT_OK(NULL);
+    return RESULT_OK(fdcan);
 }
 
 #endif
@@ -76,7 +76,7 @@ Result fdcan_vehicle_motor_send(FdcanParametar *fdcan, VehicleParameter *vehicle
 {
     fdcan_pkt_write_motor(fdcan, &vehicle->motor_left);
     fdcan_pkt_write_motor(fdcan, &vehicle->motor_right);
-    return RESULT_OK(NULL);
+    return RESULT_OK(fdcan);
 }
 
 #endif
@@ -94,7 +94,7 @@ Result fdcan_pkt_write_hall_uss(FdcanParametar *fdcan)
     pkt.data[1] = adchall_track_left.state;
     pkt.data[2] = adchall_track_right.state;
     pkt.data[3] = us_sensor_head.status;
-    return RESULT_OK(NULL);
+    return RESULT_OK(fdcan);
 }
 
 Result fdcan_pkt_write_rfid(FdcanParametar *fdcan)
@@ -105,7 +105,7 @@ Result fdcan_pkt_write_rfid(FdcanParametar *fdcan)
     pkt.data[0] = rfid_h.new_card;
     rfid_h.new_card = 0;
     memcpy(pkt.data + 1, rfid_h.uid.uidByte, 4);
-    return RESULT_OK(NULL);
+    return RESULT_OK(fdcan);
 }
 #endif
 

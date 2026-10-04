@@ -1,4 +1,4 @@
-#include "HY_MOD/lcd_1inch47/basic.h"
+#include "HY_MOD/lcd/1inch47/basic.h"
 #ifdef HY_MOD_STM32_LCD_1INCH47
 
 // 針對 1.47吋 (172x320) 的偏移量
@@ -16,25 +16,25 @@ const LcdDatas waveshare_1inch47 = {
 void lcd_write_cmd(Lcd1I47Parametar *lcd, uint8_t cmd)
 {
     GPIO_WRITE(lcd->const_h.DC, GPIO_PIN_RESET);
-    GPIO_WRITE(lcd->const_h.spi_h.NSS, GPIO_PIN_RESET);
+    GPIO_WRITE(lcd->const_h.spi_h.CS_NSS, GPIO_PIN_RESET);
     HAL_SPI_Transmit(LCD_SPI, &cmd, 1, 100);
-    GPIO_WRITE(lcd->const_h.spi_h.NSS, GPIO_PIN_SET);
+    GPIO_WRITE(lcd->const_h.spi_h.CS_NSS, GPIO_PIN_SET);
 }
 
 // 寫入資料
 void lcd_write_data(Lcd1I47Parametar *lcd, uint8_t data)
 {
     GPIO_WRITE(lcd->const_h.DC, GPIO_PIN_SET);
-    GPIO_WRITE(lcd->const_h.spi_h.NSS, GPIO_PIN_RESET);
+    GPIO_WRITE(lcd->const_h.spi_h.CS_NSS, GPIO_PIN_RESET);
     HAL_SPI_Transmit(LCD_SPI, &data, 1, 100);
-    GPIO_WRITE(lcd->const_h.spi_h.NSS, GPIO_PIN_SET);
+    GPIO_WRITE(lcd->const_h.spi_h.CS_NSS, GPIO_PIN_SET);
 }
 
 // 寫入大量資料 (例如刷新整個畫面) - 使用 DMA 會更高效
 void lcd_write_data_buf(Lcd1I47Parametar *lcd, uint8_t *buff, size_t size)
 {
     GPIO_WRITE(lcd->const_h.DC, GPIO_PIN_SET);
-    GPIO_WRITE(lcd->const_h.spi_h.NSS, GPIO_PIN_RESET);
+    GPIO_WRITE(lcd->const_h.spi_h.CS_NSS, GPIO_PIN_RESET);
     if (size >= 512)
     {
         HAL_SPI_Transmit_DMA(LCD_SPI, buff, size); // 或使用 HAL_SPI_Transmit_DMA
@@ -42,7 +42,7 @@ void lcd_write_data_buf(Lcd1I47Parametar *lcd, uint8_t *buff, size_t size)
         while (__HAL_SPI_GET_FLAG(lcd->const_h.spi_h.hspix, SPI_FLAG_BSY));
     }
     else HAL_SPI_Transmit(LCD_SPI, buff, size, 1000);
-    GPIO_WRITE(lcd->const_h.spi_h.NSS, GPIO_PIN_SET);
+    GPIO_WRITE(lcd->const_h.spi_h.CS_NSS, GPIO_PIN_SET);
 }
 
 #endif

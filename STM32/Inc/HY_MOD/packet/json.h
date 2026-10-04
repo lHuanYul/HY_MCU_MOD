@@ -3,6 +3,9 @@
 #ifdef HY_MOD_STM32_JSON
 
 #include "HY_MOD/main/fn_state.h"
+#include "HY_MOD/main/buffer.h"
+
+extern uint8_t json_buffers[JSON_PKT_POOL_CAP][ALIGN_32(JSON_PKT_LEN)];
 
 typedef struct JsonPkt
 {

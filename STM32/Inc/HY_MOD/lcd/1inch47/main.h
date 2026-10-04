@@ -1,5 +1,5 @@
 #pragma once
-#include "HY_MOD/lcd_1inch47/basic.h"
+#include "HY_MOD/lcd/1inch47/basic.h"
 #ifdef HY_MOD_STM32_LCD_1INCH47
 
 void LCD_init(Lcd1I47Parametar *lcd);

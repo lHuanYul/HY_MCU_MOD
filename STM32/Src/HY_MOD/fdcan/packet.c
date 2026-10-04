@@ -40,7 +40,7 @@ Result fdcan_ring_push(FdcanRing *self, FdcanPkt *pkt, uint8_t drop)
     self->buf[real_idx] = *pkt;
     __DMB();
     self->in++;
-    return RESULT_OK(NULL);
+    return RESULT_OK(self);
 }
 
 Result fdcan_ring_pop(FdcanRing *self, FdcanPkt *pkt)

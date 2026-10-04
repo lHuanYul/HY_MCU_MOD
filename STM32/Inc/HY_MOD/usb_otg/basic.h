@@ -5,6 +5,7 @@
 #define HY_MOD_STM32_RBYTES
 #include "usbd_def.h"
 #include "HY_MOD/packet/raw_bytes.h"
+#include "HY_MOD/main/buffer.h"
 
 typedef struct UsbOtgConst
 {

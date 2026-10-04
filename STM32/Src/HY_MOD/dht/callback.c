@@ -4,8 +4,9 @@
 /*
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 */
-void dht_tim_PE_cb(DhtParametar *dht11, TIM_HandleTypeDef *htim)
+void HAL_TIM_PeriodElapsedCallback_OWN(TIM_HandleTypeDef *htim)
 {
+    DhtParametar *dht11 = &dht_h;
     if (htim != dht11->const_h.htimx) return;
     dht11->tim_mode_pwm = 0;
     dht_tim_mode_switch(dht11);

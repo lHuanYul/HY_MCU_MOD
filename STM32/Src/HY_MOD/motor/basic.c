@@ -276,7 +276,7 @@ void motor_switch_ctrl_system(MotorParameter *motor, MotorCtrlMode ctrl)
     motor->ctrl.ref_sys = ctrl;
 }
 
-void motor_switch_ctrl(MotorParameter *motor, MotorCtrlMode ctrl)
+void motor_set_ctrl_mode(MotorParameter *motor, MotorCtrlMode ctrl)
 {
     switch (ctrl)
     {

@@ -123,7 +123,7 @@ static Result fdcan_pkt_transmit(FdcanParametar *fdcan, FdcanPkt *pkt)
     RESULT_HAL_CHECK_HANDLE(
         HAL_FDCAN_AddMessageToTxFifoQ(fdcan->const_h.hfdcanx, &header, pkt->data)
     );
-    return RESULT_OK(NULL);
+    return RESULT_OK(pkt);
 }
 
 Result fdcan_tx_push(FdcanParametar *fdcan)
@@ -135,7 +135,7 @@ Result fdcan_tx_push(FdcanParametar *fdcan)
 
         FdcanPkt pkt = {0};
         Result result = fdcan_ring_pop(&fdcan->tx_buf, &pkt);
-        if (RESULT_CHECK_FAIL(result)) break;
+        if (RESULT_CHECK_ERR(result)) break;
         RESULT_CHECK_RET_RES(fdcan_pkt_transmit(fdcan, &pkt));
         
         uint32_t timeout = 50;
@@ -144,7 +144,7 @@ Result fdcan_tx_push(FdcanParametar *fdcan)
             if (--timeout == 0) break;
         }
     }
-    return RESULT_OK(NULL);
+    return RESULT_OK(fdcan);
 }
 
 static Result trsm_pkts_proc(FdcanParametar *fdcan)
@@ -152,7 +152,7 @@ static Result trsm_pkts_proc(FdcanParametar *fdcan)
     if (HAL_FDCAN_GetTxFifoFreeLevel(fdcan->const_h.hfdcanx) != FDCAN_TX_FIFO_SIZE)
         return RESULT_ERROR(RESULT_ERROR_BUSY);
     RESULT_CHECK_RET_RES(fdcan_tx_push(fdcan));
-    return RESULT_OK(NULL);
+    return RESULT_OK(fdcan);
 }
 
 ATTR_WEAK Result fdcan_pkt_rcv_read(FdcanPkt *pkt) { return RESULT_ERROR(RESULT_ERROR_NOT_FOUND); }
@@ -164,13 +164,13 @@ static Result recv_pkts_proc(FdcanParametar *fdcan, uint8_t count)
         RESULT_CHECK_RET_RES(fdcan_ring_pop(&fdcan->rx_buf, &pkt));
         fdcan_pkt_rcv_read(&pkt);
     }
-    return RESULT_OK(NULL);
+    return RESULT_OK(fdcan);
 }
 
 #include "main/main.h"
 static Result auto_pkts_proc(FdcanParametar *fdcan)
 {
-    Result result = RESULT_OK(NULL);
+    Result result = RESULT_OK(fdcan);
 #ifdef MCU_MOTOR_CTRL
     if (fdcan->motor_ret_en)
     {

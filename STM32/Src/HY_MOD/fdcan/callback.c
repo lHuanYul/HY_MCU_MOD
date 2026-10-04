@@ -73,9 +73,11 @@ void fdcan_rx_fifo1_cb(FdcanParametar *fdcan, uint32_t RxFifo1ITs)
 
 void fdcan_tim_cb(FdcanParametar *fdcan)
 {
+#ifdef HY_MOD_STM32_MOTOR
     uint32_t freq = (uint32_t)fdcan->dbg_h.tim_freq;
     if (fdcan->tim_tick % freq == 0) fdcan->test_en = 1;
     if (++fdcan->tim_tick >= freq * 10) fdcan->tim_tick = 0;
+#endif
 }
 
 #endif

@@ -24,12 +24,12 @@ Result fdcan_pkt_ist_read(FdcanParametar *fdcan, FdcanPkt *pkt)
                 case CMD_WHEEL_B0_COAST:
                 {
                     motor_set_rotate_mode(motor, MOTOR_ROTATE_COAST);
-                    return RESULT_OK(NULL);
+                    return RESULT_OK(fdcan);
                 }
                 case CMD_WHEEL_B0_BREAK:
                 {
                     motor_set_rotate_mode(motor, MOTOR_ROTATE_BREAK);
-                    return RESULT_OK(NULL);
+                    return RESULT_OK(fdcan);
                 }
                 case CMD_WHEEL_B0_NORMAL:
                 {
@@ -38,24 +38,24 @@ Result fdcan_pkt_ist_read(FdcanParametar *fdcan, FdcanPkt *pkt)
                     uint8_t u8s[sizeof(float32_t)];
                     memcpy(u8s, pkt->data + 2, sizeof(float32_t));
                     motor_set_speed(motor, var_u8_to_f32_be(u8s));
-                    return RESULT_OK(NULL);
+                    return RESULT_OK(fdcan);
                 }
                 case CMD_WHEEL_B0_LOCK:
                 {
                     motor_set_rotate_mode(motor, MOTOR_ROTATE_LOCK);
-                    return RESULT_OK(NULL);
+                    return RESULT_OK(fdcan);
                 }
                 case (uint8_t)0xF0:
                 {
                     motor->foc_h.rotor_exp_rad =
                         var_wrap_P(motor->foc_h.rotor_exp_rad + PI_DIV_6, PI_MUL_2);
-                    return RESULT_OK(NULL);
+                    return RESULT_OK(fdcan);
                 }
                 case CMD_WHEEL_B0_FDCAN:
                 {
                     RESULT_CHECK_RET_RES(fdcan_pkt_get_byte(pkt, 1, &code));
                     fdcan->motor_ret_en = (code) ? 1 : 0;
-                    return RESULT_OK(NULL);
+                    return RESULT_OK(fdcan);
                 }
                 default: break;
             }
@@ -81,7 +81,7 @@ static Result motor_pkt(FdcanPkt *pkt, MotorParameter *motor)
     memcpy(u8s, pkt->data + 2, sizeof(float32_t));
     motor->value_fbk = var_u8_to_f32_be(u8s);
     motor_history_write(motor);
-    return RESULT_OK(NULL);
+    return RESULT_OK(pkt);
 }
 
 static void hall_read(uint8_t code, VehicleHall *hall)
@@ -125,7 +125,7 @@ Result fdcan_pkt_ist_read(FdcanParametar *fdcan, FdcanPkt *pkt)
             hall_read(pkt->data[1], &vehicle_h.hall_left);
             hall_read(pkt->data[2], &vehicle_h.hall_right);
             uss_read(pkt->data[3], &vehicle_h.us_sensor);
-            return RESULT_OK(NULL);
+            return RESULT_OK(fdcan);
         }
         case CAN_ID_RFID_FBK:
         {
@@ -149,22 +149,22 @@ Result fdcan_pkt_ist_read(FdcanParametar *fdcan, FdcanPkt *pkt)
                         case CMD_VEHI_B1_MODE_FREE:
                         {
                             vehicle_set_mode(&vehicle_h, VEHICLE_MODE_FREE);
-                            return RESULT_OK(NULL);
+                            return RESULT_OK(fdcan);
                         }
                         case CMD_VEHI_B1_MODE_TRACK:
                         {
                             vehicle_set_mode(&vehicle_h, VEHICLE_MODE_TRACK);
-                            return RESULT_OK(NULL);
+                            return RESULT_OK(fdcan);
                         }
                         case CMD_VEHI_B1_MODE_ROTATE:
                         {
                             vehicle_set_mode(&vehicle_h, VEHICLE_MODE_T_ROTATE);
-                            return RESULT_OK(NULL);
+                            return RESULT_OK(fdcan);
                         }
                         case CMD_VEHI_B1_MODE_SEARCH:
                         {
                             vehicle_set_mode(&vehicle_h, VEHICLE_MODE_SEARCH_LEFT);
-                            return RESULT_OK(NULL);
+                            return RESULT_OK(fdcan);
                         }
                         default: break;
                     }
@@ -174,26 +174,26 @@ Result fdcan_pkt_ist_read(FdcanParametar *fdcan, FdcanPkt *pkt)
                 {
                     if (pkt->len < 3) return RESULT_ERROR(RESULT_ERROR_NOT_FOUND);
                     vehicle_set_var_free(&vehicle_h, pkt->data[1], pkt->data[2]);
-                    return RESULT_OK(NULL);
+                    return RESULT_OK(fdcan);
                 }
                 case CMD_VEHI_B0_SET_TRACK_VAR:
                 {
                     if (pkt->len < 3) return RESULT_ERROR(RESULT_ERROR_NOT_FOUND);
                     vehicle_set_var_track(&vehicle_h, pkt->data[1], pkt->data[2]);
-                    return RESULT_OK(NULL);
+                    return RESULT_OK(fdcan);
                 }
                 case CMD_VEHI_B0_SET_ROTATE_VAR:
                 {
                     if (pkt->len < 4) return RESULT_ERROR(RESULT_ERROR_NOT_FOUND);
                     vehicle_set_var_rotate(&vehicle_h, pkt->data[1], pkt->data[2], pkt->data[3]);
-                    return RESULT_OK(NULL);
+                    return RESULT_OK(fdcan);
                 }
                 case CMD_VEHI_B0_FDCAN:
                 {
                     RESULT_CHECK_RET_RES(fdcan_pkt_get_byte(pkt, 1, &code));
                     if (code == 0) vehicle_h.fdcan_enable = 0;
                     else vehicle_h.fdcan_enable = 1;
-                    return RESULT_OK(NULL);
+                    return RESULT_OK(fdcan);
                 }
                 default: break;
             }

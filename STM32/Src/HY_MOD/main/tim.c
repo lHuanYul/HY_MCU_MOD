@@ -1,5 +1,7 @@
 #include "HY_MOD/main/tim.h"
 
+__weak void HAL_TIM_PeriodElapsedCallback_OWN(TIM_HandleTypeDef *htim) {}
+
 uint32_t tim_clk_APB1, tim_clk_APB2;
 
 void INIT_OWN_TIM(void)

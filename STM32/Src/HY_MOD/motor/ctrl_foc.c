@@ -170,7 +170,7 @@ static inline void motor_vec_ctrl_ipark(MotorParameter *motor)
     IPARK_run(&motor->foc_h.ipark_h);
     Result res = trigo_atan(
         motor->foc_h.ipark_h.Alpha, motor->foc_h.ipark_h.Beta, &motor->foc_h.magn_rad);
-    if (RESULT_CHECK_FAIL(res))
+    if (RESULT_CHECK_ERR(res))
     {
         if (motor->ctrl.ref_sys == MOTOR_CTRL_FOC_SIM) motor->foc_h.magn_rad = 0.0f;
         else Error_Handler();

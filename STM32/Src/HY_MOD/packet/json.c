@@ -2,7 +2,8 @@
 #ifdef HY_MOD_STM32_JSON
 
 #include "CoreJSON/core_json.h"
-#include "HY_MOD/main/buffer.h"
+
+ATTR_RAM_D1_ALIGN_32 uint8_t json_buffers[JSON_PKT_POOL_CAP][ALIGN_32(JSON_PKT_LEN)] = {0};
 
 Result json_pkt_get_num(JsonPkt *pkt, char *id, uint64_t *container)
 {
@@ -26,7 +27,7 @@ Result json_pkt_get_num(JsonPkt *pkt, char *id, uint64_t *container)
     temp[valueLength] = '\0';
     *container = (uint64_t)strtoull(temp, NULL, 10);
 
-    return RESULT_OK(NULL);
+    return RESULT_OK(container);
 }
 
 Result json_pkt_get_char(
@@ -53,7 +54,7 @@ Result json_pkt_get_char(
     memcpy(container, value + 1, contentLen);
     container[contentLen] = '\0';
 
-    return RESULT_OK(NULL);
+    return RESULT_OK(container);
 }
 
 Result json_pkt_set_len(JsonPkt *pkt, uint16_t len)

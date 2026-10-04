@@ -192,7 +192,7 @@ Result motor_deg_reverse_upd(MotorParameter *motor)
         return RESULT_ERROR(RESULT_ERROR_FAIL);
     
     motor->deg_h.reverse = (motor->speed.ref_omega < 0.0f);
-    return RESULT_OK(NULL);
+    return RESULT_OK(motor);
 }
 
 void motor_deg_check_reverse(MotorParameter *motor)
@@ -212,7 +212,7 @@ void motor_deg_check_reverse(MotorParameter *motor)
 
 void motor_deg_proc_safe_reverse(MotorParameter *motor)
 {
-    if (RESULT_CHECK_FAIL(motor_deg_reverse_upd(motor)))
+    if (RESULT_CHECK_ERR(motor_deg_reverse_upd(motor)))
     {
         motor->rotate.ref_sys = MOTOR_ROTATE_COAST;
         return;
