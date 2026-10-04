@@ -48,6 +48,7 @@ typedef struct FdcanParametar
     volatile bool   motor_idq_en2;
 #endif
 } FdcanParametar;
+
 /**
  * @brief 初始化 FDCAN 硬體周邊與過濾器設定
  * @details 配置全域過濾器規則 (Global Filter)、FIFO0/1 範圍過濾器、發送延遲補償 (TDC)，

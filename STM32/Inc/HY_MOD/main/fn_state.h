@@ -238,4 +238,7 @@ typedef struct Result
     } while (0)
 
 #define INSTANCE_CHK(x, y) ((x)->Instance == (y)->Instance)
+
+extern void Error_Handler(void);
+
 #endif

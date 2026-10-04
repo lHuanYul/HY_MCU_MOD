@@ -42,6 +42,14 @@ void fdcan_rx_fifo0_cb(FdcanParametar *fdcan, uint32_t ITs);
     } while (0)
 void fdcan_rx_fifo1_cb(FdcanParametar *fdcan, uint32_t ITs);
 
+#define FDCAN_HAL_TIM_PeriodElapsedCB_CALL(fdcan, htim) \
+    do { \
+        if ( \
+            INSTANCE_CHK((htim), (fdcan).const_h.htimx) \
+        ) { \
+            fdcan_tim_cb(&(fdcan)); \
+        } \
+    } while (0)
 void fdcan_tim_cb(FdcanParametar *fdcan);
 
 #endif

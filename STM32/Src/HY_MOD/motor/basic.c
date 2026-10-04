@@ -39,6 +39,7 @@ const MotorModelData motor_42BLF01 = {
 #include "HY_MOD/motor/rotor.h"
 #include "HY_MOD/motor/ctrl_foc.h"
 #include "HY_MOD/adc/main.h"
+#include "HY_MOD/timer/dataS.h"
 
 static void motor_init_system(MotorParameter *motor)
 {
@@ -46,16 +47,9 @@ static void motor_init_system(MotorParameter *motor)
     const MotorConst *const_h = &motor->system.const_h;
 
     TIM_TypeDef *PWM_Inst = const_h->PWM_htimx->Instance;
-    #define TIM_GET_CCR_ADDR(__INSTANCE__, __CHANNEL__) \
-        (((__CHANNEL__) == TIM_CHANNEL_1) ? &((__INSTANCE__)->CCR1) : \
-        ((__CHANNEL__) == TIM_CHANNEL_2) ? &((__INSTANCE__)->CCR2) : \
-        ((__CHANNEL__) == TIM_CHANNEL_3) ? &((__INSTANCE__)->CCR3) : \
-        ((__CHANNEL__) == TIM_CHANNEL_4) ? &((__INSTANCE__)->CCR4) : \
-        ((__CHANNEL__) == TIM_CHANNEL_5) ? &((__INSTANCE__)->CCR5) : \
-                                            &((__INSTANCE__)->CCR6))
     for (i = 0; i < 3; i++)
     {
-        motor->system.PWM_Addr_CCR_uvw[i] = TIM_GET_CCR_ADDR(PWM_Inst, const_h->PWM_uvw[i].pwm_ch);
+        motor->system.PWM_Addr_CCR_uvw[i] = TIMER_GET_CCR_ADDR(PWM_Inst, const_h->PWM_uvw[i].pwm_ch);
     }
     motor->system.pwm_freq =
         (float32_t)*const_h->PWM_tim_clk /
@@ -66,7 +60,7 @@ static void motor_init_system(MotorParameter *motor)
 
     TIM_TypeDef *Hall_Inst = const_h->Hall_htimx->Instance;
     motor->system.Hall_Addr_IT = &(Hall_Inst->EGR);
-    motor->system.Hall_Addr_CCR = TIM_GET_CCR_ADDR(Hall_Inst, const_h->Hall_tim_val_ch);
+    motor->system.Hall_Addr_CCR = TIMER_GET_CCR_ADDR(Hall_Inst, const_h->Hall_tim_val_ch);
     motor->system.hall_freq =
         (float32_t)*const_h->Hall_tim_clk /
         (float32_t)(const_h->Hall_htimx->Init.Prescaler + 1U);
