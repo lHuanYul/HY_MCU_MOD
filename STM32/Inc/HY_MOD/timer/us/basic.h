@@ -66,12 +66,12 @@ Result timer_us_delay(TimerUSParm *timer, uint32_t us);
         if ( \
             INSTANCE_CHK((htim), (timer).const_h.htimx) \
         ) { \
-            timer_us_oc_isr(&(timer), (htim)); \
+            timer_us_oc_cb(&(timer), (htim)); \
         } \
     } while (0)
 /**
  * @brief 供 HAL_TIM_OC_DelayElapsedCallback 調用的輸出比較中斷回呼
  */
-void timer_us_oc_isr(TimerUSParm *timer, TIM_HandleTypeDef *htim);
+void timer_us_oc_cb(TimerUSParm *timer, TIM_HandleTypeDef *htim);
 
 #endif

@@ -4,7 +4,7 @@ __weak void HAL_TIM_PeriodElapsedCallback_OWN(TIM_HandleTypeDef *htim) {}
 
 uint32_t tim_clk_APB1, tim_clk_APB2;
 
-void INIT_OWN_TIM(void)
+void hymod_init_tim(void)
 {
     tim_clk_APB1 = HAL_RCC_GetPCLK1Freq();
 #ifdef STM32G0B1RE

@@ -1,4 +1,4 @@
 #pragma once
 
-void hy_mod_init(void);
-void hy_mod_main(void);
+void hymod_init(void);
+void hymod_main(void);

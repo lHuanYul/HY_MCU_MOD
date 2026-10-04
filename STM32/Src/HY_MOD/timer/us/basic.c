@@ -110,7 +110,7 @@ Result timer_us_delay(TimerUSParm *timer, uint32_t us)
 /**
  * @brief Output Compare 中斷喚醒邏輯 (置於中斷回呼調用)
  */
-void timer_us_oc_isr(TimerUSParm *timer, TIM_HandleTypeDef *htim)
+void timer_us_oc_cb(TimerUSParm *timer, TIM_HandleTypeDef *htim)
 {
     if (htim != timer->const_h.htimx) return;
 

@@ -2,13 +2,14 @@
 
 #include "HY_MOD/main/tim.h"
 
-void hy_mod_init(void)
+void hymod_init(void)
 {
-    INIT_OWN_TIM();
+    hymod_init_tim();
 }
 
-void hy_mod_main(void)
+void hymod_main(void)
 {
+    // If FreeRTOS, nothing should be here
     while (1)
     {
     }
