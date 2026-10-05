@@ -4,6 +4,8 @@
 /* ---------- Motor datasheets ---------- */
 
 // Max 36V 150Hz
+// HALL  U:Yellow V:Green W:Blue
+// MOTOR U:Green  V:Blue  W:Yellow
 const MotorModelData motor_vehicle = {
     .pole = 20,
     .gear = 4.4f,
@@ -18,6 +20,8 @@ const MotorModelData motor_vehicle = {
     .foc_spd_Ki = 0.05f,
 };
 
+// HALL  U:Yellow V:Green W:Blue
+// MOTOR U:Yellow V:Green W:Blue
 const MotorModelData motor_42BLF01 = {
     .pole = 8,
     .gear = 1.0f,

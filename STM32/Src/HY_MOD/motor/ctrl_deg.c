@@ -17,6 +17,14 @@ static const int8_t seq_map_120[9][3] = {
     { NONE_PASS, NONE_PASS, NONE_PASS }, // 8
 };
 
+inline void motor_deg_pi_setup(MotorParameter *motor)
+{
+    motor->deg_h.pi_omega.Kp = motor->const_h.model->deg_spd_Kp;
+    motor->deg_h.pi_omega.Ki = motor->const_h.model->deg_spd_Ki;
+    motor->deg_h.pi_omega.max = 1.0f;
+    motor->deg_h.pi_omega.min = 0.0f;
+}
+
 static void ctrl_load(MotorParameter *motor, int8_t seq[3], float32_t duty)
 {
     // 上臂全關
