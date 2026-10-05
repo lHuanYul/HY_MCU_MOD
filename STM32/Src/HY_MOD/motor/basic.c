@@ -14,8 +14,8 @@ const MotorModelData motor_vehicle = {
     .tau = 0.0025f,
     .ll = (0.32f / 2.0f) * 0.0025f,
     .hall_angle_comp = PI_DIV_3 * 5.0f,
-    .deg_spd_Kp = 0.0f,
-    .deg_spd_Ki = 0.0f,
+    .deg_spd_Kp = 0.05f,
+    .deg_spd_Ki = 0.02f,
     .foc_spd_Kp = 0.5f,
     .foc_spd_Ki = 0.05f,
 };
@@ -184,17 +184,18 @@ static inline void phase_pwmn_on(const MotorPhaseConst *phase)
 inline void motor_adcs_init(MotorParameter *motor)
 {
     uint8_t i;
-    for (i = 0; i < 3; i++)
+    uint8_t hc = MOTOR_ADCS_CNT / 2;
+    for (i = 0; i < hc; i++)
     {
         adc_current_init(&motor->adc_h.adcs[i].basic, motor->adc_h.adcs[i].model);
-        // adc_voltage_init(&motor->adc_h.adcs[i+3].basic, motor->adc_h.adcs[i+3].model);
+        // adc_voltage_init(&motor->adc_h.adcs[i+hc].basic, motor->adc_h.adcs[i+hc].model);
     }
 }
 
 inline void motor_adcs_upd(MotorParameter *motor)
 {
     uint8_t i;
-    for (i = 0; i < 3; i++)
+    for (i = 0; i < MOTOR_ADCS_CNT; i++)
         adc_upd_injected(&motor->adc_h.adcs[i].basic);
 }
 

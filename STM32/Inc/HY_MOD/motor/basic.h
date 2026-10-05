@@ -278,6 +278,7 @@ typedef struct MotorSpeedParame
     const float32_t save_stop_omega;
 } MotorSpeedParame;
 
+#define MOTOR_ADCS_CNT 6
 typedef union MotorPhaseDuty
 {
     struct {
@@ -288,7 +289,7 @@ typedef union MotorPhaseDuty
         float32_t iv;
         float32_t iw;
     };
-    float32_t uvw[6];
+    float32_t uvw[MOTOR_ADCS_CNT];
 } MotorPhaseDuty;
 
 // DEG Parameter

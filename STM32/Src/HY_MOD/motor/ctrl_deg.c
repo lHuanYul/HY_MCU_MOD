@@ -19,8 +19,8 @@ static const int8_t seq_map_120[9][3] = {
 
 inline void motor_deg_pi_setup(MotorParameter *motor)
 {
-    motor->deg_h.pi_omega.Kp = motor->const_h.model->deg_spd_Kp;
-    motor->deg_h.pi_omega.Ki = motor->const_h.model->deg_spd_Ki;
+    motor->deg_h.pi_omega.Kp = motor->system.const_h.model->deg_spd_Kp;
+    motor->deg_h.pi_omega.Ki = motor->system.const_h.model->deg_spd_Ki;
     motor->deg_h.pi_omega.max = 1.0f;
     motor->deg_h.pi_omega.min = 0.0f;
 }
@@ -128,69 +128,71 @@ void motor_deg_120_load(MotorParameter *motor, uint8_t id)
     ctrl_load(motor, seq, motor->deg_h.duty_val);
 }
 
-// static const int8_t seq_map_180[][3] = {
-//     { HIGH_PASS, LOW__PASS,  HIGH_PASS }, // 0-4
-//     { HIGH_PASS, LOW__PASS,  LOW__PASS  }, // 1-6
-//     { HIGH_PASS, HIGH_PASS, LOW__PASS  }, // 2-2
-//     { LOW__PASS,  HIGH_PASS, LOW__PASS  }, // 3-3
-//     { LOW__PASS,  HIGH_PASS, HIGH_PASS }, // 4-1
-//     { LOW__PASS,  LOW__PASS,  HIGH_PASS }, // 5-5
-//     { HIGH_PASS, HIGH_PASS, HIGH_PASS }, // 6
-//     { LOW__PASS,  LOW__PASS,  LOW__PASS  }, // 7
-// };
-// static const uint8_t index_180_lock[] = {7, 4, 2, 3, 0, 5, 1, 7};
-// static const uint8_t index_180_ccw[]  = {7, 0, 4, 5, 2, 1, 3, 7};
-// static const uint8_t index_180_cw[]   = {7, 2, 0, 1, 4, 3, 5, 7};
-// void deg_ctrl_180_load(MotorParameter *motor)
-// {
-//     if (motor->rotor.curr == UINT8_MAX) return;
-//     uint8_t i;
-//     int8_t seq[3] = {0};
-//     switch (motor->rotate.ref_sys)
-//     {
-//         case MOTOR_ROTATE_COAST:
-//         {
-//             motor->deg_h.duty_val = 1.0f;
-//             for (i = 0; i < 3; i++) seq[i] = seq_map_180[6][i];
-//             break;
-//         }
-//         case MOTOR_ROTATE_BREAK:
-//         case MOTOR_ROTATE_LOCK:
-//         {
-//             for (i = 0; i < 3; i++) seq[i] = seq_map_180[7][i];
-//             break;
-//         }
-//         case MOTOR_ROTATE_NORMAL:
-//         {
-//             for (i = 0; i < 3; i++)
-//             {
-//                 if (!motor->deg_h.reverse)
-//                     seq[i] = seq_map_180[index_180_ccw[motor->rotor.curr]][i];
-//                 else
-//                     seq[i] = seq_map_180[ index_180_cw[motor->rotor.curr]][i];
-//             }
-//             break;
-//         }
-//         case MOTOR_ROTATE_LOCK_FIN:
-//         {
-//             motor->deg_h.duty_val = 0.2f;
-//             for (i = 0; i < 3; i++)
-//                 seq[i] = seq_map_180[index_180_lock[motor->rotor.curr]][i];
-//             break;
-//         }
-//     }
-//     for (i = 0; i < 3; i++)
-//     {
-//         if (seq[i] == HIGH_PASS)
-//         {
-//             motor->deg_h.duty_h.uvw[i] = motor->deg_h.duty_val;
-//         }
-//         else
-//         {
-//             motor->deg_h.duty_h.uvw[i] = 0;
-//         }
-//     }
-// }
+/*
+static const int8_t seq_map_180[][3] = {
+    { HIGH_PASS, LOW__PASS,  HIGH_PASS }, // 0-4
+    { HIGH_PASS, LOW__PASS,  LOW__PASS  }, // 1-6
+    { HIGH_PASS, HIGH_PASS, LOW__PASS  }, // 2-2
+    { LOW__PASS,  HIGH_PASS, LOW__PASS  }, // 3-3
+    { LOW__PASS,  HIGH_PASS, HIGH_PASS }, // 4-1
+    { LOW__PASS,  LOW__PASS,  HIGH_PASS }, // 5-5
+    { HIGH_PASS, HIGH_PASS, HIGH_PASS }, // 6
+    { LOW__PASS,  LOW__PASS,  LOW__PASS  }, // 7
+};
+static const uint8_t index_180_lock[] = {7, 4, 2, 3, 0, 5, 1, 7};
+static const uint8_t index_180_ccw[]  = {7, 0, 4, 5, 2, 1, 3, 7};
+static const uint8_t index_180_cw[]   = {7, 2, 0, 1, 4, 3, 5, 7};
+void deg_ctrl_180_load(MotorParameter *motor)
+{
+    if (motor->rotor.curr == UINT8_MAX) return;
+    uint8_t i;
+    int8_t seq[3] = {0};
+    switch (motor->rotate.ref_sys)
+    {
+        case MOTOR_ROTATE_COAST:
+        {
+            motor->deg_h.duty_val = 1.0f;
+            for (i = 0; i < 3; i++) seq[i] = seq_map_180[6][i];
+            break;
+        }
+        case MOTOR_ROTATE_BREAK:
+        case MOTOR_ROTATE_LOCK:
+        {
+            for (i = 0; i < 3; i++) seq[i] = seq_map_180[7][i];
+            break;
+        }
+        case MOTOR_ROTATE_NORMAL:
+        {
+            for (i = 0; i < 3; i++)
+            {
+                if (!motor->deg_h.reverse)
+                    seq[i] = seq_map_180[index_180_ccw[motor->rotor.curr]][i];
+                else
+                    seq[i] = seq_map_180[ index_180_cw[motor->rotor.curr]][i];
+            }
+            break;
+        }
+        case MOTOR_ROTATE_LOCK_FIN:
+        {
+            motor->deg_h.duty_val = 0.2f;
+            for (i = 0; i < 3; i++)
+                seq[i] = seq_map_180[index_180_lock[motor->rotor.curr]][i];
+            break;
+        }
+    }
+    for (i = 0; i < 3; i++)
+    {
+        if (seq[i] == HIGH_PASS)
+        {
+            motor->deg_h.duty_h.uvw[i] = motor->deg_h.duty_val;
+        }
+        else
+        {
+            motor->deg_h.duty_h.uvw[i] = 0;
+        }
+    }
+}
+*/
 
 #include "HY_MOD/motor/rotor.h"
 
