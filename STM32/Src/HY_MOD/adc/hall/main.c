@@ -1,4 +1,4 @@
-#include "HY_MOD/adc_hall/main.h"
+#include "HY_MOD/adc/hall/main.h"
 #ifdef HY_MOD_STM32_ADC_HALL
 
 #include "HY_MOD/main/variable_cal.h"

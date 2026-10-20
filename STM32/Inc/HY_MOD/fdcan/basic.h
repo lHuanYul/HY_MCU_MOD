@@ -6,8 +6,16 @@
 #include "HY_MOD/fdcan/packet.h"
 #include "fdcan.h"
 
+typedef enum FdcanModeHY
+{
+    FDCAN_MODEHY_UNINIT,
+    FDCAN_MODEHY_TEST,
+    FDCAN_MODEHY_NORMAL,
+} FdcanModeHY;
+
 typedef enum FdcanState
 {
+    FDCAN_STATE_UNINIT,
     FDCAN_STATE_RUNNING,
     FDCAN_STATE_BUS_OFF,
     FDCAN_STATE_RESTART,
@@ -31,6 +39,7 @@ typedef struct FdcanParametar
 {
     const FdcanConst const_h;
     FdcanDbg    dbg_h;
+    FdcanModeHY mode;
     FdcanState  state;
     FdcanRing   tx_buf;
     uint8_t     tx_cb;
