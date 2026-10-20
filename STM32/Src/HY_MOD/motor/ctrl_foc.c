@@ -282,7 +282,7 @@ void motor_foc_run(MotorParameter *motor)
     motor_vec_ctrl_ipark(motor);
     motor_vec_ctrl_svgen(motor);
     motor_vec_ctrl_svpwm(motor);
-
+    /*
     if (motor->tim_tick % RECORD_INTERVAL == 0)
     {
         // 計算降採樣後對應的 0~9 Buffer Index
@@ -304,7 +304,7 @@ void motor_foc_run(MotorParameter *motor)
             fdcan_h.motor_idq_en1 = 0;
             fdcan_h.motor_idq_en2 = 1;
         }
-    }
+    }*/
     // float32_t scale = 4095.0f / (2.0f * ONE_DIV_SQRT3);
     // float32_t dac_id = motor->foc_h.pi_Id_h.feedback * scale + 2048.0f;
     // float32_t dac_iq = motor->foc_h.pi_Iq_h.feedback * scale + 2048.0f;

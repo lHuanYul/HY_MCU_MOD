@@ -27,5 +27,6 @@ typedef struct AdcCurrentModel
 } AdcCurrentModel;
 extern const AdcCurrentModel adc_I_acs712;
 extern const AdcCurrentModel adc_I_opa325;
+extern const AdcCurrentModel adc_I_amc3302_R1m2;
 
 #endif

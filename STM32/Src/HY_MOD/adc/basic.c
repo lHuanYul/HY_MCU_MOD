@@ -13,4 +13,10 @@ const AdcCurrentModel adc_I_opa325 = {
     .proportion = 1.0f,
 };
 
+const AdcCurrentModel adc_I_amc3302_R1m2 = {
+    // Rshunt * Gain * Gopa
+    .sensitive = 0.0012f * 41.0f * 0.82f,
+    .proportion = 1.0f,
+};
+
 #endif
