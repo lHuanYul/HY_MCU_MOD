@@ -21,6 +21,8 @@ typedef struct AdcParameter
 
 typedef struct AdcCurrentModel
 {
+    // sensitive
+    // Rshunt * Gain * Gopa
     float32_t sensitive;
     // 5->3.3 --> 2/3
     float32_t proportion;
