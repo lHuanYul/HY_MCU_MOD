@@ -1,7 +1,7 @@
 #include "HY_MOD/fdcan/pkt_write.h"
 #ifdef HY_MOD_STM32_FDCAN
 
-#include "main/main.h"
+#include "main/_main.h"
 #include "HY_MOD/fdcan/pkt_read.h"
 #include "HY_MOD/fdcan/main.h"
 #include "HY_MOD/main/variable_cal.h"
@@ -58,7 +58,7 @@ Result fdcan_motor_idq_send(FdcanParametar *fdcan, MotorParameter *motor, uint8_
 
 #ifdef MCU_VEHICLE_MAIN
 
-static void fdcan_pkt_write_motor(FdcanParametar *fdcan, MotorParameter *motor)
+static Result fdcan_pkt_write_motor(FdcanParametar *fdcan, MotorParameter *motor)
 {
     FdcanPkt pkt = {0};
     fdcan_pkt_set_id(&pkt, motor->fdcan_id);

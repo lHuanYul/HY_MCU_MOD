@@ -19,16 +19,17 @@ typedef struct AdcParameter
     float32_t   min_fix;
 } AdcParameter;
 
-typedef struct AdcCurrentModel
+typedef struct AdcModel
 {
     // sensitive
     // Rshunt * Gain * Gopa
     float32_t sensitive;
-    // 5->3.3 --> 2/3
+    // ex. 5->3.3 --> 2/3
     float32_t proportion;
-} AdcCurrentModel;
-extern const AdcCurrentModel adc_I_acs712;
-extern const AdcCurrentModel adc_I_opa325;
-extern const AdcCurrentModel adc_I_amc3302_R1m2;
+} AdcModel;
+extern const AdcModel adc_I_acs712;
+extern const AdcModel adc_I_opa325;
+extern const AdcModel adc_I_amc3302_R1m2;
+extern const AdcModel adc_V_R_36to3V3;
 
 #endif

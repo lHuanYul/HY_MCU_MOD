@@ -1,7 +1,7 @@
 #include "HY_MOD/fdcan/pkt_read.h"
 #ifdef HY_MOD_STM32_FDCAN
 
-#include "main/main.h"
+#include "main/_main.h"
 #include "HY_MOD/cmds.h"
 #include "HY_MOD/main/variable_cal.h"
 
@@ -135,6 +135,7 @@ Result fdcan_pkt_ist_read(FdcanParametar *fdcan, FdcanPkt *pkt)
             uint8_t u8s[sizeof(uint32_t)];
             memcpy(u8s, pkt->data + 1, sizeof(uint32_t));
             vehicle_h.rfid.rfid = var_u8_to_u32_be(u8s);
+            break;
         }
         case CAN_ID_VEHICLE:
         {

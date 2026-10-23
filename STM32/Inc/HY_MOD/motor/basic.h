@@ -186,7 +186,7 @@ typedef struct MotorRotateParam
 
 typedef struct MotorADC
 {
-    const AdcCurrentModel *model;
+    const AdcModel *model;
     AdcParameter basic;
 } MotorADC;
 

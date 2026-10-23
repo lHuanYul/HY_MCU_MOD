@@ -175,6 +175,15 @@ typedef struct Result
         }\
     } while (0)
 
+#define RESULT_CHECK_RET_RES_OK(expr,_obj_)\
+    do {\
+        Result _res_ = (expr);\
+        if (RESULT_CHECK_ERR(_res_))\
+        {\
+            return RESULT_OK(_obj_);\
+        }\
+    } while (0)
+
 #define RESULT_UNWRAP_RET_RES(expr)\
     ({\
         Result _res_ = (expr);\

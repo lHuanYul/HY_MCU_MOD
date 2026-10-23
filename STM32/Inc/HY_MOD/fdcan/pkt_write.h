@@ -15,7 +15,7 @@ Result fdcan_motor_idq_send(FdcanParametar *fdcan, MotorParameter *motor, uint8_
 #include "HY_MOD/vehicle/basic.h"
 
 Result fdcan_pkt_write_motor(FdcanPkt *pkt, MotorParameter *motor);
-Result fdcan_vehicle_motor_send(VehicleParameter *vehicle, FdcanPktPool *pool, FdcanPktBuf *buf);
+Result fdcan_vehicle_motor_send(FdcanParametar *fdcan, VehicleParameter *vehicle);
 #endif
 
 #ifdef MCU_SENSOR
@@ -23,8 +23,8 @@ Result fdcan_vehicle_motor_send(VehicleParameter *vehicle, FdcanPktPool *pool, F
 #include "HY_MOD/rfid/main.h"
 #include "HY_MOD/us_sensor/main.h"
 
-Result fdcan_pkt_write_hall_uss(FdcanPkt *pkt);
-Result fdcan_pkt_write_rfid(FdcanPkt *pkt);
+Result fdcan_pkt_write_hall_uss(FdcanParametar *fdcan);
+Result fdcan_pkt_write_rfid(FdcanParametar *fdcan);
 #endif
 
 #endif

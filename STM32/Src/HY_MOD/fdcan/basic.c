@@ -2,6 +2,7 @@
 #ifdef HY_MOD_STM32_FDCAN
 
 #include "fdcan.h"
+#include "main/_main.h"
 #include "HY_MOD/cmds.h"
 #include "HY_MOD/fdcan/pkt_read.h"
 #include "HY_MOD/fdcan/pkt_write.h"
@@ -18,9 +19,10 @@ void fdcan_setup(FdcanParametar *fdcan)
             FDCAN_FILTER_REMOTE
         )
     );
+    uint8_t i = 0;
     FDCAN_FilterTypeDef fifo0_filter0 = {
         .IdType = FDCAN_EXTENDED_ID,
-        .FilterIndex = 1,
+        .FilterIndex = i++,
         .FilterType = FDCAN_FILTER_RANGE,
         .FilterConfig = FDCAN_FILTER_TO_RXFIFO0,
         .FilterID1 = FDCAN_FIFO0_FILTER0_ID_MIN,
@@ -33,7 +35,7 @@ void fdcan_setup(FdcanParametar *fdcan)
     // Inmidiet filter
     FDCAN_FilterTypeDef fifo1_filter0 = {
         .IdType = FDCAN_EXTENDED_ID,
-        .FilterIndex = 1,
+        .FilterIndex = i++,
         .FilterType = FDCAN_FILTER_RANGE,
         .FilterConfig = FDCAN_FILTER_TO_RXFIFO1,
         .FilterID1 = 0x0,
@@ -76,6 +78,7 @@ void fdcan_setup(FdcanParametar *fdcan)
         HAL_FDCAN_ActivateNotification(
             fdcan->const_h.hfdcanx, FDCAN_IT_RX_FIFO1_NEW_MESSAGE, 0)
     );
+    fdcan->state = FDCAN_STATE_RUNNING;
 }
 
 void fdcan_tim_start(FdcanParametar *fdcan)
@@ -89,15 +92,15 @@ void fdcan_tim_start(FdcanParametar *fdcan)
 
 static uint32_t len_to_dlc(uint8_t len) 
 {
-    if (len <= 0)  return FDCAN_DLC_BYTES_0;
-    if (len <= 1)  return FDCAN_DLC_BYTES_1;
-    if (len <= 2)  return FDCAN_DLC_BYTES_2;
-    if (len <= 3)  return FDCAN_DLC_BYTES_3;
-    if (len <= 4)  return FDCAN_DLC_BYTES_4;
-    if (len <= 5)  return FDCAN_DLC_BYTES_5;
-    if (len <= 6)  return FDCAN_DLC_BYTES_6;
-    if (len <= 7)  return FDCAN_DLC_BYTES_7;
-    if (len <= 8)  return FDCAN_DLC_BYTES_8;
+    if (len == 0)  return FDCAN_DLC_BYTES_0;
+    if (len == 1)  return FDCAN_DLC_BYTES_1;
+    if (len == 2)  return FDCAN_DLC_BYTES_2;
+    if (len == 3)  return FDCAN_DLC_BYTES_3;
+    if (len == 4)  return FDCAN_DLC_BYTES_4;
+    if (len == 5)  return FDCAN_DLC_BYTES_5;
+    if (len == 6)  return FDCAN_DLC_BYTES_6;
+    if (len == 7)  return FDCAN_DLC_BYTES_7;
+    if (len == 8)  return FDCAN_DLC_BYTES_8;
     if (len <= 12) return FDCAN_DLC_BYTES_12;
     if (len <= 16) return FDCAN_DLC_BYTES_16;
     if (len <= 20) return FDCAN_DLC_BYTES_20;
@@ -134,8 +137,7 @@ Result fdcan_tx_push(FdcanParametar *fdcan)
         if (fl == 0) break;
 
         FdcanPkt pkt = {0};
-        Result result = fdcan_ring_pop(&fdcan->tx_buf, &pkt);
-        if (RESULT_CHECK_ERR(result)) break;
+        RESULT_CHECK_RET_RES_OK(fdcan_ring_pop(&fdcan->tx_buf, &pkt), fdcan);
         RESULT_CHECK_RET_RES(fdcan_pkt_transmit(fdcan, &pkt));
         
         uint32_t timeout = 50;
@@ -149,7 +151,7 @@ Result fdcan_tx_push(FdcanParametar *fdcan)
 
 static Result trsm_pkts_proc(FdcanParametar *fdcan)
 {
-    if (HAL_FDCAN_GetTxFifoFreeLevel(fdcan->const_h.hfdcanx) != FDCAN_TX_FIFO_SIZE)
+    if (HAL_FDCAN_GetTxFifoFreeLevel(fdcan->const_h.hfdcanx) <= 0)
         return RESULT_ERROR(RESULT_ERROR_BUSY);
     RESULT_CHECK_RET_RES(fdcan_tx_push(fdcan));
     return RESULT_OK(fdcan);
@@ -167,7 +169,6 @@ static Result recv_pkts_proc(FdcanParametar *fdcan, uint8_t count)
     return RESULT_OK(fdcan);
 }
 
-#include "main/main.h"
 static Result auto_pkts_proc(FdcanParametar *fdcan)
 {
     Result result = RESULT_OK(fdcan);
@@ -213,6 +214,7 @@ void fdcan_main(FdcanParametar *fdcan)
 {
     switch (fdcan->state)
     {
+        case FDCAN_STATE_UNINIT: break;
         case FDCAN_STATE_BUS_OFF:
         {
             fdcan->state = FDCAN_STATE_RESTART;

@@ -38,16 +38,16 @@ typedef struct FdcanDbg
 typedef struct FdcanParametar
 {
     const FdcanConst const_h;
-    FdcanDbg    dbg_h;
-    FdcanModeHY mode;
-    FdcanState  state;
-    FdcanRing   tx_buf;
-    uint8_t     tx_cb;
-    uint32_t    tx_lost;
-    FdcanRing   rx_buf;
-    uint8_t     rx_cb;
-    uint32_t    tim_tick;
-    uint32_t    alive_tick;
+    FdcanDbg        dbg_h;
+    FdcanModeHY     mode;
+    FdcanState      state;
+    FdcanRing       tx_buf;
+    uint8_t         tx_cb;
+    uint32_t        tx_lost;
+    FdcanRing       rx_buf;
+    uint8_t         rx_cb;
+    uint32_t        tim_tick;
+    uint32_t        alive_tick;
     volatile bool   test_en;
 #ifdef MCU_MOTOR_CTRL
     uint32_t        motor_alive;

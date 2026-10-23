@@ -105,7 +105,7 @@ void adc_upd_injected(AdcParameter *adc)
     MAX_MIN_UPD(adc->max_fix, adc->min_fix, adc->value_fix);
 }
 
-void adc_current_init(AdcParameter *adc, const AdcCurrentModel *model)
+void adc_current_init(AdcParameter *adc, const AdcModel *model)
 {
     adc->need_fix = 1;
     adc->scale = ADC_TO_VOL / model->proportion / model->sensitive;

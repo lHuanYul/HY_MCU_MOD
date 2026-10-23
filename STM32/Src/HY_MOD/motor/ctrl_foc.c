@@ -263,7 +263,7 @@ static inline void motor_vec_ctrl_svpwm(MotorParameter *motor)
     motor->foc_h.duty_h.iw = 1.0f - motor->foc_h.duty_h.w;
 }
 
-#include "main/main.h"
+#include "main/_main.h"
 #define RECORD_INTERVAL 20
 void motor_foc_run(MotorParameter *motor)
 {

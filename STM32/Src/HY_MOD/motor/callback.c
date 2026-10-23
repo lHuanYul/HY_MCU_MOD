@@ -1,7 +1,7 @@
 #include "HY_MOD/motor/callback.h"
 #ifdef HY_MOD_STM32_MOTOR
 
-#include "main/main.h"
+#include "main/_main.h"
 #include "HY_MOD/motor/rotor.h"
 #include "HY_MOD/motor/ctrl_deg.h"
 #include "HY_MOD/motor/ctrl_foc.h"
