@@ -50,7 +50,7 @@ void motor_hall_timer_cb(MotorParameter *motor);
 
 #define MOTOR_HAL_ADCEx_InjectedConvCpltCB_CALL(motor, hadc) \
     do { \
-        if (INSTANCE_CHK((hadc), (motor).adc_h.adc_ui.basic.hadcx)) \
+        if (INSTANCE_CHK((hadc), (motor).adc_h.u_cur.adc.basic.const_h.hadcx)) \
         { \
             motor_pwm_cb(&(motor)); \
         } \

@@ -1828,7 +1828,7 @@ static const int16_t Table_atan[1501] = {
 
 static inline float32_t TableSearch_sin(float32_t theta)
 {
-    theta = var_wrap_P(theta, PI_MUL_2);
+    theta = var_wrap_P(theta, PI_MUL(2));
     bool minus_flag = false;
     if (theta > PI) {
         minus_flag = true;
@@ -1845,15 +1845,15 @@ static inline float32_t TableSearch_atan(float32_t theta)
 {
     uint16_t idx = (uint16_t)var_fabsf(theta * 100.0f);
     if (idx > 1500) idx = 1500;
-    float32_t output_abs = (float32_t)Table_atan[idx] / 10000.0f;
+    float32_t output_abs = (float32_t)Table_atan[idx] * VAR_ONE_DIV(10000.0f);
     return (theta >= 0.0f) ? output_abs : -output_abs;
 }
 
 static inline float32_t TableSearch_atan2(float32_t y, float32_t x)
 {
     if (x == 0.0f) {
-        if      (y > 0.0f) return  PI_DIV_2;
-        else if (y < 0.0f) return -PI_DIV_2;
+        if      (y > 0.0f) return  PI_DIV(2);
+        else if (y < 0.0f) return -PI_DIV(2);
         else               return 0.0f; // (0,0) → 定義為 0
     }
 
@@ -1896,12 +1896,12 @@ Result trigo_sin_cosf(float32_t theta, float32_t *sin, float32_t *cos)
         RESULT_HAL_CHECK_RET_RES(HAL_CORDIC_Configure(&hcordic, cordic_currunt));
     }
     int32_t in[2];
-    in[0] = (int32_t)((var_wrap_PN(theta, PI_MUL_2) / PI) * 2147483648.0f);
+    in[0] = (int32_t)((var_wrap_PN(theta, PI_MUL(2)) * VAR_ONE_DIV(PI)) * 2147483648.0f);
     in[1] = 0x7FFFFFFF;
     int32_t out[2];
     RESULT_HAL_CHECK_HANDLE(HAL_CORDIC_Calculate(&hcordic, in, out, 1, HAL_MAX_DELAY));
-    *sin = (float32_t)out[0] / 2147483648.0f;
-    *cos = (float32_t)out[1] / 2147483648.0f;
+    *sin = (float32_t)out[0] * VAR_ONE_DIV(2147483648.0f);
+    *cos = (float32_t)out[1] * VAR_ONE_DIV(2147483648.0f);
     return RESULT_OK(NULL);
 }
 
@@ -1922,8 +1922,8 @@ Result trigo_atan(float32_t x, float32_t y, float32_t *theta)
     in[0] = (int32_t)(x * 2147483648.0f);
     in[1] = (int32_t)(y * 2147483648.0f);
     RESULT_HAL_CHECK_HANDLE(HAL_CORDIC_Calculate(&hcordic, in, &out, 1, HAL_MAX_DELAY));
-    float32_t angle = (float32_t)out / 2147483648.0f * PI; // [-π, π)
-    if (angle < 0) angle += PI_MUL_2;
+    float32_t angle = (float32_t)out * VAR_ONE_DIV(2147483648.0f) * PI; // [-π, π)
+    if (angle < 0) angle += PI_MUL(2);
     *theta = angle;
     return RESULT_OK(NULL);
 }

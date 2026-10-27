@@ -3,6 +3,19 @@
 #include "HY_MOD/main/fn_state.h"
 #include "HY_MOD/main/typedef.h"
 
+#ifndef PI // 180 deg
+#define PI  3.14159265358979f
+// #define PI  3.14159265358979323846f 
+#endif
+#define PI_MUL(x)       (PI * (x))
+#define PI_DIV(x)       (PI / (x)) // 180 / x
+#define DEG_TO_RAD      (PI / 180.0f)
+#define RAD_TO_DEG      (180.0f / PI)
+#define VAR_ONE_DIV(x)      (1.0f / (x))
+#define SQRT3           1.73205080756888f   // 根號3
+#define RPM_TO_OMEGA    (PI / 30.0f)
+#define OMEGA_TO_RPM    (30.0f / PI)
+
 // 單一 bit 遮罩常數 (第 0 位元為 1)
 #define BIT_SNG_MASK                (0x01UL)
 // 將指定 bit 設為 1
@@ -46,23 +59,13 @@
     else if (val < min) val = min;          \
 })
 
-#ifndef PI // 180 deg
-#define PI  3.14159265358979f
-// #define PI  3.14159265358979323846f 
-#endif
-#define PI_MUL_2        (2.0f * PI)     // 360 deg
-#define PI_DIV_6        (PI / 6.0f)     // 30 deg
-#define PI_DIV_3        (PI / 3.0f)     // 60 deg
-#define PI_DIV_2        (PI / 2.0f)     // 90 deg
-#define DEG_TO_RAD      (PI / 180.0f)
-#define RAD_TO_DEG      (180.0f / PI)
-#define DIV_1_3         (1.0f / 3.0f)   // 1/3
-#define DIV_2_3         (2.0f / 3.0f)   // 2/3
-#define SQRT3           1.73205080756888f   // 根號3
-#define ONE_DIV_SQRT3   0.577350269189626f  // 1/(根號3)
-#define SQRT3_DIV_2     0.866025403784439f  // (根號3)/2
-#define RPM_TO_OMEGA    (PI / 30.0f)
-#define OMEGA_TO_RPM    (30.0f / PI)
+#define VAR_MAX_MIN_UPD(max, min, value) \
+    do { \
+        if ((value) > (max)) (max) = (value); \
+        if ((value) < (min)) (min) = (value); \
+    } while(0)
+
+float32_t var_iir(float32_t new, float32_t old, float32_t alpha);
 
 uint32_t var_swap_u32(uint32_t value);
 void var_u32_to_u8_be(uint32_t value, uint8_t* u8);

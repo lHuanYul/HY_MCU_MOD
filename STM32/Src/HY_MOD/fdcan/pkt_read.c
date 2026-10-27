@@ -7,7 +7,7 @@
 
 #ifdef MCU_MOTOR_CTRL
 
-#include "HY_MOD/motor/basic.h"
+#include "HY_MOD/motor/main.h"
 
 Result fdcan_pkt_ist_read(FdcanParametar *fdcan, FdcanPkt *pkt)
 {
@@ -48,7 +48,7 @@ Result fdcan_pkt_ist_read(FdcanParametar *fdcan, FdcanPkt *pkt)
                 case (uint8_t)0xF0:
                 {
                     motor->foc_h.rotor_exp_rad =
-                        var_wrap_P(motor->foc_h.rotor_exp_rad + PI_DIV_6, PI_MUL_2);
+                        var_wrap_P(motor->foc_h.rotor_exp_rad + PI_DIV(6), PI_MUL(2));
                     return RESULT_OK(fdcan);
                 }
                 case CMD_WHEEL_B0_FDCAN:

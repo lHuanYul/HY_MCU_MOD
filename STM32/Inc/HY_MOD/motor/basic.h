@@ -2,6 +2,7 @@
 #include "main/config.h"
 #ifdef HY_MOD_STM32_MOTOR
 
+#include "HY_MOD/main/fn_state.h"
 #include "HY_MOD/main/variable_cal.h"
 #include "HY_MOD/motor/math/pid.h"
 #include "HY_MOD/motor/math/clarke.h"
@@ -15,6 +16,7 @@ typedef struct MotorModelData
     uint8_t     pole;
     float32_t   gear;
     float32_t   rated_current;
+    float32_t   rated_voltage;
     // 定子相電阻
     float32_t   rl;
     // 電氣時間常數
@@ -61,9 +63,7 @@ typedef struct MotorConst
     const uint32_t          *PWM_tim_clk;
     union {
         struct {
-            MotorPhaseConst PWM_u;
-            MotorPhaseConst PWM_v;
-            MotorPhaseConst PWM_w;
+            MotorPhaseConst PWM_u, PWM_v, PWM_w;
         };
         MotorPhaseConst     PWM_uvw[3];
     };
@@ -73,9 +73,7 @@ typedef struct MotorConst
     uint32_t                *Hall_tim_clk;
     union {
         struct {
-            MotorHallConst  Hall_a;
-            MotorHallConst  Hall_b;
-            MotorHallConst  Hall_c;
+            MotorHallConst  Hall_a, Hall_b, Hall_c;
         };
         MotorHallConst      hall_abc[3];
     };
@@ -90,9 +88,10 @@ typedef struct MotorSystemConst
     //
     union {
         struct {
-            volatile uint32_t   *PWM_Addr_CCR_u;
-            volatile uint32_t   *PWM_Addr_CCR_v;
-            volatile uint32_t   *PWM_Addr_CCR_w;
+            volatile uint32_t
+                *PWM_Addr_CCR_u,
+                *PWM_Addr_CCR_v,
+                *PWM_Addr_CCR_w;
         };
         volatile uint32_t       *PWM_Addr_CCR_uvw[3];
     };
@@ -133,8 +132,10 @@ typedef enum MotorCtrlMode
     MOTOR_CTRL_TEST_LOW,
     // 上臂輸出測試 ( PWM = 0.3 )
     MOTOR_CTRL_TEST_WAVE,
-    // 120度輸出 轉子位置開環控制
-    MOTOR_CTRL_120_SIMULATE,
+    // 120度輸出 I-F 強拖固定
+    MOTOR_CTRL_120_I_F_SAME,
+    // 120度輸出 I-F 強拖加速
+    MOTOR_CTRL_120_I_F_ACCE,
     // 120度輸出 全閉環控制
     MOTOR_CTRL_120_NORMAL,
     // 120度輸出 DUTY開環控制
@@ -143,8 +144,8 @@ typedef enum MotorCtrlMode
     MOTOR_CTRL_120_DIREC_SW,
     // FOC輸出 轉子位置開環控制 ( 無ADC回授 )
     MOTOR_CTRL_FOC_SIM,
-    // Todo FOC輸出 初始
-    MOTOR_CTRL_FOC_INIT,
+    // FOC輸出 I-F 強拖加速
+    MOTOR_CTRL_FOC_I_F_ACCE,
     // FOC輸出 全閉環控制
     MOTOR_CTRL_FOC_NORMAL,
     // FOC輸出 轉子定位
@@ -184,40 +185,29 @@ typedef struct MotorRotateParam
     MotorRotateMode ref_sys;
 } MotorRotateParam;
 
-typedef struct MotorADC
+typedef struct MotorADCData
 {
-    const AdcModel *model;
-    AdcParameter basic;
-} MotorADC;
+    AdcModelParam   adc;
+    float32_t       pu;
+} MotorADCData;
 
-typedef struct MotorADCParame
+#define MOTOR_ADCS_CNT      6
+#define MOTOR_ADCS_CNT_DIV2 (MOTOR_ADCS_CNT / 2)
+typedef struct MotorADCParam
 {
     union {
         struct {
-            MotorADC adc_ui;
-            MotorADC adc_vi;
-            MotorADC adc_wi;
-            MotorADC adc_uv;
-            MotorADC adc_vv;
-            MotorADC adc_wv;
+            MotorADCData
+                u_cur, v_cur, w_cur,
+                u_vol, v_vol, w_vol;
         };
-        MotorADC adcs[6];
-    };
-    // Per-Unit
-    union {
-        struct {
-            float32_t ui;
-            float32_t vi;
-            float32_t wi;
-            float32_t uv;
-            float32_t vv;
-            float32_t wv;
-        };
-        float32_t fixs[6];
+        MotorADCData uvw[MOTOR_ADCS_CNT];
     };
     // 應接近0
-    float32_t   total;
-} MotorADCParame;
+    float32_t   total_i;
+    // 
+    float32_t   avg_v;
+} MotorADCParam;
 
 typedef enum MotorSensorMode
 {
@@ -246,24 +236,27 @@ typedef struct MotorPhaseTimeHistory
 } MotorPhaseTimeHistory;
 
 // Hall Parameter
+#define MOTOR_HALL_OF 7
 typedef struct MotorRotorParam
 {
     // 位置取得模式
-    MotorSensorMode         mode;
+    volatile MotorSensorMode        mode;
     // 換相時間記錄
-    MotorPhaseTimeHistory   times;
+    volatile MotorPhaseTimeHistory  times_histoy;
     // 目前轉子位置
-    uint8_t                 curr;
+    volatile uint8_t        curr;
     // 上次轉子位置
-    uint8_t                 prev;
+    volatile uint8_t        prev;
     // 虛擬轉子位置 用於模擬旋轉
-    uint8_t                 virtual;
+    volatile uint8_t        virtual;
     // 錯誤跳變次數
     uint8_t                 wrong;
     // 正確跳變累計
     uint8_t                 right;
-
-    uint32_t                overflow;
+    // I-F 強拖跳變週期
+    uint32_t                I_F_trigger_T;
+    // Hall timer AutoReload
+    uint32_t                tim_ar;
     // 停轉時間
     uint32_t                stop_tick;
 } MotorRotorParam;
@@ -278,18 +271,14 @@ typedef struct MotorSpeedParame
     const float32_t save_stop_omega;
 } MotorSpeedParame;
 
-#define MOTOR_ADCS_CNT 6
 typedef union MotorPhaseDuty
 {
     struct {
-        float32_t u;
-        float32_t v;
-        float32_t w;
-        float32_t iu;
-        float32_t iv;
-        float32_t iw;
+        float32_t
+            u_h, v_h, w_h,
+            u_l, v_l, w_l;
     };
-    float32_t uvw[MOTOR_ADCS_CNT];
+    float32_t uvw[6];
 } MotorPhaseDuty;
 
 // DEG Parameter
@@ -297,20 +286,22 @@ typedef struct MotorDEGParam
 {
     // 反轉
     bool                reverse;
-    // DEG duty值
-    float32_t           duty_val;
-    // DEG uvw duty
-    MotorPhaseDuty      phases_duty;
     // 速度環
     PID_CTRL            pi_omega;
     // 電流環
     PID_CTRL            pi_current;
+    // DEG duty值
+    float32_t           load_duty_val;
+    // 當前載入相位 id
+    uint8_t             load_phase_id;
+    // DEG uvw duty
+    MotorPhaseDuty      final_duty;
 } MotorDEGParam;
 
 // FOC Parameter
 typedef struct MotorFOCParam
 {
-    uint32_t            init_cnt;
+    uint32_t            tim_tick_init;
     // clarke
     CLARKE              clarke_h;
     // 目前轉子位置
@@ -324,11 +315,11 @@ typedef struct MotorFOCParam
     // park
     PARK                park_h;
 
-    PID_CTRL             pi_omega;
+    PID_CTRL            pi_omega;
     // 
-    PID_CTRL             pi_Id_h;
+    PID_CTRL            pi_Id_h;
     // 
-    PID_CTRL             pi_Iq_h;
+    PID_CTRL            pi_Iq_h;
     // 磁場位置
     float32_t           magn_rad;
     // ipark
@@ -338,7 +329,7 @@ typedef struct MotorFOCParam
     // Vref_s = SQRT3 * Vref / Vbus
     float32_t           Vref_s;
     // FOC duty
-    MotorPhaseDuty      duty_h;
+    MotorPhaseDuty      final_duty;
 } MotorFOCParam;
 
 // DBG: debug
@@ -358,101 +349,47 @@ typedef struct MotorHistoryArray
     volatile float32_t  iq[10];
 } MotorHistoryArray;
 
+#define ZCP_CONFIRM_TIMES       2       // 連續確認 2 次
+typedef struct MotorVZcpParam
+{
+    uint8_t zcp_cnt;           // 連續確認計數
+    uint8_t zcp_detected;      // 過零點偵測完成標記
+    uint16_t comm_ticks;       // 當前相步距已走過的 PWM tick 數
+    uint16_t delay_30deg_cnt;  // 30度換相延遲倒數
+} MotorVZcpParam;
+
 typedef struct MotorParameter
 {
     // 系統常數
-    MotorSystemConst            system;
-
-    uint32_t                    init_cnt;
+    MotorSystemConst        system;
+    // PWM 中斷計數
+    uint32_t                tim_tick;
+    // PWM 中斷 初始化遞增計數
+    uint32_t                tim_tick_init;
+    // PWM 中斷 自上次換相已過計數
+    uint32_t                tim_tick_ch_phase;
     // 馬達控制模式 (120度與foc以及細部)
-    MotorCtrlParam              ctrl;
+    MotorCtrlParam          ctrl;
     // 馬達旋轉模式 (滑行與剎車等)
-    MotorRotateParam            rotate;
-    // 計時中斷計數
-    uint32_t                    tim_tick;
+    MotorRotateParam        rotate;
     // ADC
-    MotorADCParame              adc_h;
+    MotorADCParam          adc_h;
     // 轉子
-    volatile MotorRotorParam    rotor;
+     MotorRotorParam        rotor;
     // 從座往轉子 順時針為負
-    MotorSpeedParame            speed;
+    MotorSpeedParame        speed;
     // 120度控制
-    MotorDEGParam               deg_h;
+    MotorDEGParam           deg_h;
     // FOC控制
-    MotorFOCParam               foc_h;
+    MotorFOCParam           foc_h;
     // PWM load duty
-    MotorPhaseDuty              phases_duty_load;
-
-    MotorDbg                    dbg_h;
-
-    MotorHistoryArray           history;
+    MotorPhaseDuty          final_duty;
+    // 除錯用
+    MotorDbg                dbg_h;
+    // 記錄用
+    MotorHistoryArray       history;
+    // Todo 須想放在哪
+    MotorVZcpParam          zcp;
 } MotorParameter;
-
-/* -------------------------------------------------- */
-
-#include "HY_MOD/main/fn_state.h"
-
-/**
- * @brief 初始化馬達控制系統 (包含常數換算、ADC校正、PWM與霍爾定時器啟動)
- * 
- * @param motor 馬達控制參數結構體指標
- */
-void motor_init(MotorParameter *motor);
-/**
- * @brief 直接寫入三相 PWM 定時器的比較暫存器 (CCR)
- * 
- * @param motor 馬達控制參數結構體指標
- * @param u     U 相 CCR 原始計數值
- * @param v     V 相 CCR 原始計數值
- * @param w     W 相 CCR 原始計數值
- */
-void motor_timer_load_inner(MotorParameter *motor, uint32_t u, uint32_t v, uint32_t w);
-/**
- * @brief 根據當前三相占空比 (phases_duty_load) 限幅並計算寫入 PWM 定時器
- * 
- * @param motor 馬達控制參數結構體指標
- */
-void motor_timer_load(MotorParameter *motor);
-/**
- * @brief 初始化三相電流 (及電壓) ADC 取樣結構體與校正參數
- * 
- * @param motor 馬達控制參數結構體指標
- */
-void motor_adcs_init(MotorParameter *motor);
-/**
- * @brief 更新注入組 ADC 原始取樣值並換算 (規定流入馬達繞組為正電流)
- * 
- * @param motor 馬達控制參數結構體指標
- */
-void motor_adcs_upd(MotorParameter *motor);
-/**
- * @brief 設定目標轉速 (從尾端向轉子看，逆時針 CCW 為正)
- * 
- * @param motor 馬達控制參數結構體指標
- * @param rpm   目標轉速 (正負代表轉向): 
- *              在 DUTY 模式下作為占空比使用，範圍 [-1.0, 1.0]，正負同樣代表轉向。
- */
-void motor_set_speed(MotorParameter *motor, float32_t rpm);
-/**
- * @brief 設定馬達運轉/停機模式 (滑行、煞車、鎖軸、正常運轉等)
- * 
- * @param motor 馬達控制參數結構體指標
- * @param mode  目標旋轉模式
- */
-void motor_set_rotate_mode(MotorParameter *motor, MotorRotateMode mode);
-/**
- * @brief 使用者請求切換馬達控制模式 (更新 ref_user 並自動配置內部計數與狀態)
- * 
- * @param motor 馬達控制參數結構體指標
- * @param ctrl  目標控制模式 (120度方波、FOC、開環測試等)
- */
-void motor_set_ctrl_mode(MotorParameter *motor, MotorCtrlMode ctrl);
-/**
- * @brief 系統內部狀態機切換控制模式 (切換下橋 PWMN GPIO/AF 模式並配置計時器溢位週期)
- * 
- * @param motor 馬達控制參數結構體指標
- * @param ctrl  目標控制模式
- */
-void motor_switch_ctrl_system(MotorParameter *motor, MotorCtrlMode ctrl);
 
 #endif

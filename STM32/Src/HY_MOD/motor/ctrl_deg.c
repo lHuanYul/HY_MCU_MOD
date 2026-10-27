@@ -1,21 +1,111 @@
-#include "HY_MOD/motor/ctrl_deg.h"
+#include "HY_MOD/motor/ctrl.h"
 #ifdef HY_MOD_STM32_MOTOR
 
-#define HIGH_PASS   1
-#define NONE_PASS   0
-#define LOW__PASS  -1
-static const int8_t seq_map_120[9][3] = {
-    // 註解從頭順序是ccw 標準化角度-霍爾
-    { HIGH_PASS, NONE_PASS, LOW__PASS }, // 0-4
-    { NONE_PASS, HIGH_PASS, LOW__PASS }, // 1-6
-    { LOW__PASS, HIGH_PASS, NONE_PASS }, // 2-2
-    { LOW__PASS, NONE_PASS, HIGH_PASS }, // 3-3
-    { NONE_PASS, LOW__PASS, HIGH_PASS }, // 4-1
-    { HIGH_PASS, LOW__PASS, NONE_PASS }, // 5-5
-    { HIGH_PASS, HIGH_PASS, HIGH_PASS }, // 6
-    { LOW__PASS, LOW__PASS, LOW__PASS }, // 7
-    { NONE_PASS, NONE_PASS, NONE_PASS }, // 8
+#include "HY_MOD/motor/main.h"
+
+// #define _HIGH_   1
+// #define _NONE_   0
+// #define _LOW__  -1
+// static const int8_t seq_map_120[][3] = {
+//     // 註解從頭順序是ccw 標準化角度-霍爾
+//     { _HIGH_, _NONE_, _LOW__ }, // 0-4
+//     { _NONE_, _HIGH_, _LOW__ }, // 1-6
+//     { _LOW__, _HIGH_, _NONE_ }, // 2-2
+//     { _LOW__, _NONE_, _HIGH_ }, // 3-3
+//     { _NONE_, _LOW__, _HIGH_ }, // 4-1
+//     { _HIGH_, _LOW__, _NONE_ }, // 5-5
+//     { _HIGH_, _HIGH_, _HIGH_ }, // 6
+//     { _LOW__, _LOW__, _LOW__ }, // 7
+//     { _NONE_, _NONE_, _NONE_ }, // 8
+// };
+// static const int8_t zcp_map_120[][3] = {
+//     { _NONE_, _HIGH_, _NONE_ },
+//     { _LOW__, _NONE_, _NONE_ },
+//     { _NONE_, _NONE_, _HIGH_ },
+//     { _NONE_, _LOW__, _NONE_ },
+//     { _HIGH_, _NONE_, _NONE_ },
+//     { _NONE_, _NONE_, _LOW__ },
+// };
+
+static const StepDriveLUT STEP_DRIVE_TABLE[] = {
+    // Step 0 (4): U=HIGH, V=NONE (Rising), W=LOW
+    [0] = {
+        .u_h = 1.0f, .v_h = 0.0f, .w_h = 0.0f,
+        .u_l = 0.0f, .v_l = 0.0f, .w_l = 1.0f,
+        .u_l_en = 0, .v_l_en = 0, .w_l_en = 1,
+        .u_zcp  = 0, .v_zcp  = 1, .w_zcp  = 0
+    },
+    // Step 1 (6): U=NONE (Falling), V=HIGH, W=LOW
+    [1] = {
+        .u_h = 0.0f, .v_h = 1.0f, .w_h = 0.0f,
+        .u_l = 0.0f, .v_l = 0.0f, .w_l = 1.0f,
+        .u_l_en = 0, .v_l_en = 0, .w_l_en = 1,
+        .u_zcp  =-1, .v_zcp  = 0, .w_zcp  = 0
+    },
+    // Step 2 (2): U=LOW, V=HIGH, W=NONE (Rising)
+    [2] = {
+        .u_h = 0.0f, .v_h = 1.0f, .w_h = 0.0f,
+        .u_l = 1.0f, .v_l = 0.0f, .w_l = 0.0f,
+        .u_l_en = 1, .v_l_en = 0, .w_l_en = 0,
+        .u_zcp  = 0, .v_zcp  = 0, .w_zcp  = 1
+    },
+    // Step 3 (3): U=LOW, V=NONE (Falling), W=HIGH
+    [3] = {
+        .u_h = 0.0f, .v_h = 0.0f, .w_h = 1.0f,
+        .u_l = 1.0f, .v_l = 0.0f, .w_l = 0.0f,
+        .u_l_en = 1, .v_l_en = 0, .w_l_en = 0,
+        .u_zcp  = 0, .v_zcp  =-1, .w_zcp  = 0
+    },
+    // Step 4 (1): U=NONE (Rising), V=LOW, W=HIGH
+    [4] = {
+        .u_h = 0.0f, .v_h = 0.0f, .w_h = 1.0f,
+        .u_l = 0.0f, .v_l = 1.0f, .w_l = 0.0f,
+        .u_l_en = 0, .v_l_en = 1, .w_l_en = 0,
+        .u_zcp  = 1, .v_zcp  = 0, .w_zcp  = 0
+    },
+    // Step 5 (5): U=HIGH, V=LOW, W=NONE (Falling)
+    [5] = {
+        .u_h = 1.0f, .v_h = 0.0f, .w_h = 0.0f,
+        .u_l = 0.0f, .v_l = 1.0f, .w_l = 0.0f,
+        .u_l_en = 0, .v_l_en = 1, .w_l_en = 0,
+        .u_zcp  = 0, .v_zcp  = 0, .w_zcp  =-1
+    },
+    // Cond 6: All HIGH
+    [6] = {
+        .u_h = 1.0f, .v_h = 1.0f, .w_h = 1.0f,
+        .u_l = 0.0f, .v_l = 0.0f, .w_l = 0.0f,
+        .u_l_en = 0, .v_l_en = 0, .w_l_en = 0,
+        .u_zcp  = 0, .v_zcp  = 0, .w_zcp  = 0
+    },
+    // Cond 7: All LOW
+    [7] = {
+        .u_h = 0.0f, .v_h = 0.0f, .w_h = 0.0f,
+        .u_l = 1.0f, .v_l = 1.0f, .w_l = 1.0f,
+        .u_l_en = 1, .v_l_en = 1, .w_l_en = 1,
+        .u_zcp  = 0, .v_zcp  = 0, .w_zcp  = 0
+    },
+    // Cond 8: All NONE (自由滑行 Coast)
+    [8] = {
+        .u_h = 0.0f, .v_h = 0.0f, .w_h = 0.0f,
+        .u_l = 0.0f, .v_l = 0.0f, .w_l = 0.0f,
+        .u_l_en = 0, .v_l_en = 0, .w_l_en = 0,
+        .u_zcp  = 0, .v_zcp  = 0, .w_zcp  = 0
+    }
 };
+
+inline bool motor_deg_zcp_match(MotorParameter *motor)
+{
+    const StepDriveLUT *cfg = &STEP_DRIVE_TABLE[motor->deg_h.load_phase_id];
+
+    // 利用 zcp (0, 1, -1) 自動過濾非懸空相，並自動翻轉下降相的極性
+    // 因為非懸空相的 zcp 均為 0，三項相加等同只取出「懸空相的定向投影值」
+    float32_t zcp_val =
+        (motor->adc_h.u_vol.pu * (float32_t)cfg->u_zcp) +
+        (motor->adc_h.v_vol.pu * (float32_t)cfg->v_zcp) +
+        (motor->adc_h.w_vol.pu * (float32_t)cfg->w_zcp);
+    
+    return (zcp_val > ZCP_THRESHOLD_PU) ? 1 : 0;
+}
 
 inline void motor_deg_pi_setup(MotorParameter *motor)
 {
@@ -25,119 +115,113 @@ inline void motor_deg_pi_setup(MotorParameter *motor)
     motor->deg_h.pi_omega.min = 0.0f;
 }
 
-static void ctrl_load(MotorParameter *motor, int8_t seq[3], float32_t duty)
+inline uint8_t motor_deg_get_next_phase(MotorParameter *motor, uint8_t phase)
 {
-    // 上臂全關
-    motor_timer_load_inner(motor, 0, 0, 0);
+    if (phase >= MOTOR_HALL_OF) return MOTOR_HALL_OF;
+    if (!motor->deg_h.reverse)
+        return ((phase + 1) % 6);
+    else
+        return ((phase + 5) % 6);
+}
 
-    const MotorPhaseConst *phase = motor->system.const_h.PWM_uvw;
-    uint8_t i;
-    for (i = 0; i < 3; i++)
-    {
-        if (seq[i] == HIGH_PASS)
-        {
-            motor->deg_h.phases_duty.uvw[i] = duty;
-            motor->deg_h.phases_duty.uvw[i+3] = 0.0f;
-            GPIO_WRITE_R(phase[i].pwmn_gpio, 0);
-        }
-        else if (seq[i] == LOW__PASS)
-        {
-            motor->deg_h.phases_duty.uvw[i] = 0.0f;
-            motor->deg_h.phases_duty.uvw[i+3] = 1.0f;
-            GPIO_WRITE_R(phase[i].pwmn_gpio, 1);
-        }
-        else
-        {
-            motor->deg_h.phases_duty.uvw[i] = 0.0f;
-            motor->deg_h.phases_duty.uvw[i+3] = 0.0f;
-            GPIO_WRITE_R(phase[i].pwmn_gpio, 0);
-        }
-    }
-    motor->phases_duty_load = motor->deg_h.phases_duty;
+static void ctrl_load(MotorParameter *motor)
+{
+    const StepDriveLUT  *cfg = &STEP_DRIVE_TABLE[motor->deg_h.load_phase_id];
+    const MotorConst    *c   = &motor->system.const_h;
+    MotorPhaseDuty      *f_d = &motor->deg_h.final_duty;
+    float32_t           duty = motor->deg_h.load_duty_val;
+
+    f_d->u_h = duty * cfg->u_h;
+    f_d->v_h = duty * cfg->v_h;
+    f_d->w_h = duty * cfg->w_h;
+    f_d->u_l = cfg->u_l;
+    f_d->v_l = cfg->v_l;
+    f_d->w_l = cfg->w_l;
+
+    // 關閉上臂
+    motor_timer_load_inner(motor, 0, 0, 0);
+    // 更新
+    GPIO_WRITE_R(c->PWM_u.pwmn_gpio, cfg->u_l_en);
+    GPIO_WRITE_R(c->PWM_v.pwmn_gpio, cfg->v_l_en);
+    GPIO_WRITE_R(c->PWM_w.pwmn_gpio, cfg->w_l_en);
+    motor->final_duty = motor->deg_h.final_duty;
     motor_timer_load(motor);
 }
 
 void motor_deg_test(MotorParameter *motor)
 {
-    uint8_t i;
-    float32_t duty = 1.0f;
-    int8_t seq[3] = {0};
     switch (motor->ctrl.ref_sys)
     {
         case MOTOR_CTRL_TEST_HIGH:
         {
-            for (i = 0; i < 3; i++) seq[i] = seq_map_120[6][i];
+            motor->deg_h.load_duty_val = 1.0f;
+            motor->deg_h.load_phase_id = 6;
             break;
         }
         case MOTOR_CTRL_TEST_LOW:
         {
-            for (i = 0; i < 3; i++) seq[i] = seq_map_120[7][i];
+            motor->deg_h.load_duty_val = 1.0f;
+            motor->deg_h.load_phase_id = 7;
             break;
         }
         case MOTOR_CTRL_TEST_WAVE:
         {
-            duty = 0.3f;
-            for (i = 0; i < 3; i++) seq[i] = seq_map_120[6][i];
+            motor->deg_h.load_duty_val = 0.3f;
+            motor->deg_h.load_phase_id = 6;
             break;
         }
         default: return;
     }
-    ctrl_load(motor, seq, duty);
+    ctrl_load(motor);
 }
 
 void motor_deg_120_load(MotorParameter *motor, uint8_t id)
 {
-    uint8_t i;
-    int8_t seq[3] = {0};
     switch (motor->rotate.ref_sys)
     {
     	case MOTOR_ROTATE_UNINIT: return;
         case MOTOR_ROTATE_COAST:
         {
-            motor->deg_h.duty_val = 1.0f;
-            for (i = 0; i < 3; i++) seq[i] = seq_map_120[8][i];
+            motor->deg_h.load_duty_val = 1.0f;
+            motor->deg_h.load_phase_id = 8;
             break;
         }
         case MOTOR_ROTATE_BREAK:
         case MOTOR_ROTATE_LOCK:
         {
-            for (i = 0; i < 3; i++) seq[i] = seq_map_120[7][i];
+            motor->deg_h.load_phase_id = 7;
             break;
         }
         case MOTOR_ROTATE_NORMAL:
         {
-            for (i = 0; i < 3; i++)
-            {
-                if (!motor->deg_h.reverse)
-                    seq[i] = seq_map_120[id][i];
-                else
-                    seq[i] = seq_map_120[(id + 3) % 6][i];
-            }
+            if (!motor->deg_h.reverse)
+                motor->deg_h.load_phase_id = id;
+            else
+                motor->deg_h.load_phase_id = (id + 3) % 6;
             break;
         }
         case MOTOR_ROTATE_LOCK_FIN:
         {
-            motor->deg_h.duty_val = 0.2f;
+            motor->deg_h.load_duty_val = 0.2f;
             // Todo
             // motor->rotor.virtual = motor->rotor.curr;
-            for (i = 0; i < 3; i++)
-                seq[i] = seq_map_120[motor->rotor.virtual][i];
+            motor->deg_h.load_phase_id = motor->rotor.virtual;
             break;
         }
     }
-    ctrl_load(motor, seq, motor->deg_h.duty_val);
+    ctrl_load(motor);
 }
 
 /*
 static const int8_t seq_map_180[][3] = {
-    { HIGH_PASS, LOW__PASS,  HIGH_PASS }, // 0-4
-    { HIGH_PASS, LOW__PASS,  LOW__PASS  }, // 1-6
-    { HIGH_PASS, HIGH_PASS, LOW__PASS  }, // 2-2
-    { LOW__PASS,  HIGH_PASS, LOW__PASS  }, // 3-3
-    { LOW__PASS,  HIGH_PASS, HIGH_PASS }, // 4-1
-    { LOW__PASS,  LOW__PASS,  HIGH_PASS }, // 5-5
-    { HIGH_PASS, HIGH_PASS, HIGH_PASS }, // 6
-    { LOW__PASS,  LOW__PASS,  LOW__PASS  }, // 7
+    { _HIGH_, _LOW__,  _HIGH_ }, // 0-4
+    { _HIGH_, _LOW__,  _LOW__  }, // 1-6
+    { _HIGH_, _HIGH_, _LOW__  }, // 2-2
+    { _LOW__,  _HIGH_, _LOW__  }, // 3-3
+    { _LOW__,  _HIGH_, _HIGH_ }, // 4-1
+    { _LOW__,  _LOW__,  _HIGH_ }, // 5-5
+    { _HIGH_, _HIGH_, _HIGH_ }, // 6
+    { _LOW__,  _LOW__,  _LOW__  }, // 7
 };
 static const uint8_t index_180_lock[] = {7, 4, 2, 3, 0, 5, 1, 7};
 static const uint8_t index_180_ccw[]  = {7, 0, 4, 5, 2, 1, 3, 7};
@@ -182,7 +266,7 @@ void deg_ctrl_180_load(MotorParameter *motor)
     }
     for (i = 0; i < 3; i++)
     {
-        if (seq[i] == HIGH_PASS)
+        if (seq[i] == _HIGH_)
         {
             motor->deg_h.duty_h.uvw[i] = motor->deg_h.duty_val;
         }

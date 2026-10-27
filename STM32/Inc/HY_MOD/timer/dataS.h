@@ -15,8 +15,10 @@
 #define TIM16_ARR_MAX   65535U
 #define TIM17_ARR_MAX   65535U
 
-// #define TIMx_ARR_MAX(instance) \
-//     (((instance) == TIM2 || (instance) == TIM5) ? 4294967295U : 65535U)
+/*
+#define TIMx_ARR_MAX(instance) \
+    (((instance) == TIM2 || (instance) == TIM5) ? 4294967295U : 65535U)
+*/
 
 #define TIMER_GET_CCR_ADDR(__INSTANCE__, __CHANNEL__) \
     (((__CHANNEL__) == TIM_CHANNEL_1) ? &((__INSTANCE__)->CCR1) : \

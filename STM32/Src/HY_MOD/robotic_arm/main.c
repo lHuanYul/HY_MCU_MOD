@@ -157,7 +157,7 @@ void StartArmTask(void *argument)
     arm_motion_set(ARM_MOTION_IDLE);
     for(;;)
     {
-        // !
+        // Aba
         if (robotic_arm_h.motion_inner != robotic_arm_h.motion)
         {
             robotic_arm_h.motion_inner = robotic_arm_h.motion;

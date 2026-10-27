@@ -10,7 +10,7 @@ typedef enum AdcState
 
 typedef struct AdcHallParameter
 {
-    AdcParameter    adc;
+    AdcParam    adc;
     uint16_t        value;
     uint16_t        gate;
     AdcState        state;

@@ -7,7 +7,7 @@
 // inline void SVGEN_run(SVGENDQ *svgq)
 // {
 //     float32_t t1 = svgq->Ualpha * 0.5f;
-//     float32_t t2 = svgq->Ubeta * SQRT3_DIV_2;
+//     float32_t t2 = svgq->Ubeta * (SQRT3 / 2.0f);
 //     // Inverse clarke transformation
 //     svgq->Va = svgq->Ualpha;
 //     svgq->Vb = -t1 + t2;

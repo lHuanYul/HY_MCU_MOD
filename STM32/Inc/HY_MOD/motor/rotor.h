@@ -3,12 +3,12 @@
 #ifdef HY_MOD_STM32_MOTOR
 
 /**
- * @brief 讀取硬體三相霍爾 GPIO 腳位並轉換為標么電角度扇區 (0~5)
+ * @brief 切換轉子位置感測模式 (霍爾中斷、PWM取樣、模擬步進或無感測)
  * 
  * @param motor 馬達控制參數結構體指標
- * @return uint8_t 轉子電角度扇區索引 (無效霍爾訊號回傳 10)
+ * @param mode  目標感測模式
  */
-uint8_t motor_rotor_hall_get(MotorParameter *motor);
+void motor_set_rotor_mode(MotorParameter *motor, MotorSensorMode mode);
 /**
  * @brief 設定霍爾定時器自動重裝載值 (ARR / Overflow)
  * 
@@ -17,18 +17,24 @@ uint8_t motor_rotor_hall_get(MotorParameter *motor);
  */
 void motor_rotor_set_overflow(MotorParameter *motor, uint32_t of);
 /**
- * @brief 切換轉子位置感測模式 (霍爾中斷、PWM取樣、模擬步進或無感測)
- * 
- * @param motor 馬達控制參數結構體指標
- * @param mode  目標感測模式
- */
-void motor_set_rotor_mode(MotorParameter *motor, MotorSensorMode mode);
-/**
  * @brief 軟體觸發霍爾定時器捕獲與更新事件 (用於模擬模式或無感測模式步進觸發)
  * 
  * @param motor 馬達控制參數結構體指標
  */
-void motor_rotor_phase_trigger(MotorParameter *motor);
+void motor_rotor_hall_tim_tri(MotorParameter *motor);
+/**
+ * @brief 讀取硬體三相霍爾 GPIO 腳位並轉換為標么電角度扇區 (0~5)
+ * 
+ * @param motor 馬達控制參數結構體指標
+ * @return uint8_t 轉子電角度扇區索引 (無效霍爾訊號回傳 10)
+ */
+uint8_t motor_rotor_hall_get(MotorParameter *motor);
+/**
+ * @brief I-F 強拖跳變觸發 (用於模擬模式或無感測模式步進觸發)
+ * 
+ * @param motor 馬達控制參數結構體指標
+ */
+void motor_rotor_I_F_trigger(MotorParameter *motor);
 /**
  * @brief 內部霍爾定時器中斷處理程序 (更新扇區、記錄換相間隔並換算角速度回授)
  * 

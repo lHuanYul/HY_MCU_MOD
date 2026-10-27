@@ -1,5 +1,10 @@
 #include "HY_MOD/main/variable_cal.h"
 
+float32_t var_iir(float32_t new, float32_t old, float32_t alpha)
+{
+    return (old + alpha * (new - old));
+}
+
 // 32 bit --------------------------------------------------------------------------------
 
 uint32_t var_comb_u32(const void* src)
@@ -75,7 +80,6 @@ float32_t var_u8_to_f32_be(const uint8_t *u8)
     return f32;
 }
 
-// Todo 倒數
 float32_t var_wrap_P(float32_t x, float32_t value)
 {
     int32_t n = (int32_t)(x / value);

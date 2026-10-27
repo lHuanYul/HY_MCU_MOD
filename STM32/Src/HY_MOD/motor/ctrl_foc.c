@@ -1,7 +1,8 @@
-#include "HY_MOD/motor/ctrl_foc.h"
+#include "HY_MOD/motor/ctrl.h"
 #ifdef HY_MOD_STM32_MOTOR
 
 #include "HY_MOD/main/variable_cal.h"
+#include "HY_MOD/motor/main.h"
 #include "HY_MOD/motor/math/trigonometric.h"
 #include "tim.h"
 
@@ -15,7 +16,7 @@ inline void motor_foc_pi_init(MotorParameter *motor)
     motor->foc_h.pi_omega.min = -1.0f;
 
     const float32_t bw =
-        motor->system.pwm_it_f / MOTOR_I_BW_INDEX * PI_MUL_2;
+        motor->system.pwm_it_f / MOTOR_I_BW_INDEX * PI_MUL(2);
     const float32_t Vbase = MOTOR_VBUS / SQRT3;
     motor->foc_h.pi_Id_h.Kp = const_h->model->ll * bw / Vbase;
     motor->foc_h.pi_Id_h.Ki = 1.0f / const_h->model->tau * motor->system.pwm_period;
@@ -46,26 +47,15 @@ static inline Result motor_vec_ctrl_angle_upd(MotorParameter *motor)
         if (motor->ctrl.ref_sys == MOTOR_CTRL_FOC_SIM) pos = 0;
         else return RESULT_ERROR(RESULT_ERROR_NOT_FOUND);
     }
-    motor->foc_h.rotor_rad = pos * PI_DIV_3;
+    motor->foc_h.rotor_rad = pos * PI_DIV(3);
     return RESULT_OK(motor);
 }
 
 static inline void motor_vec_ctrl_clarke(MotorParameter *motor)
 {
-    uint8_t i;
-    motor->adc_h.total = 0.0f;
-    for (i = 0; i < 3; i++)
-    {
-        motor->adc_h.total += motor->adc_h.adcs[i].basic.value_fix;
-    }
-    float32_t avg = motor->adc_h.total / 3.0f;
-    for (i = 0; i < 3; i++)
-    {
-        // To Per-Unit
-        motor->adc_h.fixs[i] =
-            (motor->adc_h.adcs[i].basic.value_fix - avg) / motor->system.const_h.model->rated_current;
-        motor->foc_h.clarke_h.ABC[i] = motor->adc_h.fixs[i];
-    }
+    motor->foc_h.clarke_h.As = motor->adc_h.u_cur.pu;
+    motor->foc_h.clarke_h.Bs = motor->adc_h.v_cur.pu;
+    motor->foc_h.clarke_h.Cs = motor->adc_h.w_cur.pu;
     CLARKE_run_ideal(&motor->foc_h.clarke_h);
 }
 
@@ -74,7 +64,7 @@ static inline void motor_vec_ctrl_park(MotorParameter *motor)
     motor->foc_h.park_h.Alpha = motor->foc_h.clarke_h.Alpha;
     motor->foc_h.park_h.Beta = motor->foc_h.clarke_h.Beta;
     motor->foc_h.rad_acc += motor->foc_h.rad_itpl;
-    VAR_CLAMPF(motor->foc_h.rad_acc, -PI_DIV_3, PI_DIV_3);
+    VAR_CLAMPF(motor->foc_h.rad_acc, -PI_DIV(3), PI_DIV(3));
     switch (motor->ctrl.ref_sys)
     {
         case MOTOR_CTRL_FOC_POS:
@@ -88,7 +78,7 @@ static inline void motor_vec_ctrl_park(MotorParameter *motor)
         case MOTOR_CTRL_FOC_OL_VDQ:
         {
             motor->foc_h.rotor_exp_rad += 0.001f * PI;
-            motor->foc_h.rotor_exp_rad = var_wrap_P(motor->foc_h.rotor_exp_rad, PI_MUL_2);
+            motor->foc_h.rotor_exp_rad = var_wrap_P(motor->foc_h.rotor_exp_rad, PI_MUL(2));
             break;
         }
         default:
@@ -97,7 +87,7 @@ static inline void motor_vec_ctrl_park(MotorParameter *motor)
                 motor->foc_h.rad_acc +
                 motor->foc_h.rotor_rad +
                 motor->system.const_h.model->hall_angle_comp,
-                PI_MUL_2
+                PI_MUL(2)
             );
             break;
         }
@@ -194,11 +184,11 @@ static inline void motor_vec_ctrl_svpwm(MotorParameter *motor)
         if (motor->ctrl.ref_sys == MOTOR_CTRL_FOC_SIM) motor->foc_h.Vref_s = 0.0f;
         else Error_Handler();
     }
-    float32_t theta = var_wrap_P(motor->foc_h.magn_rad, PI_DIV_3);
+    float32_t theta = var_wrap_P(motor->foc_h.magn_rad, PI_DIV(3));
     // T1: 第一個有源向量導通時間 在該sector內靠近前一個主向量的時間比例(由sin(π/3−θ)決定)
     // T2: 第二個有源向量導通時間 在該sector內靠近下一個主向量的時間比例(由sin(θ)決定)
     float32_t T1, T2;
-    RESULT_CHECK_HANDLE(trigo_sin_cosf(PI_DIV_3 - theta, &T1, NULL));
+    RESULT_CHECK_HANDLE(trigo_sin_cosf(PI_DIV(3) - theta, &T1, NULL));
     RESULT_CHECK_HANDLE(trigo_sin_cosf(theta, &T2, NULL));
     T1 *= motor->foc_h.Vref_s;
     T2 *= motor->foc_h.Vref_s;
@@ -207,8 +197,8 @@ static inline void motor_vec_ctrl_svpwm(MotorParameter *motor)
     if (sum_T1_T2 > MOTOR_MAX_MODULATION_INDEX)
     {
         // 等比例縮放 T1 與 T2，維持電壓向量的方向，但限制大小
-        T1 = T1 / sum_T1_T2;
-        T2 = T2 / sum_T1_T2;
+        T1 /= sum_T1_T2;
+        T2 /= sum_T1_T2;
         sum_T1_T2 = MOTOR_MAX_MODULATION_INDEX;
     }
     // T0div2: 零向量時間的一半 將整個零向量時間平均分配到PWM週期的前後兩端 讓波形中心對稱
@@ -217,50 +207,50 @@ static inline void motor_vec_ctrl_svpwm(MotorParameter *motor)
     {
         case 6:
         {
-            motor->foc_h.duty_h.u = T0div2 + T1 + T2;
-            motor->foc_h.duty_h.v = T0div2 + T2;
-            motor->foc_h.duty_h.w = T0div2;
+            motor->foc_h.final_duty.u_h = T0div2 + T1 + T2;
+            motor->foc_h.final_duty.v_h = T0div2 + T2;
+            motor->foc_h.final_duty.w_h = T0div2;
             break;
         }
         case 2:
         {
-            motor->foc_h.duty_h.u = T0div2 + T1;
-            motor->foc_h.duty_h.v = T0div2 + T1 + T2;
-            motor->foc_h.duty_h.w = T0div2;
+            motor->foc_h.final_duty.u_h = T0div2 + T1;
+            motor->foc_h.final_duty.v_h = T0div2 + T1 + T2;
+            motor->foc_h.final_duty.w_h = T0div2;
             break;
         }
         case 3:
         {
-            motor->foc_h.duty_h.u = T0div2;
-            motor->foc_h.duty_h.v = T0div2 + T1 + T2;
-            motor->foc_h.duty_h.w = T0div2 + T2;
+            motor->foc_h.final_duty.u_h = T0div2;
+            motor->foc_h.final_duty.v_h = T0div2 + T1 + T2;
+            motor->foc_h.final_duty.w_h = T0div2 + T2;
             break;
         }
         case 1:
         {
-            motor->foc_h.duty_h.u = T0div2;
-            motor->foc_h.duty_h.v = T0div2 + T1;
-            motor->foc_h.duty_h.w = T0div2 + T1 + T2;
+            motor->foc_h.final_duty.u_h = T0div2;
+            motor->foc_h.final_duty.v_h = T0div2 + T1;
+            motor->foc_h.final_duty.w_h = T0div2 + T1 + T2;
             break;
         }
         case 5:
         {
-            motor->foc_h.duty_h.u = T0div2 + T2;
-            motor->foc_h.duty_h.v = T0div2;
-            motor->foc_h.duty_h.w = T0div2 + T1 + T2;
+            motor->foc_h.final_duty.u_h = T0div2 + T2;
+            motor->foc_h.final_duty.v_h = T0div2;
+            motor->foc_h.final_duty.w_h = T0div2 + T1 + T2;
             break;
         }
         case 4:
         {
-            motor->foc_h.duty_h.u = T0div2 + T1 + T2;
-            motor->foc_h.duty_h.v = T0div2;
-            motor->foc_h.duty_h.w = T0div2 + T1;
+            motor->foc_h.final_duty.u_h = T0div2 + T1 + T2;
+            motor->foc_h.final_duty.v_h = T0div2;
+            motor->foc_h.final_duty.w_h = T0div2 + T1;
             break;
         }
     }
-    motor->foc_h.duty_h.iu = 1.0f - motor->foc_h.duty_h.u;
-    motor->foc_h.duty_h.iv = 1.0f - motor->foc_h.duty_h.v;
-    motor->foc_h.duty_h.iw = 1.0f - motor->foc_h.duty_h.w;
+    motor->foc_h.final_duty.u_l = 1.0f - motor->foc_h.final_duty.u_h;
+    motor->foc_h.final_duty.v_l = 1.0f - motor->foc_h.final_duty.v_h;
+    motor->foc_h.final_duty.w_l = 1.0f - motor->foc_h.final_duty.w_h;
 }
 
 #include "main/_main.h"
@@ -268,10 +258,10 @@ static inline void motor_vec_ctrl_svpwm(MotorParameter *motor)
 void motor_foc_run(MotorParameter *motor)
 {
     RESULT_CHECK_RET_VOID(motor_vec_ctrl_angle_upd(motor));
-    if (motor->foc_h.init_cnt > 0)
+    if (motor->foc_h.tim_tick_init > 0)
     {
-        motor->foc_h.init_cnt--;
-        if (motor->foc_h.init_cnt == 0)
+        motor->foc_h.tim_tick_init--;
+        if (motor->foc_h.tim_tick_init == 0)
         // Todo FOC初始角度測試 先用簡單的120度控制等效於60度換相 讓馬達轉起來再說
             motor_switch_ctrl_system(motor, motor->ctrl.ref_user);
         return;
@@ -305,7 +295,7 @@ void motor_foc_run(MotorParameter *motor)
             fdcan_h.motor_idq_en2 = 1;
         }
     }*/
-    // float32_t scale = 4095.0f / (2.0f * ONE_DIV_SQRT3);
+    // float32_t scale = 4095.0f / (2.0f * VAR_ONE_DIV(SQRT3));
     // float32_t dac_id = motor->foc_h.pi_Id_h.feedback * scale + 2048.0f;
     // float32_t dac_iq = motor->foc_h.pi_Iq_h.feedback * scale + 2048.0f;
     // VAR_CLAMPF(dac_id, 0.0f, 4095.0f);
@@ -316,7 +306,7 @@ void motor_foc_run(MotorParameter *motor)
 
 void motor_foc_load(MotorParameter *motor)
 {
-    motor->phases_duty_load = motor->foc_h.duty_h;
+    motor->final_duty = motor->foc_h.final_duty;
     motor_timer_load(motor);
 }
 
